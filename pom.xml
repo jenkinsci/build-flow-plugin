@@ -1,0 +1,57 @@
+<!--
+Copyright (C) 2011 CloudBees Inc.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Affero General Public License
+as published by the Free Software Foundation; either version 3
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, see <http://www.gnu.org/licenses/>.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>1.424</version>
+  </parent>
+
+  <groupId>com.cloudbees.plugins</groupId>
+  <artifactId>build-flow-plugin</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>hpi</packaging>
+  <name>CloudBees Build Flow plugin</name>
+  <description>Manages job orchestration as a build flow</description>
+
+  <licenses>
+    <license>
+        <name>AGPL 3</name>
+        <url>http://www.gnu.org/licenses/agpl-3.0.html</url>
+        <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>ndeloof</id>
+      <name>Nicolas De Loof</name>
+    </developer>
+    <developer>
+      <id>henryju</id>
+      <name>Julien Henry</name>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</developerConnection>
+  </scm>
+
+</project>
+
