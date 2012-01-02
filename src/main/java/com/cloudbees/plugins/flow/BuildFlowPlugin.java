@@ -16,35 +16,30 @@
 */
 package com.cloudbees.plugins.flow;
 
-import hudson.model.Build;
+import hudson.Extension;
+import hudson.Plugin;
+import hudson.model.AbstractBuild;
 import hudson.model.Run;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
+import hudson.model.TaskListener;
+import hudson.model.listeners.RunListener;
 
 /**
- * Maintain the state of a build flow execution, as a chain of triggered jobs
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends Build<BuildFlow, FlowRun> {
+public class BuildFlowPlugin extends Plugin {
 
-    protected FlowRun(BuildFlow flow, Calendar timestamp) {
-        super(flow, timestamp);
-    }
+    /**
+     * A RunListener to watch Job builds and trigger downstream jobs according to flow definition
+     */
+    @Extension
+    public static class FlowListener extends RunListener<Run> {
 
-    public BuildFlow getFlow() {
-        return getProject();
-    }
+        @Override
+        public void onCompleted(Run run, TaskListener listener) {
 
-    protected FlowRun(BuildFlow flow) throws IOException {
-        super(flow);
-    }
-
-    protected FlowRun(BuildFlow flow, File buildDir) throws IOException {
-        super(flow, buildDir);
-    }
-
-    public void onCompleted(Run run) {
+            BuildFlowAction flowAction = run.getAction(BuildFlowAction.class);
+            flowAction.getFlow().onCompleted(run);
+            // TODO let the flow trigger next step(s);
+        }
     }
 }

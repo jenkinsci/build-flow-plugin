@@ -16,35 +16,34 @@
 */
 package com.cloudbees.plugins.flow;
 
-import hudson.model.Build;
-import hudson.model.Run;
+import hudson.model.Action;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
+import jenkins.model.Jenkins;
 
 /**
- * Maintain the state of a build flow execution, as a chain of triggered jobs
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends Build<BuildFlow, FlowRun> {
+public class BuildFlowAction implements Action {
 
-    protected FlowRun(BuildFlow flow, Calendar timestamp) {
-        super(flow, timestamp);
+    private FlowRun flow;
+
+    public BuildFlowAction(FlowRun flow) {
+        this.flow = flow;
     }
 
-    public BuildFlow getFlow() {
-        return getProject();
+    public FlowRun getFlow() {
+        return flow;
     }
 
-    protected FlowRun(BuildFlow flow) throws IOException {
-        super(flow);
+    public String getIconFileName() {
+        return null;  // TODO find adequate ico
     }
 
-    protected FlowRun(BuildFlow flow, File buildDir) throws IOException {
-        super(flow, buildDir);
+    public String getDisplayName() {
+        return Messages.BuildFlowAction_Messages();
     }
 
-    public void onCompleted(Run run) {
+    public String getUrlName() {
+        return flow.getBuildStatusUrl();
     }
 }

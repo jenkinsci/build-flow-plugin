@@ -16,35 +16,24 @@
 */
 package com.cloudbees.plugins.flow;
 
-import hudson.model.Build;
+import hudson.model.Cause.UpstreamCause;
 import hudson.model.Run;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
-
 /**
- * Maintain the state of a build flow execution, as a chain of triggered jobs
+ * Cause for a job that get triggered as part of a build flow execution
+ *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends Build<BuildFlow, FlowRun> {
+public class BuildFlowCause extends UpstreamCause {
 
-    protected FlowRun(BuildFlow flow, Calendar timestamp) {
-        super(flow, timestamp);
+    private final FlowRun flow;
+
+    public BuildFlowCause(Run<?, ?> up, FlowRun flow) {
+        super(up);
+        this.flow = flow;
     }
 
-    public BuildFlow getFlow() {
-        return getProject();
-    }
-
-    protected FlowRun(BuildFlow flow) throws IOException {
-        super(flow);
-    }
-
-    protected FlowRun(BuildFlow flow, File buildDir) throws IOException {
-        super(flow, buildDir);
-    }
-
-    public void onCompleted(Run run) {
+    public FlowRun getFlow() {
+        return flow;
     }
 }
