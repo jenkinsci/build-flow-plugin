@@ -17,30 +17,26 @@
 package com.cloudbees.plugins.flow;
 
 import hudson.Extension;
-import hudson.model.AbstractItem;
+import hudson.model.Descriptor;
 import hudson.model.ItemGroup;
-import hudson.model.Job;
+import hudson.model.Project;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
-
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Defines the orchestration logic for a build flow as a succession o jobs to be executed and chained together
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends AbstractItem implements TopLevelItem {
-
+public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelItem {
 
     public BuildFlow(ItemGroup parent, String name) {
         super(parent,name);
     }
 
     @Override
-    public Collection<? extends Job> getAllJobs() {
-        return Collections.<Job> emptyList();
+    protected Class<FlowRun> getBuildClass() {
+        return FlowRun.class;
     }
 
     public BuildFlowDescriptor getDescriptor() {
@@ -54,6 +50,11 @@ public class BuildFlow extends AbstractItem implements TopLevelItem {
         @Override
         public String getDisplayName() {
             return Messages.BuildFlow_Messages();
+        }
+
+        @Override
+        public boolean isApplicable(Descriptor descriptor) {
+            return descriptor.isSubTypeOf(AbstractFlow.class);
         }
 
         @Override
