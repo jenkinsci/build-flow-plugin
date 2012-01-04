@@ -16,32 +16,20 @@
 */
 package com.cloudbees.plugins.flow;
 
-import hudson.model.AbstractBuild;
-import hudson.model.Run;
+import hudson.model.AbstractStatusIcon;
+
+import org.kohsuke.stapler.Stapler;
 
 /**
- * Maintain the state of execution of a build flow as a chain of triggered jobs
- *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun {
+public class FlowIcon extends AbstractStatusIcon {
 
-    private final BuildFlow flow;
-
-    public FlowRun(BuildFlow flow) {
-        this.flow = flow;
+    public String getImageOf(String size) {
+        return Stapler.getCurrentRequest().getContextPath()+"/plugin/build-flow-plugin/images/"+size+"/flow.png";
     }
 
-    public BuildFlow getFlow() {
-        return flow;
-    }
-
-    public void onStarted(AbstractBuild<?, ?> build) {
-        // TODO maintain the state of the run as execution of the build flow
-        build.addAction(new BuildFlowAction(this));
-    }
-
-    public void onCompleted(Run run) {
-        // TODO maintain the state of the run as execution of the build flow
+    public String getDescription() {
+        return Messages.FlowIcon_Messages();
     }
 }

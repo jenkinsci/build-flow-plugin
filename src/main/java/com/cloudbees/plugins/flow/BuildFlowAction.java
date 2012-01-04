@@ -18,14 +18,12 @@ package com.cloudbees.plugins.flow;
 
 import hudson.model.Action;
 
-import jenkins.model.Jenkins;
-
 /**
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
 public class BuildFlowAction implements Action {
 
-    private FlowRun flow;
+    private final FlowRun flow;
 
     public BuildFlowAction(FlowRun flow) {
         this.flow = flow;
@@ -36,7 +34,7 @@ public class BuildFlowAction implements Action {
     }
 
     public String getIconFileName() {
-        return null;  // TODO find adequate ico
+        return "/plugin/build-flow-plugin/images/16x16/flow.png";
     }
 
     public String getDisplayName() {
@@ -44,6 +42,6 @@ public class BuildFlowAction implements Action {
     }
 
     public String getUrlName() {
-        return flow.getBuildStatusUrl();
+        return flow.getFlow().getAbsoluteUrl();
     }
 }

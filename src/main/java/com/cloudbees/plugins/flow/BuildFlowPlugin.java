@@ -18,10 +18,17 @@ package com.cloudbees.plugins.flow;
 
 import hudson.Extension;
 import hudson.Plugin;
+import hudson.Util;
 import hudson.model.AbstractBuild;
+import hudson.model.Job;
+import hudson.model.Project;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
+
+import java.io.IOException;
+
+import jenkins.model.Jenkins;
 
 /**
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
@@ -33,6 +40,14 @@ public class BuildFlowPlugin extends Plugin {
      */
     @Extension
     public static class FlowListener extends RunListener<Run> {
+
+        @Override
+        public void onStarted(Run run, TaskListener listener) {
+            BuildFlowCause cause = (BuildFlowCause) run.getCause(BuildFlowCause.class);
+            if (cause != null) {
+                run.addAction(new BuildFlowAction(cause.getFlow()));
+            }
+        }
 
         @Override
         public void onCompleted(Run run, TaskListener listener) {
