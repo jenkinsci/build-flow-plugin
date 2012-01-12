@@ -42,6 +42,6 @@ public class BuildFlowAction implements Action {
     }
 
     public String getUrlName() {
-        return flow.getFlow().getAbsoluteUrl();
+        return flow.getBuildFlow().getAbsoluteUrl();
     }
 }

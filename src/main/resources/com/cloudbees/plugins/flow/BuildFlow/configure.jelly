@@ -22,10 +22,17 @@
             <h1><img src="${h.rootUrl}/plugin/build-flow-plugin/images/24x24/flow.png"/>
                 ${it.pronoun} ${it.displayName}</h1>
 
-            <div class="behavior-loading">${%LOADING}</div>
             <f:form method="post" action="configSubmit" name="config">
+                <f:entry title="${%name(it.pronoun)}">
+                    <f:textbox name="name" value="${it.name}" />
+                </f:entry>
 
-                <f:entry field="flow" title="${%Define build flow using flow DSL}">
+                <f:entry title="${%Description}" help="${app.markupFormatter.helpUrl}">
+                    <f:textarea name="description" value="${it.description}"/>
+                </f:entry>
+
+
+                <f:entry field="dsl" title="${%Define build flow using flow DSL}">
                     <f:textarea/>
                 </f:entry>
 
@@ -33,7 +40,6 @@
                     <f:block>
                         <div id="bottom-sticker">
                             <div class="bottom-sticker-inner">
-                                <!--<input type="button" name="StructureTest" value="Test" onclick="buildFormTree(this.form)" />-->
                                 <f:submit value="${%Save}" />
                             </div>
                         </div>

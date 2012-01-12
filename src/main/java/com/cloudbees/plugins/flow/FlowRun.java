@@ -19,21 +19,26 @@ package com.cloudbees.plugins.flow;
 import hudson.model.AbstractBuild;
 import hudson.model.Run;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun {
+public class FlowRun extends Run<BuildFlow, FlowRun>{
 
-    private final BuildFlow flow;
-
-    public FlowRun(BuildFlow flow) {
-        this.flow = flow;
+    public FlowRun(BuildFlow job) throws IOException {
+        super(job);
     }
 
-    public BuildFlow getFlow() {
-        return flow;
+    public FlowRun(BuildFlow project, File buildDir) throws IOException {
+        super(project, buildDir);
+    }
+
+    public BuildFlow getBuildFlow() {
+        return project;
     }
 
     public void onStarted(AbstractBuild<?, ?> build) {

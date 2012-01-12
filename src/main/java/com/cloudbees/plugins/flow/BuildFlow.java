@@ -19,62 +19,91 @@ package com.cloudbees.plugins.flow;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractItem;
-import hudson.model.BallColor;
-import hudson.model.Descriptor;
 import hudson.model.Descriptor.FormException;
+import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
-import hudson.model.Project;
 import hudson.model.Run;
+import hudson.model.RunMap;
+import hudson.model.RunMap.Constructor;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
+import hudson.util.AlternativeUiTextProvider;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Collections;
-
+import java.util.SortedMap;
 import javax.servlet.ServletException;
 
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
 
 /**
  * Defines the orchestration logic for a build flow as a succession o jobs to be executed and chained together
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends AbstractItem implements TopLevelItem {
+public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
+
+    private final FlowIcon icon = new FlowIcon();
+
+    protected transient /*final*/ RunMap<FlowRun> runs = new RunMap<FlowRun>();
+
+    private String dsl;
 
     public BuildFlow(ItemGroup parent, String name) {
-        super(parent,name);
+        super(parent, name);
+        loadRuns();
     }
 
-    /**
-     * Accepts submission from the configuration page.
-     */
-    public synchronized void doConfigSubmit(StaplerRequest req,
-                                            StaplerResponse rsp) throws IOException, ServletException, FormException {
-        checkPermission(CONFIGURE);
-        requirePOST();
+    @Override
+    public void onLoad(ItemGroup<? extends Item> parent, String name) throws IOException {
+        super.onLoad(parent, name);
+        loadRuns();
+    }
 
-        JSONObject json = req.getSubmittedForm();
-        // TODO (re)configure buildFlow
+    private void loadRuns() {
+        this.runs = new RunMap<FlowRun>();
+        // Load previous flowRuns from history
+        this.runs.load(this, new Constructor<FlowRun>() {
+            public FlowRun create(File dir) throws IOException {
+                return new FlowRun(BuildFlow.this, dir);
+            }
+        });
+    }
 
-        save();
+    public String getDsl() {
+        return dsl;
+    }
+
+    @Override
+    protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
+        this.dsl = req.getSubmittedForm().getString("dsl");
     }
 
     @Override
     public Collection<? extends Job> getAllJobs() {
-        return Collections.<Job>emptyList();
+        return Collections.<Job>singleton(this);
     }
 
-    public FlowIcon getIconColor() {
-        return new FlowIcon();
+    @Override
+    public boolean isBuildable() {
+        // TODO may be buildable by triggering the entry-point job
+        return false;
+    }
+
+    @Override
+    protected SortedMap<Integer, ? extends FlowRun> _getRuns() {
+        return runs.getView();
+    }
+
+    @Override
+    protected void removeRun(FlowRun run) {
+        runs.remove(run);
     }
 
     public static Collection<BuildFlow> all() {
@@ -92,10 +121,15 @@ public class BuildFlow extends AbstractItem implements TopLevelItem {
         // TODO trigger next step of the flow
     }
 
+    @Override
+    public String getPronoun() {
+        return AlternativeUiTextProvider.get(PRONOUN, this, Messages.BuildFlow_Messages());
+    }
+
     /**
      * Start a new execution of the build flow, running the entry-point job
      */
-    public void newRun(AbstractBuild<?,?> build) {
+    public void newRun(AbstractBuild<?,?> build) throws IOException {
         new FlowRun(this).onStarted(build);
     }
 
@@ -103,11 +137,6 @@ public class BuildFlow extends AbstractItem implements TopLevelItem {
         @Override
         public String getDisplayName() {
             return Messages.BuildFlow_Messages();
-        }
-
-        @Override
-        public boolean isApplicable(Descriptor descriptor) {
-            return descriptor.isSubTypeOf(AbstractFlow.class);
         }
 
         @Override
