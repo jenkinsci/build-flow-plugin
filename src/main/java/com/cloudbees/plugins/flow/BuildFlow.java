@@ -32,6 +32,7 @@ import hudson.util.AlternativeUiTextProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.SortedMap;
@@ -104,6 +105,12 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
     @Override
     protected void removeRun(FlowRun run) {
         runs.remove(run);
+    }
+
+    protected synchronized FlowRun newRun() throws IOException {
+        FlowRun flowRun = new FlowRun(this);
+        runs.put(flowRun);
+        return flowRun;
     }
 
     public static Collection<BuildFlow> all() {

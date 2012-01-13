@@ -23,6 +23,8 @@
                 ${it.pronoun} ${it.displayName}</h1>
 
             <f:form method="post" action="configSubmit" name="config">
+                <j:set var="instance" value="${it}" />
+
                 <f:entry title="${%name(it.pronoun)}">
                     <f:textbox name="name" value="${it.name}" />
                 </f:entry>
@@ -30,7 +32,6 @@
                 <f:entry title="${%Description}" help="${app.markupFormatter.helpUrl}">
                     <f:textarea name="description" value="${it.description}"/>
                 </f:entry>
-
 
                 <f:entry field="dsl" title="${%Define build flow using flow DSL}">
                     <f:textarea/>
