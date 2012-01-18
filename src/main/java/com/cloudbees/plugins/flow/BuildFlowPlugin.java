@@ -16,6 +16,10 @@
 */
 package com.cloudbees.plugins.flow;
 
+import com.cloudbees.plugins.flow.dsl.Flow;
+import com.cloudbees.plugins.flow.dsl.Step;
+import hudson.model.Result;
+
 import hudson.Extension;
 import hudson.Plugin;
 import hudson.Util;
@@ -43,18 +47,22 @@ public class BuildFlowPlugin extends Plugin {
 
         @Override
         public void onStarted(Run run, TaskListener listener) {
-            BuildFlowCause cause = (BuildFlowCause) run.getCause(BuildFlowCause.class);
-            if (cause != null) {
-                run.addAction(new BuildFlowAction(cause.getFlow()));
-            }
         }
 
         @Override
         public void onCompleted(Run run, TaskListener listener) {
-
-            BuildFlowAction flowAction = run.getAction(BuildFlowAction.class);
-            flowAction.getFlow().onCompleted(run);
-            // TODO let the flow trigger next step(s);
+            BuildFlowCause cause = (BuildFlowCause) run.getCause(BuildFlowCause.class);
+            if (cause != null) {
+                Step s = cause.getStep();
+                Flow f = cause.getFlowRun().getFlow();
+                Result r = run.getResult();
+                if (r == Result.SUCCESS && s.getOnSuccess() != null) {
+                    cause.getFlowRun().startStep(s.getOnSuccess());
+                }
+                else if (r != Result.SUCCESS && s.getOnError() != null) {
+                    cause.getFlowRun().startStep(s.getOnError());
+                }
+            }
         }
     }
 }

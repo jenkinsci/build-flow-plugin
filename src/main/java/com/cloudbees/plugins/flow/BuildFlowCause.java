@@ -16,6 +16,8 @@
 */
 package com.cloudbees.plugins.flow;
 
+import com.cloudbees.plugins.flow.dsl.Step;
+
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Run;
 
@@ -26,14 +28,20 @@ import hudson.model.Run;
  */
 public class BuildFlowCause extends UpstreamCause {
 
-    private final FlowRun flow;
+    private final FlowRun flowRun;
+    private final Step step;
 
-    public BuildFlowCause(Run<?, ?> up, FlowRun flow) {
-        super(up);
-        this.flow = flow;
+    public BuildFlowCause(FlowRun flowRun, Step step) {
+        super(flowRun);
+        this.flowRun = flowRun;
+        this.step = step;
     }
 
-    public FlowRun getFlow() {
-        return flow;
+    public FlowRun getFlowRun() {
+        return flowRun;
+    }    
+    
+    public Step getStep() {
+        return step;
     }
 }

@@ -16,6 +16,16 @@
 */
 package com.cloudbees.plugins.flow;
 
+import com.cloudbees.plugins.flow.dsl.JobStep;
+import hudson.model.AbstractProject;
+import hudson.model.Cause;
+import hudson.model.Item;
+import jenkins.model.Jenkins;
+
+import com.cloudbees.plugins.flow.dsl.Flow;
+
+import com.cloudbees.plugins.flow.dsl.Step;
+
 import hudson.model.AbstractBuild;
 import hudson.model.Run;
 
@@ -28,22 +38,49 @@ import java.io.IOException;
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
 public class FlowRun extends Run<BuildFlow, FlowRun>{
+    
+    private Flow flow;
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
+        this.flow = job.getFlow();
     }
 
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
         super(project, buildDir);
+        this.flow = project.getFlow();
+    }
+    
+    public Flow getFlow() {
+        return flow;
     }
 
     public BuildFlow getBuildFlow() {
         return project;
     }
 
-    public void onStarted(AbstractBuild<?, ?> build) {
-        // TODO maintain the state of the run as execution of the build flow
-        build.addAction(new BuildFlowAction(this));
+    public void start() {
+        for (Step s : getFlow().getEntrySteps()) {
+            startStep(s);
+        }
+    }
+    
+    public void startStep(Step s) {
+        if (s instanceof JobStep) {
+            String jobName = ((JobStep) s).getJob().getName();
+            Item i = Jenkins.getInstance().getItem(jobName);
+            if (i instanceof AbstractProject) {
+                AbstractProject p = (AbstractProject) i;
+                Cause cause = new BuildFlowCause(this, s);
+                p.scheduleBuild2(p.getQuietPeriod(), cause);
+            }
+            else {
+                throw new RuntimeException(jobName + " is not a job");
+            }
+        }
+        else {
+            throw new RuntimeException("Only job steps are supported");
+        }
     }
 
     public void onCompleted(Run run) {

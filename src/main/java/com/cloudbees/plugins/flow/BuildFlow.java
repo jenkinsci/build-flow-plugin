@@ -16,6 +16,9 @@
 */
 package com.cloudbees.plugins.flow;
 
+import com.cloudbees.plugins.flow.dsl.Flow;
+import com.cloudbees.plugins.flow.dsl.FlowDSL;
+
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractBuild;
@@ -80,6 +83,10 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
     public String getDsl() {
         return dsl;
     }
+    
+    public Flow getFlow() {
+        return FlowDSL.evalScript(getDsl());
+    }
 
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
@@ -93,8 +100,7 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
 
     @Override
     public boolean isBuildable() {
-        // TODO may be buildable by triggering the entry-point job
-        return false;
+        return true;
     }
 
     @Override
@@ -136,8 +142,8 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
     /**
      * Start a new execution of the build flow, running the entry-point job
      */
-    public void newRun(AbstractBuild<?,?> build) throws IOException {
-        new FlowRun(this).onStarted(build);
+    public void doBuild() throws IOException {
+        newRun().start();
     }
 
     public static class BuildFlowDescriptor extends TopLevelItemDescriptor {
