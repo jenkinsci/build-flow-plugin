@@ -52,6 +52,50 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
     <connection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</developerConnection>
   </scm>
+  
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <configuration>
+                    <providerSelection>1.7</providerSelection>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generateStubs</goal>
+                            <goal>compile</goal>
+                            <goal>generateTestStubs</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>1.7.2</version>
+        </dependency>
+    </dependencies>
+  
+  <repositories>
+    <repository>
+      <id>m.g.o-public</id>
+      <url>http://maven.glassfish.org/content/groups/public/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
 </project>
 
