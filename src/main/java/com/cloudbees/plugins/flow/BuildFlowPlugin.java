@@ -16,53 +16,12 @@
 */
 package com.cloudbees.plugins.flow;
 
-import com.cloudbees.plugins.flow.dsl.Flow;
-import com.cloudbees.plugins.flow.dsl.Step;
-import hudson.model.Result;
-
-import hudson.Extension;
 import hudson.Plugin;
-import hudson.Util;
-import hudson.model.AbstractBuild;
-import hudson.model.Job;
-import hudson.model.Project;
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.model.listeners.RunListener;
-
-import java.io.IOException;
-
-import jenkins.model.Jenkins;
 
 /**
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
 public class BuildFlowPlugin extends Plugin {
 
-    /**
-     * A RunListener to watch Job builds and trigger downstream jobs according to flow definition
-     */
-    @Extension
-    public static class FlowListener extends RunListener<Run> {
 
-        @Override
-        public void onStarted(Run run, TaskListener listener) {
-        }
-
-        @Override
-        public void onCompleted(Run run, TaskListener listener) {
-            BuildFlowCause cause = (BuildFlowCause) run.getCause(BuildFlowCause.class);
-            if (cause != null) {
-                Step s = cause.getStep();
-                Flow f = cause.getFlowRun().getFlow();
-                Result r = run.getResult();
-                if (r == Result.SUCCESS && s.getOnSuccess() != null) {
-                    cause.getFlowRun().startStep(s.getOnSuccess());
-                }
-                else if (r != Result.SUCCESS && s.getOnError() != null) {
-                    cause.getFlowRun().startStep(s.getOnError());
-                }
-            }
-        }
-    }
 }

@@ -12,7 +12,7 @@ public class DSLTest {
         FlowDSL dsl = new FlowDSL();
         def script = """\
         flow {
-            entrystep("step1") {
+            step("step1") {
                 job( "jobA" )
             }.onSuccess("step2")
              .onError("step3")
@@ -25,7 +25,7 @@ public class DSLTest {
         }
         """
         Flow f = dsl.evalScript(script);
-        assertThat(f.entryStepNames.size(), is(1));
+        assertThat(f.entryStepName, is("step1"));
         assertThat(f.steps.size(), is(3));
         assertThat(((JobStep)f.getStep("step1")).job.name, is("jobA"))
         assertThat(((JobStep)f.getStep("step1").onSuccess).job.name, is("jobB"))

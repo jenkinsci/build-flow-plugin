@@ -16,6 +16,13 @@
 */
 package com.cloudbees.plugins.flow;
 
+import hudson.model.DependencyGraph;
+import hudson.model.Descriptor;
+import hudson.tasks.Publisher;
+import hudson.util.DescribableList;
+
+import hudson.model.AbstractProject;
+
 import com.cloudbees.plugins.flow.dsl.Flow;
 import com.cloudbees.plugins.flow.dsl.FlowDSL;
 
@@ -51,33 +58,14 @@ import jenkins.model.Jenkins;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
+public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem {
 
     private final FlowIcon icon = new FlowIcon();
-
-    protected transient /*final*/ RunMap<FlowRun> runs = new RunMap<FlowRun>();
 
     private String dsl;
 
     public BuildFlow(ItemGroup parent, String name) {
         super(parent, name);
-        loadRuns();
-    }
-
-    @Override
-    public void onLoad(ItemGroup<? extends Item> parent, String name) throws IOException {
-        super.onLoad(parent, name);
-        loadRuns();
-    }
-
-    private void loadRuns() {
-        this.runs = new RunMap<FlowRun>();
-        // Load previous flowRuns from history
-        this.runs.load(this, new Constructor<FlowRun>() {
-            public FlowRun create(File dir) throws IOException {
-                return new FlowRun(BuildFlow.this, dir);
-            }
-        });
     }
 
     public String getDsl() {
@@ -90,37 +78,8 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
 
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
+        super.submit(req, rsp);
         this.dsl = req.getSubmittedForm().getString("dsl");
-    }
-
-    @Override
-    public Collection<? extends Job> getAllJobs() {
-        return Collections.<Job>singleton(this);
-    }
-
-    @Override
-    public boolean isBuildable() {
-        return true;
-    }
-
-    @Override
-    protected SortedMap<Integer, ? extends FlowRun> _getRuns() {
-        return runs.getView();
-    }
-
-    @Override
-    protected void removeRun(FlowRun run) {
-        runs.remove(run);
-    }
-
-    protected synchronized FlowRun newRun() throws IOException {
-        FlowRun flowRun = new FlowRun(this);
-        runs.put(flowRun);
-        return flowRun;
-    }
-
-    public static Collection<BuildFlow> all() {
-        return Util.createSubList(Jenkins.getInstance().getItems(), BuildFlow.class);
     }
 
     @Extension
@@ -139,12 +98,6 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
         return AlternativeUiTextProvider.get(PRONOUN, this, Messages.BuildFlow_Messages());
     }
 
-    /**
-     * Start a new execution of the build flow, running the entry-point job
-     */
-    public void doBuild() throws IOException {
-        newRun().start();
-    }
 
     public static class BuildFlowDescriptor extends TopLevelItemDescriptor {
         @Override
@@ -156,6 +109,29 @@ public class BuildFlow extends Job<BuildFlow, FlowRun> implements TopLevelItem {
         public TopLevelItem newInstance(ItemGroup parent, String name) {
             return new BuildFlow(parent, name);
         }
+    }
+
+
+    @Override
+    public DescribableList<Publisher, Descriptor<Publisher>> getPublishersList() {
+        return new DescribableList<Publisher,Descriptor<Publisher>>(this);
+    }
+
+    @Override
+    protected Class<FlowRun> getBuildClass() {
+        return FlowRun.class;
+    }
+
+    @Override
+    public boolean isFingerprintConfigured() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    protected void buildDependencyGraph(DependencyGraph graph) {
+        // TODO Auto-generated method stub
+        
     } 
     
 }

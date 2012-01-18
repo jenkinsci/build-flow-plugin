@@ -16,21 +16,28 @@
 */
 package com.cloudbees.plugins.flow;
 
+import hudson.model.BuildBadgeAction;
+
 import hudson.model.Action;
 
 /**
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlowAction implements Action {
+public class BuildFlowAction implements BuildBadgeAction {
 
     private final FlowRun flow;
-
+    
     public BuildFlowAction(FlowRun flow) {
         this.flow = flow;
     }
 
     public FlowRun getFlow() {
         return flow;
+    }
+    
+    public String getTooltip() {
+        //FIXME use bundle
+        return "This build was triggered by a flow";
     }
 
     public String getIconFileName() {
@@ -42,6 +49,7 @@ public class BuildFlowAction implements Action {
     }
 
     public String getUrlName() {
+        //FIXME flow is not persisted so it is null when reloading action from previous build
         return flow.getBuildFlow().getAbsoluteUrl();
     }
 }

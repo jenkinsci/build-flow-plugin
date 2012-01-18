@@ -16,28 +16,34 @@
 */
 package com.cloudbees.plugins.flow;
 
-import com.cloudbees.plugins.flow.dsl.JobStep;
-import hudson.model.AbstractProject;
-import hudson.model.Cause;
-import hudson.model.Item;
-import jenkins.model.Jenkins;
+import hudson.model.Cause.UpstreamCause;
+
+import hudson.model.Action;
 
 import com.cloudbees.plugins.flow.dsl.Flow;
-
+import com.cloudbees.plugins.flow.dsl.JobStep;
 import com.cloudbees.plugins.flow.dsl.Step;
-
+import hudson.model.BuildListener;
+import hudson.model.Item;
+import hudson.model.Result;
 import hudson.model.AbstractBuild;
-import hudson.model.Run;
-
+import hudson.model.AbstractProject;
+import hudson.model.Cause;
+import hudson.model.Executor;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
+import jenkins.model.Jenkins;
+
+import static hudson.model.Result.FAILURE;
 
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends Run<BuildFlow, FlowRun>{
+public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     
     private Flow flow;
 
@@ -59,20 +65,15 @@ public class FlowRun extends Run<BuildFlow, FlowRun>{
         return project;
     }
 
-    public void start() {
-        for (Step s : getFlow().getEntrySteps()) {
-            startStep(s);
-        }
-    }
-    
-    public void startStep(Step s) {
+    public Future<? extends AbstractBuild<?,?>> startStep(Step s) {
         if (s instanceof JobStep) {
             String jobName = ((JobStep) s).getJob().getName();
             Item i = Jenkins.getInstance().getItem(jobName);
             if (i instanceof AbstractProject) {
-                AbstractProject p = (AbstractProject) i;
-                Cause cause = new BuildFlowCause(this, s);
-                p.scheduleBuild2(p.getQuietPeriod(), cause);
+                AbstractProject<?, ? extends AbstractBuild<?,?>> p = (AbstractProject<?, ? extends AbstractBuild<?,?>>) i;
+                Cause cause = new UpstreamCause(this);
+                Action action = new BuildFlowAction(this);
+                return p.scheduleBuild2(p.getQuietPeriod(), cause, action);
             }
             else {
                 throw new RuntimeException(jobName + " is not a job");
@@ -83,7 +84,65 @@ public class FlowRun extends Run<BuildFlow, FlowRun>{
         }
     }
 
-    public void onCompleted(Run run) {
-        // TODO maintain the state of the run as execution of the build flow
+    @Override
+    public void run() {
+        run(createRunner());        
     }
+    
+    protected Runner createRunner() {
+        return new RunnerImpl();
+    }
+    
+    protected class RunnerImpl extends AbstractRunner {
+        protected Result doRun(BuildListener listener) throws Exception {
+
+            Result r = null;
+            boolean flowCompleted = false;
+            try {
+                Step currentStep = getFlow().getEntryStep();
+                while (currentStep != null) {
+                    Future<? extends AbstractBuild<?,?>> f = startStep(currentStep);
+                    Result intermediateResult = f.get().getResult();
+                    if (intermediateResult == Result.SUCCESS && currentStep.getOnSuccess() != null) {
+                        currentStep = currentStep.getOnSuccess();
+                    }
+                    else if (intermediateResult != Result.SUCCESS && currentStep.getOnError() != null) {
+                        currentStep = currentStep.getOnError();
+                    }
+                    else {
+                        currentStep = null;
+                        r = intermediateResult;
+                    }
+                }
+            } catch (InterruptedException e) {
+                r = Executor.currentExecutor().abortResult();
+                throw e;
+            } finally {
+                if (r != null) setResult(r);
+                // tear down in reverse order
+                boolean failed=false;
+                for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
+                    if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
+                        failed=true;
+                    }                    
+                }
+                // WARNING The return in the finally clause will trump any return before
+                if (failed) return FAILURE;
+            }
+
+            return r;
+        }
+
+        @Override
+        public void post2(BuildListener listener) throws IOException, InterruptedException {
+        }
+
+        @Override
+        public void cleanUp(BuildListener listener) throws Exception {
+            super.cleanUp(listener);
+        }
+
+    }
+    
+    private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
 }

@@ -42,16 +42,14 @@ public class ScriptDelegate implements Serializable {
         this.flow = flow;
     }
 
-    Step entrystep(String name, Closure c) {
-        def jobStep = step(name, c);
-        this.flow.entryStepNames.add(name);
-        return jobStep;
-    }
-
     Step step(String name, Closure c) {
         def res = c();
         if (res instanceof Job) {
             def jobStep = new JobStep(name, res, this.flow);
+            if (flow.steps.size() == 0) {
+                //By convention first step is entry step
+                flow.entryStepName = name;
+            }
             flow.steps.put(name, jobStep);
             return jobStep;
         }
