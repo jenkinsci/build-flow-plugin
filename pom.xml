@@ -28,11 +28,12 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
   <packaging>hpi</packaging>
   <name>CloudBees Build Flow plugin</name>
   <description>Manages job orchestration as a build flow</description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Build+Flow+Plugin</url>
 
   <licenses>
     <license>
-        <name>AGPL 3</name>
-        <url>http://www.gnu.org/licenses/agpl-3.0.html</url>
+        <name>LGPL 3</name>
+        <url>http://www.gnu.org/licenses/lgpl.html</url>
         <distribution>repo</distribution>
     </license>
   </licenses>
