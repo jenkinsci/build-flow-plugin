@@ -35,6 +35,7 @@ import hudson.model.ItemGroup;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.RunMap;
+import hudson.model.Queue.FlyweightTask;
 import hudson.model.RunMap.Constructor;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
@@ -58,7 +59,7 @@ import jenkins.model.Jenkins;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem {
+public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask {
 
     private final FlowIcon icon = new FlowIcon();
 
