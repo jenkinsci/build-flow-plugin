@@ -1,38 +1,41 @@
 package com.cloudbees.plugins.flow.dsl;
 
 import java.util.Map;
+import hudson.model.Result;
 
 public class Step {
 
     String name;
-    private String onSuccessStepName;
-    private String onErrorStepName;
     Flow parentFlow;
-    Step onSuccess;
-    Step onError;
-
+    List<Job> jobs = new ArrayList<Job>();
+    List<StepOn> stepOns = new ArrayList<StepOn>();
 
     public Step(String name, Flow parentFlow) {
         this.name = name;
         this.parentFlow = parentFlow;
     }
     
-    Step onSuccess(String stepName) {
-        onSuccessStepName = stepName;
-        return this;
-    }
-
-    Step onError(String stepName) {
-        onErrorStepName = stepName;
-        return this;
+    public List<Job> getJobs() {
+        return this.jobs;
     }
     
-    Step getOnSuccess() {
-        return parentFlow.steps.get(onSuccessStepName);
-    }
-    
-    Step getOnError() {
-        return parentFlow.steps.get(onErrorStepName);
+    public void addJob(String jobName) {
+        this.jobs.add(new Job(jobName));
     }
 
+    public StepOn on(Result result) {
+        def stepOn = new StepOn(this, result);
+        this.stepOns.add(stepOn);
+        return stepOn;
+    }
+    
+    public Step getTriggerOn(Result result) {
+        stepOns.each() { stepOn ->
+           if (result.isBetterOrEqualTo(stepOn.result)) {
+              return parentFlow.getStep(stepOn.nextStepName);
+           }
+        }
+        return null;
+    }
+    
 }

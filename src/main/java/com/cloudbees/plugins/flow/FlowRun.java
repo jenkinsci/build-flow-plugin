@@ -21,8 +21,8 @@ import hudson.model.Cause.UpstreamCause;
 import hudson.model.Action;
 
 import com.cloudbees.plugins.flow.dsl.Flow;
-import com.cloudbees.plugins.flow.dsl.JobStep;
 import com.cloudbees.plugins.flow.dsl.Step;
+import com.cloudbees.plugins.flow.dsl.Job;
 import hudson.model.BuildListener;
 import hudson.model.Item;
 import hudson.model.Result;
@@ -32,6 +32,8 @@ import hudson.model.Cause;
 import hudson.model.Executor;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -65,23 +67,22 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         return project;
     }
 
-    public Future<? extends AbstractBuild<?,?>> startStep(Step s) {
-        if (s instanceof JobStep) {
-            String jobName = ((JobStep) s).getJob().getName();
+    public List<Future<? extends AbstractBuild<?,?>>> startStep(Step s) {
+        Cause cause = new UpstreamCause(this);
+        Action action = new BuildFlowAction(this);
+        List<Future<? extends AbstractBuild<?,?>>> futures = new ArrayList<Future<? extends AbstractBuild<?,?>>>();
+        for (Job j : s.getJobs()) {
+        	String jobName = j.getName();
             Item i = Jenkins.getInstance().getItem(jobName);
             if (i instanceof AbstractProject) {
                 AbstractProject<?, ? extends AbstractBuild<?,?>> p = (AbstractProject<?, ? extends AbstractBuild<?,?>>) i;
-                Cause cause = new UpstreamCause(this);
-                Action action = new BuildFlowAction(this);
-                return p.scheduleBuild2(p.getQuietPeriod(), cause, action);
+                futures.add(p.scheduleBuild2(p.getQuietPeriod(), cause, action));
             }
             else {
                 throw new RuntimeException(jobName + " is not a job");
             }
         }
-        else {
-            throw new RuntimeException("Only job steps are supported");
-        }
+        return futures;
     }
 
     @Override
@@ -101,17 +102,15 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
             try {
                 Step currentStep = getFlow().getEntryStep();
                 while (currentStep != null) {
-                    Future<? extends AbstractBuild<?,?>> f = startStep(currentStep);
-                    Result intermediateResult = f.get().getResult();
-                    if (intermediateResult == Result.SUCCESS && currentStep.getOnSuccess() != null) {
-                        currentStep = currentStep.getOnSuccess();
+                    List<Future<? extends AbstractBuild<?,?>>> futures = startStep(currentStep);
+                    Result stepResult = Result.SUCCESS;
+                    for (Future<? extends AbstractBuild<?,?>> f : futures) {
+                    	stepResult = stepResult.combine(f.get().getResult());
                     }
-                    else if (intermediateResult != Result.SUCCESS && currentStep.getOnError() != null) {
-                        currentStep = currentStep.getOnError();
-                    }
-                    else {
-                        currentStep = null;
-                        r = intermediateResult;
+                    
+                    currentStep = currentStep.getTriggerOn(stepResult);
+                    if (currentStep == null) {
+                        r = stepResult;
                     }
                 }
             } catch (InterruptedException e) {

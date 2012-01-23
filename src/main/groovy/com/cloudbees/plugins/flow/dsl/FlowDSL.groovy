@@ -1,5 +1,7 @@
 package com.cloudbees.plugins.flow.dsl;
 
+import hudson.model.Result;
+
 public class FlowDSL {
     
     private FlowDSL() {
@@ -22,10 +24,10 @@ public class FlowDSL {
 
             emc.flow = { Closure cl ->
                 Flow f = new Flow();
-                ScriptDelegate sd = new ScriptDelegate(f);
-                cl.delegate = sd
-                cl.resolveStrategy = Closure.DELEGATE_FIRST
-                cl()
+                FlowDelegate fd = new FlowDelegate(f);
+                cl.delegate = fd;
+                cl.resolveStrategy = Closure.DELEGATE_ONLY;
+                cl();
                 return f;
             }
         })
@@ -34,32 +36,61 @@ public class FlowDSL {
 }
 
 
-public class ScriptDelegate implements Serializable {
+public class FlowDelegate implements Serializable {
+
+	def SUCCESS = Result.SUCCESS;
+	def UNSTABLE = Result.UNSTABLE;
+	def FAILURE = Result.FAILURE;
 
     Flow flow;
 
-    public ScriptDelegate(Flow flow) {
+    public FlowDelegate(Flow flow) {
         this.flow = flow;
     }
+    
+    def invokeMethod(String name, args) {
+       if (name.startsWith("step") && args.length > 0 && args[0] instanceof Closure) {
+           return step(name, args[0]);
+       }
+       else {
+           throw new MissingMethodException(name, FlowDelegate.class, args);
+       }
+	}
+	
+	def propertyMissing(String name) {
+	   if (name.startsWith("step")) {
+           return name;
+       }
+       else {
+           throw new MissingPropertyException(name, FlowDelegate.class);
+       }
+	}
 
-    Step step(String name, Closure c) {
-        def res = c();
-        if (res instanceof Job) {
-            def jobStep = new JobStep(name, res, this.flow);
-            if (flow.steps.size() == 0) {
-                //By convention first step is entry step
-                flow.entryStepName = name;
-            }
-            flow.steps.put(name, jobStep);
-            return jobStep;
+    Step step(String name, Closure cl) {
+        Step s = new Step(name, flow);
+        StepDelegate sd = new StepDelegate(s);
+        cl.delegate = sd;
+        cl.resolveStrategy = Closure.DELEGATE_ONLY;
+        cl();
+        if (flow.steps.size() == 0) {
+            //By convention first step is entry step
+            flow.entryStepName = name;
         }
-        else {
-            throw new RuntimeException("Job expected");
-        }
+        flow.steps.put(name, s);
+        return s;
+    }
+}
+
+public class StepDelegate implements Serializable {
+
+    Step step;
+
+    public StepDelegate(Step step) {
+        this.step = step;
     }
 
-    Job job(String name) {
-        return new Job(name);
+    void job(String name) {
+        this.step.addJob(name);
     }
 }
 

@@ -89,7 +89,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.7.2</version>
+            <version>1.8.4</version>
         </dependency>
     </dependencies>
   
