@@ -56,7 +56,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
   
     <build>
         <plugins>
-
+            <plugin>
+                <groupId>org.jenkins-ci.tools</groupId>
+                <artifactId>maven-hpi-plugin</artifactId>
+                <version>1.74</version>
+                <configuration>
+                   <pluginFirstClassLoader>true</pluginFirstClassLoader>
+                   <!--<maskClasses></maskClasses>-->
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
