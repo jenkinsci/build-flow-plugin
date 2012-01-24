@@ -81,6 +81,13 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         this.dsl = req.getSubmittedForm().getString("dsl");
+        try {
+        	//TODO Need better validation (like check if jobs exist)
+        	getFlow();
+        } catch (groovy.lang.GroovyRuntimeException e) {
+        	e.printStackTrace();
+        	throw new FormException(Messages.BuildFlow_InvalidDSL(), e, "dsl");
+        }
     }
 
     @Extension
