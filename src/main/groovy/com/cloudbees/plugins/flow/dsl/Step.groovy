@@ -49,7 +49,7 @@ public class Step {
     }
     
     public Step getTriggerOn(Result result) {
-        stepOns.each() { stepOn ->
+        for (stepOn in stepOns) {
            if (result.isBetterOrEqualTo(stepOn.result)) {
               return parentFlow.getStep(stepOn.nextStepName);
            }

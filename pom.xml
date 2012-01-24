@@ -60,17 +60,17 @@
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
-                <version>1.74</version>
+                <version>1.79</version>
                 <configuration>
-                   <pluginFirstClassLoader>true</pluginFirstClassLoader>
-                   <!--<maskClasses></maskClasses>-->
+                   <maskClasses>groovy. org.codehaus.groovy. groovyjarjarasm.</maskClasses>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
+                <version>1.4</version>
                 <configuration>
-                    <providerSelection>1.7</providerSelection>
+                    <providerSelection>1.8</providerSelection>
                 </configuration>
                 <executions>
                     <execution>
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.8.4</version>
+            <version>1.8.5</version>
         </dependency>
     </dependencies>
   

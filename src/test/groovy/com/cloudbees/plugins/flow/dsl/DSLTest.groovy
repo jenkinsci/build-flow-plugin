@@ -54,5 +54,8 @@ public class DSLTest {
         assertThat(f.getStep("step1").stepOns[0].nextStepName, is("step2"))
         assertThat(f.getStep("step1").stepOns[1].result, is(Result.FAILURE))
         assertThat(f.getStep("step1").stepOns[1].nextStepName, is("step3"))
+        assertThat(f.getStep("step1").getTriggerOn(Result.SUCCESS).name, is("step2"))
+        assertThat(f.getStep("step1").getTriggerOn(Result.FAILURE).name, is("step3"))
+        assertThat(f.getStep("step1").getTriggerOn(Result.UNSTABLE).name, is("step3"))
     }
 }
