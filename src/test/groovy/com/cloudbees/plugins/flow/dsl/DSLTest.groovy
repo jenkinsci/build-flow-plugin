@@ -19,6 +19,7 @@
 
 package com.cloudbees.plugins.flow.dsl;
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -89,5 +90,12 @@ public class DSLTest {
 		assertThat(f.getStep("step2").getTriggerOn(Result.FAILURE), is(nullValue()))
 		
 		assertThat(FlowDSL.evalParam(f.getStep("step3").jobs[0].params["MY_STR_PARAM"], f), is("toto2"));
+	}
+	
+	@Test(expected=MultipleCompilationErrorsException.class)
+	void testDSLSecure() {
+		Flow f = FlowDSL.readFlow("""
+			System.exit(0);
+		""");
 	}
 }

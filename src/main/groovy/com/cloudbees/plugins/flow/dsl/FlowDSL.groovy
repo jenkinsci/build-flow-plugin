@@ -19,8 +19,14 @@
 
 package com.cloudbees.plugins.flow.dsl;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
+
 import hudson.model.AbstractBuild
 import hudson.model.Result;
+
+import static org.codehaus.groovy.syntax.Types.*;
 
 public class FlowDSL {
 
@@ -44,7 +50,68 @@ public class FlowDSL {
 
 		Binding binding = new Binding();
 		ClassLoader parent = FlowDSL.class.getClassLoader();
-		Script dslScript = new GroovyShell(parent, binding).parse(script);
+		
+		final ImportCustomizer imports = new ImportCustomizer().addStaticStars('hudson.model.Result')
+		final SecureASTCustomizer secure = new SecureASTCustomizer()
+		secure.with {
+			closuresAllowed = true
+			methodDefinitionAllowed = false
+			packageAllowed = false
+
+			importsWhitelist = []
+			staticImportsWhitelist = []
+			staticStarImportsWhitelist = ['hudson.model.Result'] // only java.lang.Math is allowed
+
+			tokensWhitelist = [
+					PLUS,
+					MINUS,
+					MULTIPLY,
+					DIVIDE,
+					MOD,
+					POWER,
+					PLUS_PLUS,
+					MINUS_MINUS,
+					COMPARE_EQUAL,
+					COMPARE_NOT_EQUAL,
+					COMPARE_LESS_THAN,
+					COMPARE_LESS_THAN_EQUAL,
+					COMPARE_GREATER_THAN,
+					COMPARE_GREATER_THAN_EQUAL,
+					ASSIGN
+			].asImmutable()
+
+			constantTypesClassesWhiteList = [
+					Integer,
+					Float,
+					Long,
+					Double,
+					BigDecimal,
+					String,
+					Boolean,
+					Integer.TYPE,
+					Long.TYPE,
+					Float.TYPE,
+					Double.TYPE,
+					Boolean.TYPE
+			].asImmutable()
+
+			receiversClassesWhiteList = [
+					Math,
+					Integer,
+					Float,
+					Double,
+					Long,
+					BigDecimal,
+					String,
+					Boolean,
+					Object
+			].asImmutable()
+		}
+		CompilerConfiguration config = new CompilerConfiguration()
+		config.addCompilationCustomizers(imports, secure)
+		
+		
+		Script dslScript = new GroovyShell(parent, binding, config).parse(script);
 		dslScript.metaClass = createEMC(dslScript.class, { ExpandoMetaClass emc ->
 
 			emc.flow = { Closure cl ->
@@ -106,10 +173,6 @@ public class FlowDSL {
 
 
 public class FlowDelegate implements Serializable {
-
-	def SUCCESS = Result.SUCCESS;
-	def UNSTABLE = Result.UNSTABLE;
-	def FAILURE = Result.FAILURE;
 
 	Flow flow;
 
@@ -201,10 +264,6 @@ public class JobAndDelegate implements Serializable {
 
 public class ConditionDelegate implements Serializable {
 
-	def SUCCESS = Result.SUCCESS;
-	def UNSTABLE = Result.UNSTABLE;
-	def FAILURE = Result.FAILURE;
-
 	private Flow flow;
 
 	public ConditionDelegate(Flow flow) {
@@ -216,10 +275,6 @@ public class ConditionDelegate implements Serializable {
 }
 
 public class ParamDelegate implements Serializable {
-
-	def SUCCESS = Result.SUCCESS;
-	def UNSTABLE = Result.UNSTABLE;
-	def FAILURE = Result.FAILURE;
 
 	private Flow flow;
 
