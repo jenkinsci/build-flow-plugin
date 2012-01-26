@@ -15,8 +15,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 package com.cloudbees.plugins.flow.dsl;
 
 import java.util.Map;
@@ -24,37 +22,62 @@ import hudson.model.Result;
 
 public class Step {
 
-    String name;
-    Flow parentFlow;
-    List<Job> jobs = new ArrayList<Job>();
-    List<StepOn> stepOns = new ArrayList<StepOn>();
+	String name;
+	Flow parentFlow;
+	List<Job> jobs = new ArrayList<Job>();
+	List<StepOn> stepOns = new ArrayList<StepOn>();
 
-    public Step(String name, Flow parentFlow) {
-        this.name = name;
-        this.parentFlow = parentFlow;
-    }
-    
-    public List<Job> getJobs() {
-        return this.jobs;
-    }
-    
-    public void addJob(String jobName) {
-        this.jobs.add(new Job(jobName));
-    }
+	public Step(String name, Flow parentFlow) {
+		this.name = name;
+		this.parentFlow = parentFlow;
+	}
 
-    public StepOn on(Result result) {
-        def stepOn = new StepOn(this, result);
-        this.stepOns.add(stepOn);
-        return stepOn;
-    }
-    
-    public Step getTriggerOn(Result result) {
-        for (stepOn in stepOns) {
-           if (result.isBetterOrEqualTo(stepOn.result)) {
-              return parentFlow.getStep(stepOn.nextStepName);
-           }
-        }
-        return null;
-    }
-    
+	public List<Job> getJobs() {
+		return this.jobs;
+	}
+
+	public Job addJob(String jobName) {
+		def j = new Job(jobName);
+		this.jobs.add(j);
+		return j;
+	}
+
+	public StepOn on(Result result) {
+		def stepOn = new StepOn(this, result);
+		this.stepOns.add(stepOn);
+		return stepOn;
+	}
+
+	public StepOn on(Closure cl) {
+		def stepOn = new StepOn(this, cl);
+		this.stepOns.add(stepOn);
+		return stepOn;
+	}
+
+	/**
+	 * Return the next step of the flow given the aggregated Result of all jobs of the previous step.
+	 * Note that in case some closures are used to define transition condition, this result may not be used.
+	 * @param result
+	 * @return
+	 */
+	public Step getTriggerOn(Result result) {
+		for (stepOn in stepOns) {
+			if (stepOn.cl != null && FlowDSL.evalCondition(stepOn.cl, parentFlow)) {
+				return parentFlow.getStep(stepOn.nextStepName);
+			}
+			if (stepOn.result != null && result.isBetterOrEqualTo(stepOn.result)) {
+				return parentFlow.getStep(stepOn.nextStepName);
+			}
+		}
+		return null;
+	}
+
+	public StepOn getStepOn(Result result) {
+		for (stepOn in stepOns) {
+		   if (result.isBetterOrEqualTo(stepOn.result)) {
+			  return stepOn;
+		   }
+		}
+		return null;
+	}
 }

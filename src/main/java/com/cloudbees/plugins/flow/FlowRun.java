@@ -17,11 +17,14 @@
 
 package com.cloudbees.plugins.flow;
 
+import groovy.lang.Closure;
+import hudson.model.BooleanParameterValue;
 import hudson.model.Cause.UpstreamCause;
 
 import hudson.model.Action;
 
 import com.cloudbees.plugins.flow.dsl.Flow;
+import com.cloudbees.plugins.flow.dsl.FlowDSL;
 import com.cloudbees.plugins.flow.dsl.Step;
 import com.cloudbees.plugins.flow.dsl.Job;
 import hudson.model.BuildListener;
@@ -31,10 +34,15 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
 import hudson.model.Executor;
+import hudson.model.ParametersAction;
+import hudson.model.StringParameterValue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -48,10 +56,12 @@ import static hudson.model.Result.FAILURE;
  */
 public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     
-    private Flow flow;
+	private String dsl;
+    private transient Flow flow;
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
+        this.dsl = job.getDsl();
         this.flow = job.getFlow();
     }
 
@@ -61,6 +71,9 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
     
     public Flow getFlow() {
+    	if (flow == null) {
+    		this.flow = FlowDSL.readFlow(dsl);
+    	}
         return flow;
     }
 
@@ -68,16 +81,35 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         return project;
     }
 
-    public List<Future<? extends AbstractBuild<?,?>>> startStep(Step s) {
+    public Map<Job, Future<? extends AbstractBuild<?,?>>> startStep(Step s) {
         Cause cause = new UpstreamCause(this);
-        Action action = new BuildFlowAction(this);
-        List<Future<? extends AbstractBuild<?,?>>> futures = new ArrayList<Future<? extends AbstractBuild<?,?>>>();
+        Action flowAction = new BuildFlowAction(this);
+        List<Action> actions = new ArrayList<Action>();
+        actions.add(flowAction);
+        Map<Job, Future<? extends AbstractBuild<?,?>>> futures = new HashMap<Job, Future<? extends AbstractBuild<?,?>>>();
         for (Job j : s.getJobs()) {
         	String jobName = j.getName();
             Item i = Jenkins.getInstance().getItem(jobName);
             if (i instanceof AbstractProject) {
                 AbstractProject<?, ? extends AbstractBuild<?,?>> p = (AbstractProject<?, ? extends AbstractBuild<?,?>>) i;
-                futures.add(p.scheduleBuild2(p.getQuietPeriod(), cause, action));
+                if (j.getAnd() != null) {
+                	FlowDSL.evalJobAnd(j.getAnd(), flow);
+                }
+                for (Object param: j.getParams().keySet()) {
+                	String paramName = param.toString();
+                	Object paramValue = j.getParams().get(param);
+                	if (paramValue instanceof Closure) {
+                		paramValue = FlowDSL.evalParam((Closure<?>) paramValue, s.getParentFlow());
+                	}
+                	if (paramValue instanceof Boolean) {
+                		actions.add(new ParametersAction(new BooleanParameterValue(paramName, (Boolean) paramValue)));
+                	}
+                	else {
+                		//TODO For now we will only support String and boolean parameters
+                		actions.add(new ParametersAction(new StringParameterValue(paramName, paramValue.toString())));
+                	}
+                }                
+                futures.put(j, p.scheduleBuild2(p.getQuietPeriod(), cause, actions));
             }
             else {
                 throw new RuntimeException(jobName + " is not a job");
@@ -99,20 +131,25 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         protected Result doRun(BuildListener listener) throws Exception {
 
             Result r = null;
-            boolean flowCompleted = false;
             try {
                 Step currentStep = getFlow().getEntryStep();
                 while (currentStep != null) {
-                    List<Future<? extends AbstractBuild<?,?>>> futures = startStep(currentStep);
+                	Map<Job, Future<? extends AbstractBuild<?,?>>> futures = startStep(currentStep);
                     Result stepResult = Result.SUCCESS;
-                    for (Future<? extends AbstractBuild<?,?>> f : futures) {
-                    	stepResult = stepResult.combine(f.get().getResult());
+                    for (Job j : futures.keySet()) {
+                    	Future<? extends AbstractBuild<?,?>> f = futures.get(j);
+                    	AbstractBuild<?, ?> build = f.get();
+                    	if (j.getThen() != null) {
+                    		FlowDSL.evalJobThen(j.getThen(), getFlow(), build);
+                    	}
+                    	stepResult = stepResult.combine(build.getResult());
                     }
                     
-                    currentStep = currentStep.getTriggerOn(stepResult);
-                    if (currentStep == null) {
+                    Step nextStep = currentStep.getTriggerOn(stepResult);
+                    if (nextStep == null) {
                         r = stepResult;
                     }
+                   	currentStep = nextStep;
                 }
             } catch (InterruptedException e) {
                 r = Executor.currentExecutor().abortResult();

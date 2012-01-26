@@ -14,9 +14,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
-
-
-
 package com.cloudbees.plugins.flow.dsl;
 
 import hudson.model.Result;
@@ -24,6 +21,7 @@ import hudson.model.Result;
 public class StepOn {
 
     Result result;
+	Closure cl;
     Step parentStep;
     String nextStepName;
 
@@ -32,7 +30,12 @@ public class StepOn {
         this.result = result;
     }
     
-    public Step trigger(String stepName) {
+    public StepOn(Step parentStep, Closure cl) {
+        this.parentStep = parentStep;
+        this.cl = cl;
+    }
+
+	public Step trigger(String stepName) {
     	this.nextStepName = stepName;
         return this.parentStep;
     }

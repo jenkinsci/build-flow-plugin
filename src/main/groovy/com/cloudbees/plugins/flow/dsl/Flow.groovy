@@ -26,6 +26,7 @@ public class Flow {
     
     Map<String, Step> steps = new HashMap<String, Step>();
     String entryStepName;
+	Map storage = [:]
     
     public Step getStep(String name) {
         return steps.get(name);

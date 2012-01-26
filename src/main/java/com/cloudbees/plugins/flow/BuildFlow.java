@@ -38,6 +38,7 @@ import hudson.model.Run;
 import hudson.model.RunMap;
 import hudson.model.Queue.FlyweightTask;
 import hudson.model.RunMap.Constructor;
+import hudson.model.SCMedItem;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
 import hudson.util.AlternativeUiTextProvider;
@@ -60,7 +61,7 @@ import jenkins.model.Jenkins;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask {
+public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask, SCMedItem {
 
     private final FlowIcon icon = new FlowIcon();
 
@@ -75,7 +76,7 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     }
     
     public Flow getFlow() {
-        return FlowDSL.evalScript(getDsl());
+        return FlowDSL.readFlow(getDsl());
     }
 
     @Override
@@ -141,6 +142,10 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     protected void buildDependencyGraph(DependencyGraph graph) {
         // TODO Auto-generated method stub
         
-    } 
+    }
+
+	public AbstractProject<?, ?> asProject() {
+		return (AbstractProject) this;
+	} 
     
 }

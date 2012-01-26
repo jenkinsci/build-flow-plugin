@@ -21,6 +21,8 @@
   </f:entry>
 
   <p:config-disableBuild/>
+  
+  <p:config-trigger/>
     
   <f:section title="${%Advanced Project Options configure-common}">
     <f:advanced>
