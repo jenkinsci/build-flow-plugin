@@ -3,3 +3,7 @@
 /.project
 /target
 /work
+.DS_Store
+*.iml
+*.ipr
+*.iws

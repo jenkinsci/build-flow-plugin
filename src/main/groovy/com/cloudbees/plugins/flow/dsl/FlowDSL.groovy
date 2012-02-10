@@ -17,15 +17,6 @@
 
 package com.cloudbees.plugins.flow.dsl;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import org.codehaus.groovy.control.customizers.SecureASTCustomizer;
-
-import hudson.model.AbstractBuild
-import hudson.model.Result;
-
-import static org.codehaus.groovy.syntax.Types.*;
-
 public class FlowDSL {
 
     ExpandoMetaClass createEMC(Class scriptClass, Closure cl) {
@@ -35,51 +26,186 @@ public class FlowDSL {
         return emc
     }
 
-    String executeFlowScript(String dsl) {
+    String executeFlowScript(String dsl, JobCause cause) {
+        // TODO : add all restrictions, etc ...
+        FlowDelegate flow = new FlowDelegate(cause)
         Script dslScript = new GroovyShell().parse(dsl)
         dslScript.metaClass = createEMC(dslScript.class, {
             ExpandoMetaClass emc ->
             emc.flow = {
                 Closure cl ->
-                cl.delegate = new FlowDelegate()
+                cl.delegate = flow
                 cl.resolveStrategy = Closure.DELEGATE_FIRST
                 cl()
             }
         })
         dslScript.run()
-        return "Cool"
+        def ret = FlowDSLSyntax.DONE_KEYWORD
+        if (flow.failed())  {
+            ret = FlowDSLSyntax.FAILED_KEYWORD
+        }
+        flow.cleanAfterRun()
+        return ret
     }
 }
 
 public class FlowDelegate {
 
+    private ThreadLocal<Boolean> parallel = new ThreadLocal<Boolean>()
+    private ThreadLocal<List<JobInvocation>> parallelJobs = new ThreadLocal<List<JobInvocation>>()
+    private ThreadLocal<List<String>> failuresContext = new ThreadLocal<List<String>>()
+    def cause
+
+    public FlowDelegate(JobCause c) {
+        cause = c
+        parallel.set(false)
+        parallelJobs.set(new ArrayList<String>())
+        failuresContext.set(new ArrayList<String>())
+    }
+
+    def failed() {
+        return !failuresContext.get().isEmpty()
+    }
+
     def build(String jobName) {
-        executeJenkinsJobWithName(jobName);
+        if (failuresContext.get().isEmpty()) {
+            executeJenkinsJobWithName(jobName);
+        }
     }
 
     def build(Map args, String jobName) {
-        executeJenkinsJobWithNameAndArgs(jobName, args);
+        if (failuresContext.get().isEmpty()) {
+            executeJenkinsJobWithNameAndArgs(jobName, args);
+        }
     }
 
-    /**def methodMissing(String name, Object args) {
-        println "On flowdelegate, missing method '${name}' with args '${args}'"
-        if (name == FlowDSLSyntax.BUILD_KEYWORD) {
-            String jobName = args[0]
-            return executeJenkinsJobWith(jobName)
+    def parallel(closure) {
+        // TODO : handle paralle inside parallel
+        if (failuresContext.get().isEmpty()) {
+            Map<String, String> results = new HashMap<String, String>()
+            List<JobInvocation> oldJobs = new ArrayList<JobInvocation>()
+            if (parallel.get()) {
+                oldJobs = parallelJobs.get()
+                parallelJobs.set(new ArrayList<JobInvocation>())
+            }
+            parallel.set(true);
+            closure()
+            // TODO : run all job from TL list in parallel then return results
+            println "Parallel execution {"
+            for (JobInvocation job : parallelJobs.get()) {
+                results.put(job.name, job.runAndWait())    // TODO : change it
+            }
+            println "}"
+            // TODO : run all job from TL list in parallel then return results
+            parallelJobs.get().clear()
+            if (!oldJobs.isEmpty()) {
+                parallelJobs.set(oldJobs)
+            }
+            parallel.set(false);
+            results.values().each {
+                if (it.result() != FlowDSLSyntax.DONE_KEYWORD) {
+                    failuresContext.get().add(it.result())
+                }
+            }
+            return results
         }
-    }    **/
+    }
+
+    def guard(guardedClosure) {
+        if (failuresContext.get().isEmpty()) {
+            return new GuardedJob(guardedClosure, failuresContext)
+        }
+    }
 
     private def executeJenkinsJobWithName(String name) {
-        return executeJenkinsJobWithNameAndArgs(name, [:])
+        if (failuresContext.get().isEmpty()) {
+            return executeJenkinsJobWithNameAndArgs(name, [:])
+        }
     }
 
     private def executeJenkinsJobWithNameAndArgs(String name, Map args) {
-        // ask for job with name ${name}
-        // execute the job and wait for it
-        // if fail, then prevent other instructions
-        println "\nJenkins is executing job : ${name} with args : ${args}\n"
-        return "Done job ${name}"
+        if (failuresContext.get().isEmpty()) {
+            // ask for job with name ${name}
+            JobInvocation job = findJob(name, args)
+            if (parallel.get()) {
+                // if parallel enabled, push the job in a threadlocal list and let other run it for you
+                parallelJobs.get().add(job)
+            } else {
+                job.runAndWait()
+            }
+            if (job.result() != FlowDSLSyntax.DONE_KEYWORD) {
+                failuresContext.get().add(job.result())
+            }
+            return job;
+        }
     }
+
+    // TODO : plug with actual job search
+    def findJob(String name, Map args) {
+        return new JobInvocation(name: name, args: args)
+    }
+
+    def cleanAfterRun() {
+        parallel.remove()
+        parallelJobs.remove()
+        failuresContext.remove()
+    }
+}
+
+public class GuardedJob {
+    def guardedClosure
+    def ThreadLocal<List<String>> failureContext
+    public GuardedJob(Closure c, ThreadLocal<List<String>> f) {
+        guardedClosure = c
+        failureContext = f
+    }
+    def rescue(rescueClosure) {
+        List<String> oldContext = failureContext.get()
+        failureContext.set(new ArrayList<String>())
+        try {
+            println "Guarded {"
+            guardedClosure()
+            print "}"
+            if (!failureContext.get().isEmpty()) {
+                throw new RuntimeException("Failure appened during guarded exec")
+            }
+        } catch (Throwable t) {
+            println " Rescuing {"
+            rescueClosure()
+            println "}"
+        }
+        println ""
+        failureContext.set(oldContext)
+    }
+}
+
+// TODO : plug with actual Job invocation
+public class JobInvocation {
+
+    String name
+    Map args
+
+    def runAndWait() {
+        println "Jenkins is running job : ${name} with args : ${args}"
+        return this;
+    }
+
+    def result() {
+        if (name == "willFail") {
+            return FlowDSLSyntax.FAILED_KEYWORD
+        }
+        return FlowDSLSyntax.DONE_KEYWORD
+    }
+
+    def String toString() {
+        return "Job : ${name} with ${args}"
+    }
+}
+
+// TODO : use actual cause
+public class JobCause {
+    def from = "root"
+    def build = new JobInvocation(name: "root", args: [:])
 }
 
 public class FlowDSLSyntax  {
@@ -89,4 +215,7 @@ public class FlowDSLSyntax  {
     public final static String GUARD_KEYWORD = "guard"
     public final static String RESCUE_KEYWORD = "rescue"
     public final static String CLEAN_KEYWORD = "clean"
+    public final static String DONE_KEYWORD = "DONE"
+    public final static String FAILED_KEYWORD = "FAILED"
+    public final static String WARNING_KEYWORD = "WARNING"
 }

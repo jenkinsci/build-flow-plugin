@@ -15,15 +15,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="955fb6e5-6459-4288-8157-6d629bb1aa87" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/Flow.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/Job.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/Step.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/StepOn.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/test/groovy/com/cloudbees/plugins/flow/dsl/DSLTest.groovy" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/test/java/com/cloudbees/plugins/flow/BuildFlowTestCase.java" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build-flow-plugin.iws" afterPath="$PROJECT_DIR$/build-flow-plugin.iws" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy" afterPath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/BuildFlow.java" afterPath="$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/BuildFlow.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/FlowRun.java" afterPath="$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/FlowRun.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy" afterPath="$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy" />
     </list>
     <ignored path="build-flow-plugin.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -82,19 +77,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="FlowDSL.groovy" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy">
+      <file leaf-file-name="DSLTest.groovy" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="68" column="42" selection-start="2228" selection-end="2228" vertical-scroll-proportion="0.49329758">
+            <state line="35" column="21" selection-start="712" selection-end="712" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DSLTest.groovy" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
+      <file leaf-file-name="FlowDSL.groovy" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="10" column="62" selection-start="214" selection-end="214" vertical-scroll-proportion="0.0">
+            <state line="19" column="0" selection-start="738" selection-end="738" vertical-scroll-proportion="0.3324397">
               <folding />
             </state>
           </provider>
@@ -439,6 +434,22 @@
         <option name="SBT.BeforeRunTask" enabled="false" />
       </method>
     </configuration>
+    <configuration default="true" type="GroovyScriptRunConfiguration" factoryName="Groovy Script">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workDir" value="$PROJECT_DIR$" />
+      <setting name="debug" value="false" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+        <option name="PhingTarget" enabled="false" />
+        <option name="SBT.BeforeRunTask" enabled="false" />
+      </method>
+    </configuration>
     <configuration default="true" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="" />
       <setting name="path" value="" />
@@ -496,6 +507,7 @@
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Phing Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -512,7 +524,6 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
     </layout>
@@ -629,15 +640,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/BuildFlow.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="45" column="29" selection-start="1621" selection-end="1621" vertical-scroll-proportion="0.24193548">
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/FlowRun.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="24" column="31" selection-start="912" selection-end="912" vertical-scroll-proportion="0.0">
@@ -652,16 +654,25 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/BuildFlow.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="79" column="24" selection-start="2527" selection-end="2527" vertical-scroll-proportion="0.7916667">
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="62" selection-start="214" selection-end="214" vertical-scroll-proportion="0.0">
+        <state line="35" column="21" selection-start="712" selection-end="712" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="68" column="42" selection-start="2228" selection-end="2228" vertical-scroll-proportion="0.49329758">
+        <state line="19" column="0" selection-start="738" selection-end="738" vertical-scroll-proportion="0.3324397">
           <folding />
         </state>
       </provider>
