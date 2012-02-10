@@ -15,7 +15,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="955fb6e5-6459-4288-8157-6d629bb1aa87" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build-flow-plugin.iws" afterPath="$PROJECT_DIR$/build-flow-plugin.iws" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy" afterPath="$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy" afterPath="$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy" />
@@ -77,19 +76,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="DSLTest.groovy" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="DSLTest.groovy" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="35" column="21" selection-start="712" selection-end="712" vertical-scroll-proportion="0.0">
+            <state line="31" column="12" selection-start="695" selection-end="698" vertical-scroll-proportion="0.1152815">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="FlowDSL.groovy" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="FlowDSL.groovy" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="19" column="0" selection-start="738" selection-end="738" vertical-scroll-proportion="0.3324397">
+            <state line="124" column="50" selection-start="4381" selection-end="4381" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -222,6 +221,32 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="build-flow-plugin" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="build-flow-plugin" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="main" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="java" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="flow" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -640,13 +665,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/FlowRun.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="31" selection-start="912" selection-end="912" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
@@ -663,16 +681,25 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/cloudbees/plugins/flow/FlowRun.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="35" column="21" selection-start="712" selection-end="712" vertical-scroll-proportion="0.0">
-          <folding />
+        <state line="63" column="0" selection-start="1894" selection-end="1894" vertical-scroll-proportion="0.6836461">
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/groovy/com/cloudbees/plugins/flow/dsl/FlowDSL.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="0" selection-start="738" selection-end="738" vertical-scroll-proportion="0.3324397">
+        <state line="124" column="50" selection-start="4381" selection-end="4381" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/groovy/dsl/DSLTest.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="31" column="12" selection-start="695" selection-end="698" vertical-scroll-proportion="0.1152815">
           <folding />
         </state>
       </provider>

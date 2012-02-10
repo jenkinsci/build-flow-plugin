@@ -19,17 +19,23 @@ public class DSLTest {
 	    par = parallel {
 	        build("jobp1")
 	        build("jobp2")
+	        parallel {
+                build("jobp3")
+                build("jobp4")
+            }
 	    }
 
 	    println ""
 	    par.values().each { job -> println job.result() }
 	    println ""
 
+        build("mlkjmljk")
+
 	    guard {
 	        build("jobg1")
 	        build("willFail")
 	    } rescue {
-	        build("Cleaning")
+	        build("mlkjmljk")
 	    }
     }
 	"""

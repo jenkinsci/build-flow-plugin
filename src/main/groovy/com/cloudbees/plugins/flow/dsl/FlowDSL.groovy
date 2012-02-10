@@ -80,7 +80,7 @@ public class FlowDelegate {
     }
 
     def parallel(closure) {
-        // TODO : handle paralle inside parallel
+        // TODO : handle parallel inside parallel
         if (failuresContext.get().isEmpty()) {
             Map<String, String> results = new HashMap<String, String>()
             List<JobInvocation> oldJobs = new ArrayList<JobInvocation>()
@@ -112,9 +112,26 @@ public class FlowDelegate {
     }
 
     def guard(guardedClosure) {
-        if (failuresContext.get().isEmpty()) {
-            return new GuardedJob(guardedClosure, failuresContext)
-        }
+        def deleg = this;
+        [ rescue : { rescueClosure ->
+            rescueClosure.delegate = deleg
+            rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
+            if (failuresContext.get().isEmpty()) {
+                //return new GuardedJob(guardedClosure, failuresContext, this)
+                List<String> oldContext = failuresContext.get()
+                failuresContext.set(new ArrayList<String>())
+                println "Guarded {"
+                guardedClosure()
+                print "}"
+                if (!failuresContext.get().isEmpty()) {
+                    println " Rescuing {"
+                    rescueClosure()
+                    println "}"
+                }
+                println ""
+                failuresContext.set(oldContext)
+            }
+        } ]
     }
 
     private def executeJenkinsJobWithName(String name) {
@@ -150,14 +167,22 @@ public class FlowDelegate {
         parallelJobs.remove()
         failuresContext.remove()
     }
+
+    def resc(clo) {
+        println " Rescuing {"
+        clo()
+        println "}"
+    }
 }
 
 public class GuardedJob {
     def guardedClosure
     def ThreadLocal<List<String>> failureContext
-    public GuardedJob(Closure c, ThreadLocal<List<String>> f) {
+    def FlowDelegate flowDelegate
+    public GuardedJob(Closure c, ThreadLocal<List<String>> f, FlowDelegate fl) {
         guardedClosure = c
         failureContext = f
+        flowDelegate = fl
     }
     def rescue(rescueClosure) {
         List<String> oldContext = failureContext.get()
@@ -170,9 +195,10 @@ public class GuardedJob {
                 throw new RuntimeException("Failure appened during guarded exec")
             }
         } catch (Throwable t) {
-            println " Rescuing {"
-            rescueClosure()
-            println "}"
+            //println " Rescuing {"
+            //rescueClosure.delegate = flowDelegate
+            flowDelegate.resc(rescueClosure)
+            //println "}"
         }
         println ""
         failureContext.set(oldContext)
