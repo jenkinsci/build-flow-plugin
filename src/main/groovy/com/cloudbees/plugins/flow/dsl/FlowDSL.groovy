@@ -15,8 +15,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 package com.cloudbees.plugins.flow.dsl;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -30,258 +28,65 @@ import static org.codehaus.groovy.syntax.Types.*;
 
 public class FlowDSL {
 
-	private FlowDSL() {
+    ExpandoMetaClass createEMC(Class scriptClass, Closure cl) {
+        ExpandoMetaClass emc = new ExpandoMetaClass(scriptClass, false)
+        cl(emc)
+        emc.initialize()
+        return emc
+    }
 
-	}
-
-	private static ExpandoMetaClass createEMC(Class scriptClass, Closure cl) {
-		ExpandoMetaClass emc = new ExpandoMetaClass(scriptClass, false);
-		cl(emc)
-		emc.initialize()
-		return emc
-	}
-
-	/**
-	 * Evaluate the groovy script describing the flow (DSL).
-	 * @param script
-	 * @return
-	 */
-	public static Flow readFlow(String script) {
-
-		Binding binding = new Binding();
-		ClassLoader parent = FlowDSL.class.getClassLoader();
-		
-		final ImportCustomizer imports = new ImportCustomizer().addStaticStars('hudson.model.Result')
-		final SecureASTCustomizer secure = new SecureASTCustomizer()
-		secure.with {
-			closuresAllowed = true
-			methodDefinitionAllowed = false
-			packageAllowed = false
-
-			importsWhitelist = []
-			staticImportsWhitelist = []
-			staticStarImportsWhitelist = ['hudson.model.Result'] // only java.lang.Math is allowed
-
-			tokensWhitelist = [
-					PLUS,
-					MINUS,
-					MULTIPLY,
-					DIVIDE,
-					MOD,
-					POWER,
-					PLUS_PLUS,
-					MINUS_MINUS,
-					COMPARE_EQUAL,
-					COMPARE_NOT_EQUAL,
-					COMPARE_LESS_THAN,
-					COMPARE_LESS_THAN_EQUAL,
-					COMPARE_GREATER_THAN,
-					COMPARE_GREATER_THAN_EQUAL,
-					ASSIGN
-			].asImmutable()
-
-			constantTypesClassesWhiteList = [
-					Integer,
-					Float,
-					Long,
-					Double,
-					BigDecimal,
-					String,
-					Boolean,
-					Integer.TYPE,
-					Long.TYPE,
-					Float.TYPE,
-					Double.TYPE,
-					Boolean.TYPE
-			].asImmutable()
-
-			receiversClassesWhiteList = [
-					Math,
-					Integer,
-					Float,
-					Double,
-					Long,
-					BigDecimal,
-					String,
-					Boolean,
-					Object
-			].asImmutable()
-		}
-		CompilerConfiguration config = new CompilerConfiguration()
-		config.addCompilationCustomizers(imports, secure)
-		
-		
-		Script dslScript = new GroovyShell(parent, binding, config).parse(script);
-		dslScript.metaClass = createEMC(dslScript.class, { ExpandoMetaClass emc ->
-
-			emc.flow = { Closure cl ->
-				Flow f = new Flow();
-				FlowDelegate fd = new FlowDelegate(f);
-				cl.delegate = fd;
-				cl.resolveStrategy = Closure.DELEGATE_ONLY;
-				cl();
-				return f;
-			}
-		})
-		return dslScript.run();
-	}
-
-	/**
-	 * Evaluate the "then" closure after a job execution
-	 * @param flow
-	 */
-	public static void evalJobThen(Closure jobThenCl, Flow flow, AbstractBuild build) {
-		JobThenDelegate sd = new JobThenDelegate(flow, build);
-		jobThenCl.delegate = sd;
-		jobThenCl.resolveStrategy = Closure.DELEGATE_ONLY;
-		jobThenCl();
-	}
-	
-	/**
-	* Evaluate the "and" closure before a job execution
-	* @param flow
-	*/
-   public static void evalJobAnd(Closure jobAndCl, Flow flow) {
-	   JobAndDelegate ad = new JobAndDelegate(flow);
-	   jobAndCl.delegate = ad;
-	   jobAndCl.resolveStrategy = Closure.DELEGATE_ONLY;
-	   jobAndCl();
-   }
-
-	/**
-	 * Evaluate the closure of a step transition
-	 * @param flow
-	 */
-	public static boolean evalCondition(Closure condition, Flow flow) {
-		ConditionDelegate cd = new ConditionDelegate(flow);
-		condition.delegate = cd;
-		condition.resolveStrategy = Closure.DELEGATE_ONLY;
-		return condition();
-	}
-
-	/**
-	 * Evaluate the closure of a parameter value
-	 * @param flow
-	 */
-	public static Object evalParam(Closure paramCl, Flow flow) {
-		ParamDelegate pd = new ParamDelegate(flow);
-		paramCl.delegate = pd;
-		paramCl.resolveStrategy = Closure.DELEGATE_ONLY;
-		return paramCl();
-	}
+    String executeFlowScript(String dsl) {
+        Script dslScript = new GroovyShell().parse(dsl)
+        dslScript.metaClass = createEMC(dslScript.class, {
+            ExpandoMetaClass emc ->
+            emc.flow = {
+                Closure cl ->
+                cl.delegate = new FlowDelegate()
+                cl.resolveStrategy = Closure.DELEGATE_FIRST
+                cl()
+            }
+        })
+        dslScript.run()
+        return "Cool"
+    }
 }
 
+public class FlowDelegate {
 
-public class FlowDelegate implements Serializable {
+    def build(String jobName) {
+        executeJenkinsJobWithName(jobName);
+    }
 
-	Flow flow;
+    def build(Map args, String jobName) {
+        executeJenkinsJobWithNameAndArgs(jobName, args);
+    }
 
-	public FlowDelegate(Flow flow) {
-		this.flow = flow;
-	}
+    /**def methodMissing(String name, Object args) {
+        println "On flowdelegate, missing method '${name}' with args '${args}'"
+        if (name == FlowDSLSyntax.BUILD_KEYWORD) {
+            String jobName = args[0]
+            return executeJenkinsJobWith(jobName)
+        }
+    }    **/
 
-	def invokeMethod(String name, args) {
-		if (name.startsWith("step") && args.length > 0 && args[0] instanceof Closure) {
-			return step(name, args[0]);
-		}
-		else {
-			throw new MissingMethodException(name, FlowDelegate.class, args);
-		}
-	}
+    private def executeJenkinsJobWithName(String name) {
+        return executeJenkinsJobWithNameAndArgs(name, [:])
+    }
 
-	def propertyMissing(String name) {
-		if (name.startsWith("step")) {
-			return name;
-		}
-		else {
-			throw new MissingPropertyException(name, FlowDelegate.class);
-		}
-	}
-
-	Step step(String name, Closure cl) {
-		Step s = new Step(name, flow);
-		StepDelegate sd = new StepDelegate(s);
-		cl.delegate = sd;
-		cl.resolveStrategy = Closure.DELEGATE_ONLY;
-		cl();
-		if (flow.steps.size() == 0) {
-			//By convention first step is entry step
-			flow.entryStepName = name;
-		}
-		flow.steps.put(name, s);
-		return s;
-	}
+    private def executeJenkinsJobWithNameAndArgs(String name, Map args) {
+        // ask for job with name ${name}
+        // execute the job and wait for it
+        // if fail, then prevent other instructions
+        println "\nJenkins is executing job : ${name} with args : ${args}\n"
+        return "Done job ${name}"
+    }
 }
 
-public class StepDelegate implements Serializable {
-
-	private Step step;
-
-	public StepDelegate(Step step) {
-		this.step = step;
-	}
-
-	Job trigger(String name) {
-		return this.step.addJob(name);
-	}
-}
-
-public class JobThenDelegate implements Serializable {
-
-	private Flow flow;
-	private AbstractBuild build;
-
-	public JobThenDelegate(Flow flow, AbstractBuild build) {
-		this.flow = flow;
-		this.build = build;
-	}
-
-	def propertyMissing(String name, value) { this.flow.storage[name] = value }
-	def propertyMissing(String name) { this.flow.storage[name] }
-	
-	public int buildNumber() {
-		return this.build.number;
-	}
-	
-	public Result buildResult() {
-		return this.build.result;
-	}
-
-}
-
-public class JobAndDelegate implements Serializable {
-
-	private Flow flow;
-
-	public JobAndDelegate(Flow flow) {
-		this.flow = flow;
-	}
-
-	def propertyMissing(String name, value) { flow.storage[name] = value }
-	def propertyMissing(String name) { flow.storage[name] }
-
-}
-
-public class ConditionDelegate implements Serializable {
-
-	private Flow flow;
-
-	public ConditionDelegate(Flow flow) {
-		this.flow = flow;
-	}
-
-	def propertyMissing(String name) { flow.storage[name] }
-
-}
-
-public class ParamDelegate implements Serializable {
-
-	private Flow flow;
-
-	public ParamDelegate(Flow flow) {
-		this.flow = flow;
-	}
-
-	def propertyMissing(String name) { flow.storage[name] }
-
+public class FlowDSLSyntax  {
+    public final static String BUILD_KEYWORD = "build"
+    public final static String CAUSE_KEYWORD = "cause"
+    public final static String PARALLEL_KEYWORD = "parallel"
+    public final static String GUARD_KEYWORD = "guard"
+    public final static String RESCUE_KEYWORD = "rescue"
+    public final static String CLEAN_KEYWORD = "clean"
 }

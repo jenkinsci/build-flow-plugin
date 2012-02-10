@@ -17,44 +17,17 @@
 
 package com.cloudbees.plugins.flow;
 
-import hudson.model.DependencyGraph;
-import hudson.model.Descriptor;
-import hudson.tasks.Publisher;
-import hudson.util.DescribableList;
-
-import hudson.model.AbstractProject;
-
-import com.cloudbees.plugins.flow.dsl.Flow;
-import com.cloudbees.plugins.flow.dsl.FlowDSL;
-
 import hudson.Extension;
-import hudson.Util;
-import hudson.model.AbstractBuild;
+import hudson.model.*;
 import hudson.model.Descriptor.FormException;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
-import hudson.model.Job;
-import hudson.model.Run;
-import hudson.model.RunMap;
 import hudson.model.Queue.FlyweightTask;
-import hudson.model.RunMap.Constructor;
-import hudson.model.SCMedItem;
-import hudson.model.TopLevelItem;
-import hudson.model.TopLevelItemDescriptor;
+import hudson.tasks.Publisher;
 import hudson.util.AlternativeUiTextProvider;
-
-import java.io.File;
+import hudson.util.DescribableList;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.SortedMap;
 import javax.servlet.ServletException;
-
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
-
-import jenkins.model.Jenkins;
 
 /**
  * Defines the orchestration logic for a build flow as a succession o jobs to be executed and chained together
@@ -74,22 +47,11 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     public String getDsl() {
         return dsl;
     }
-    
-    public Flow getFlow() {
-        return FlowDSL.readFlow(getDsl());
-    }
 
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         this.dsl = req.getSubmittedForm().getString("dsl");
-        try {
-        	//TODO Need better validation (like check if jobs exist)
-        	getFlow();
-        } catch (groovy.lang.GroovyRuntimeException e) {
-        	e.printStackTrace();
-        	throw new FormException(Messages.BuildFlow_InvalidDSL(), e, "dsl");
-        }
     }
 
     @Extension
@@ -100,7 +62,6 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     }
 
     public void onCompleted(Run run) {
-        // TODO trigger next step of the flow
     }
 
     @Override
