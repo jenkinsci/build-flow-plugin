@@ -17,12 +17,12 @@
 
 package com.cloudbees.plugins.flow;
 
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.Result;
+import com.cloudbees.plugins.flow.dsl.FlowDSL;
+import hudson.model.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
@@ -55,13 +55,37 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
     
     protected Runner createRunner() {
-        return new RunnerImpl();
+        return new RunnerImpl(this, dsl);
     }
     
     protected class RunnerImpl extends AbstractRunner {
 
+        private final Cause cause;
+        private final String dsl;
+
+        public RunnerImpl(AbstractBuild<?, ?> build, String dsl) {
+            this.cause = new Cause.UpstreamCause(build);
+            this.dsl = dsl;
+        }
+
         protected Result doRun(BuildListener listener) throws Exception {
             Result r = null;
+            try {
+                r = new FlowDSL().executeFlowScript("", cause);
+            } catch (Exception e) {
+                r = Executor.currentExecutor().abortResult();
+                throw e;
+            } finally {
+                // TODO : do we need this ?
+                if (r != null) setResult(r);
+                boolean failed=false;
+                for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
+                    if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
+                        failed=true;
+                    }
+                }
+                if (failed) return Result.FAILURE;
+            }
             return r;
         }
 

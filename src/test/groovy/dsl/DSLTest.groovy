@@ -2,13 +2,13 @@ package dsl
 
 import org.junit.Test
 import com.cloudbees.plugins.flow.dsl.FlowDSL
-import com.cloudbees.plugins.flow.dsl.JobCause
+import hudson.model.Cause
 
 public class DSLTest {
 
 	def script = """
 	flow {
-	    println "\\nTriggered by " + cause.build + "\\n"
+	    println "\\nTriggered by " + cause + "\\n"
 
 	    a = build("Job1")
 	    b = build("Job2", param1: "troulala", param2: "machin")
@@ -19,29 +19,33 @@ public class DSLTest {
 	    par = parallel {
 	        build("jobp1")
 	        build("jobp2")
-	        parallel {
-                build("jobp3")
-                build("jobp4")
-            }
 	    }
 
 	    println ""
 	    par.values().each { job -> println job.result() }
 	    println ""
 
-        build("mlkjmljk")
+        build("job3")
 
 	    guard {
-	        build("jobg1")
-	        build("willFail")
+	        build("job1")
+	        build("job2")
 	    } rescue {
-	        build("mlkjmljk")
+	        build("job3")
 	    }
     }
 	"""
 
+    def String getScript() {
+        return script;
+    }
+
     @Test
-    void testParseDSL() {
-        new FlowDSL().executeFlowScript(script, new JobCause())
+    public void testParseDSL() {
+        new FlowDSL().executeFlowScript(script, null)
+    }
+
+    public void testParseDSL(Cause cause) {
+        new FlowDSL().executeFlowScript(script, cause)
     }
 }

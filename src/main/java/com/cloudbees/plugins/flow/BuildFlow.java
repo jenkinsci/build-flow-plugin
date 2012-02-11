@@ -48,6 +48,10 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
         return dsl;
     }
 
+    public void setDsl(String dsl) {
+        this.dsl = dsl;
+    }
+
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
