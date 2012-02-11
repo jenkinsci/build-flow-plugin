@@ -26,18 +26,15 @@ public class DSLTestCase extends HudsonTestCase {
         FreeStyleProject jobp1 = createFreeStyleProject("jobp1");
         FreeStyleProject jobp2 = createFreeStyleProject("jobp2");
 
-        BuildFlow flow = createBuildFlow("flow1");
-        flow.setDsl(new DSLTest().getScript());
-        FlowRun run = flow.createExecutable();
-        run.run();
-        new DSLTest().testParseDSL(new Cause.UpstreamCause(rootBuild));
+        Result flowResult = new DSLTest().testParseDSL(new Cause.UpstreamCause(rootBuild));
 
-        assertEquals(job1.getBuilds().getFirstBuild().getResult(), Result.SUCCESS);
-        assertEquals(job2.getBuilds().getFirstBuild().getResult(), Result.SUCCESS);
-        assertEquals(job3.getBuilds().getFirstBuild().getResult(), Result.SUCCESS);
+        assertEquals(Result.SUCCESS, job1.getBuilds().getFirstBuild().getResult());
+        assertEquals(Result.SUCCESS, job2.getBuilds().getFirstBuild().getResult());
+        assertEquals(Result.SUCCESS, job3.getBuilds().getFirstBuild().getResult());
 
-        assertEquals(jobp1.getBuilds().getFirstBuild().getResult(), Result.SUCCESS);
-        assertEquals(jobp2.getBuilds().getFirstBuild().getResult(), Result.SUCCESS);
+        assertEquals(Result.SUCCESS, jobp1.getBuilds().getFirstBuild().getResult());
+        assertEquals(Result.SUCCESS, jobp2.getBuilds().getFirstBuild().getResult());
+        assertEquals(Result.SUCCESS, flowResult);
     }
 
     public void testBasic() throws Exception {

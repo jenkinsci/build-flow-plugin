@@ -73,9 +73,10 @@ public class FlowDelegate {
 
     def failed() {
         // TODO : return the right Result based on failures priority
-        if (!failuresContext.get().isEmpty()) {
+        if (failuresContext.get().isEmpty()) {
             return Result.SUCCESS
         }
+        return Result.FAILURE
     }
 
     def build(String jobName) {
@@ -113,7 +114,7 @@ public class FlowDelegate {
             }
             parallel.set(false);
             results.values().each {
-                // TODO : do it better
+                // TODO : enhance it
                 AbstractBuild<?, ?> build = it.future().get()
                 if (build.getResult() != Result.SUCCESS) {
                     failuresContext.get().add(it.result())
@@ -134,11 +135,11 @@ public class FlowDelegate {
                 println "Guarded {"
                 guardedClosure()
                 print "}"
-                //if (!failuresContext.get().isEmpty()) {
+                if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
                     println " Rescuing {"
                     rescueClosure()
                     println "}"
-                //}
+                }
                 println ""
                 failuresContext.set(oldContext)
             }
@@ -185,6 +186,7 @@ public class JobInvocation {
     def Map args
     def Cause cause
     def AbstractProject<?, ? extends AbstractBuild<?, ?>> project
+    def AbstractBuild build
     def Result result = Result.SUCCESS
     def Future<? extends AbstractBuild<?, ?>> future
 
@@ -203,7 +205,7 @@ public class JobInvocation {
     def runAndWait() {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause);
         println "Jenkins is running job : ${name} with args : ${args} and blocking"
-        AbstractBuild<?, ?> build = future.get();
+        build = future.get();
         result = build.getResult();
         return this;
     }
@@ -216,6 +218,13 @@ public class JobInvocation {
 
     def result() {
         return result;
+    }
+
+    def build() {
+        if (build == null) {
+            build = future.get()
+        }
+        return build
     }
 
     def future() {

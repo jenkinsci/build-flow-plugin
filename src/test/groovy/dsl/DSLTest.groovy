@@ -3,6 +3,7 @@ package dsl
 import org.junit.Test
 import com.cloudbees.plugins.flow.dsl.FlowDSL
 import hudson.model.Cause
+import hudson.model.Result
 
 public class DSLTest {
 
@@ -41,11 +42,11 @@ public class DSLTest {
     }
 
     @Test
-    public void testParseDSL() {
-        new FlowDSL().executeFlowScript(script, null)
+    public Result testParseDSL() {
+        //return testParseDSL(null)
     }
 
-    public void testParseDSL(Cause cause) {
-        new FlowDSL().executeFlowScript(script, cause)
+    public Result testParseDSL(Cause cause) {
+        return new FlowDSL().executeFlowScript(script, cause)
     }
 }
