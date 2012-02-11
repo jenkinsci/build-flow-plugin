@@ -42,8 +42,8 @@ public class DSLTest {
     }
 
     @Test
-    public Result testParseDSL() {
-        //return testParseDSL(null)
+    public void testParseDSL() {
+        // TODO : need to mock it for quick dev
     }
 
     public Result testParseDSL(Cause cause) {
