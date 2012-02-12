@@ -24,7 +24,12 @@ import hudson.model.AbstractProject
 import hudson.model.AbstractBuild
 import java.util.concurrent.Future
 import hudson.model.Cause
-import hudson.model.Result;
+import hudson.model.Result
+import com.cloudbees.plugins.flow.JobNotFoundException
+import hudson.model.ParametersAction
+import hudson.model.BooleanParameterValue
+import hudson.model.Action
+import hudson.model.StringParameterValue;
 
 public class FlowDSL {
 
@@ -62,6 +67,8 @@ public class FlowDelegate {
     private ThreadLocal<Boolean> parallel = new ThreadLocal<Boolean>()
     private ThreadLocal<List<JobInvocation>> parallelJobs = new ThreadLocal<List<JobInvocation>>()
     private ThreadLocal<List<String>> failuresContext = new ThreadLocal<List<String>>()
+    private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
+
     def Cause cause
 
     public FlowDelegate(Cause c) {
@@ -69,6 +76,7 @@ public class FlowDelegate {
         parallel.set(false)
         parallelJobs.set(new ArrayList<String>())
         failuresContext.set(new ArrayList<String>())
+        retryContext.set(false)
     }
 
     def failed() {
@@ -100,6 +108,9 @@ public class FlowDelegate {
                 oldJobs = parallelJobs.get()
                 parallelJobs.set(new ArrayList<JobInvocation>())
             }
+            if (parallel.get()) {
+                throw new RuntimeException("You can't use 'parallel' inside a 'parallel' block")
+            }
             parallel.set(true);
             closure()
             println "Parallel execution {"
@@ -115,6 +126,7 @@ public class FlowDelegate {
             parallel.set(false);
             results.values().each {
                 // TODO : enhance it
+                // TODO : remove Jenkins dependency
                 AbstractBuild<?, ?> build = it.future().get()
                 if (build.getResult() != Result.SUCCESS) {
                     failuresContext.get().add(it.result())
@@ -133,7 +145,11 @@ public class FlowDelegate {
                 List<String> oldContext = failuresContext.get()
                 failuresContext.set(new ArrayList<String>())
                 println "Guarded {"
-                guardedClosure()
+                try {
+                    guardedClosure()
+                } catch (Throwable t) {
+                    // Do we need to do something here ?
+                }
                 print "}"
                 if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
                     println " Rescuing {"
@@ -144,6 +160,21 @@ public class FlowDelegate {
                 failuresContext.set(oldContext)
             }
         } ]
+    }
+
+    // TODO : support 3.times guarded {} for retry / failed, dunno how to do that with guard keyword
+    def retry(retryClosure) {
+        retryContext.set(true)
+        return {
+            if (retryContext.get()) {
+                retryContext.set(false)
+                retryClosure()
+                if (!failuresContext.get().isEmpty()) {
+                    retryContext.set(true)
+                }
+                // TODO : here handle failure context cleaning
+            }
+        }
     }
 
     private def executeJenkinsJobWithName(String name) {
@@ -169,41 +200,56 @@ public class FlowDelegate {
         }
     }
 
-    def findJob(String name, Map args, Cause cause) {
+    private def findJob(String name, Map args, Cause cause) {
         return new JobInvocation(name, args, cause)
     }
 
-    def cleanAfterRun() {
+    private def cleanAfterRun() {
         parallel.remove()
         parallelJobs.remove()
         failuresContext.remove()
+        retryContext.remove()
     }
+
+    def propertyMissing(String name) {
+        throw new MissingPropertyException("Property ${name} doesn't exist."); // TODO : add the DSL grammar for help
+    }
+
+    def methodMissing(String name, Object args) {
+        throw new MissingMethodException("Method ${name} doesn't exist."); // TODO : add the DSL grammar for help
+    }
+
+    // TODO : add restrictions for System.exit, etc ...
 }
 
 public class JobInvocation {
 
     def String name
     def Map args
+    // TODO : remove Jenkins dependency
     def Cause cause
     def AbstractProject<?, ? extends AbstractBuild<?, ?>> project
     def AbstractBuild build
     def Result result = Result.SUCCESS
     def Future<? extends AbstractBuild<?, ?>> future
+    // TODO : remove Jenkins dependency
 
     public JobInvocation(String name, Map args, Cause cause) {
         this.name = name
         this.args = args
         this.cause = cause
+        // TODO : remove Jenkins dependency
         Item item = Jenkins.getInstance().getItem(name);
         if (item instanceof AbstractProject) {
             project = (AbstractProject<?, ? extends AbstractBuild<?,?>>) item;
         } else {
-            throw new RuntimeException("Item '${name}' isn't a job.")
+            throw new JobNotFoundException("Item '${name}' not found (or isn't a job).")
         }
     }
 
     def runAndWait() {
-        future = project.scheduleBuild2(project.getQuietPeriod(), cause);
+        // TODO : remove Jenkins dependency
+        future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
         println "Jenkins is running job : ${name} with args : ${args} and blocking"
         build = future.get();
         result = build.getResult();
@@ -211,7 +257,8 @@ public class JobInvocation {
     }
 
     def runAndContinue() {
-        future = project.scheduleBuild2(project.getQuietPeriod(), cause);
+        // TODO : remove Jenkins dependency
+        future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
         println "Jenkins is running job : ${name} with args : ${args} and continuing"
         return this;
     }
@@ -233,5 +280,28 @@ public class JobInvocation {
 
     def String toString() {
         return "Job : ${name} with ${args}"
+    }
+
+    def getActions() {
+        List<Action> actions = new ArrayList<Action>();
+        for (Object param: args) {
+            String paramName = param.key
+            Object paramValue = param.value
+            if (paramValue instanceof Closure) {
+                paramValue = getClosureValue(paramValue)
+            }
+            if (paramValue instanceof Boolean) {
+                actions.add(new ParametersAction(new BooleanParameterValue(paramName, (Boolean) paramValue)))
+            }
+            else {
+                //TODO For now we will only support String and boolean parameters
+                actions.add(new ParametersAction(new StringParameterValue(paramName, paramValue.toString())))
+            }
+        }
+        return actions
+    }
+
+    def getClosureValue(closure) {
+        return closure()
     }
 }

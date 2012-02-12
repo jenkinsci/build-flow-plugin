@@ -25,6 +25,11 @@ public class DSLTestCase extends HudsonTestCase {
         FreeStyleProject job3 = createFreeStyleProject("Job3");
         FreeStyleProject jobp1 = createFreeStyleProject("jobp1");
         FreeStyleProject jobp2 = createFreeStyleProject("jobp2");
+        FreeStyleProject jobp3 = createFreeStyleProject("jobp3");
+        FreeStyleProject jobp4 = createFreeStyleProject("jobp4");
+        FreeStyleProject jobp5 = createFreeStyleProject("jobp5");
+        FreeStyleProject jobp6 = createFreeStyleProject("jobp6");
+        FreeStyleProject jobp7 = createFreeStyleProject("jobp7");
 
         Result flowResult = new DSLTest().testParseDSL(new Cause.UpstreamCause(rootBuild));
 

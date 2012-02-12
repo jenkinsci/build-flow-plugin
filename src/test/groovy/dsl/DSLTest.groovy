@@ -9,7 +9,8 @@ public class DSLTest {
 
 	def script = """
 	flow {
-	    println "\\nTriggered by " + cause + "\\n"
+
+	    println "\\nTriggered by '" + cause.upstreamProject + "' with build number '" + cause.upstreamBuild + "'\\n"
 
 	    a = build("Job1")
 	    b = build("Job2", param1: "troulala", param2: "machin")
@@ -20,10 +21,15 @@ public class DSLTest {
 	    par = parallel {
 	        build("jobp1")
 	        build("jobp2")
+	        build("jobp3")
+	        build("jobp4")
+	        build("jobp5")
+	        build("jobp6")
+	        build("jobp7")
 	    }
 
 	    println ""
-	    par.values().each { job -> println job.result() }
+	    par.values().each { job -> println job.name + " => " + job.result() }
 	    println ""
 
         build("job3")
@@ -33,6 +39,10 @@ public class DSLTest {
 	        build("job2")
 	    } rescue {
 	        build("job3")
+	    }
+
+        3.times retry {
+            build("job1")
 	    }
     }
 	"""
