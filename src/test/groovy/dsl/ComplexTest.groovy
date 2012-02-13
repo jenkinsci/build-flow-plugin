@@ -72,10 +72,6 @@ public class ComplexTest extends DSLTestCase {
     }
 	"""
 
-    def String getScript() {
-        return script;
-    }
-
 
     public void testComplexDSL() {
         FreeStyleProject root = createFreeStyleProject("root");

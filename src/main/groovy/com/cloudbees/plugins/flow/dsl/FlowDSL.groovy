@@ -18,7 +18,6 @@
 package com.cloudbees.plugins.flow.dsl
 
 import jenkins.model.Jenkins
-import java.util.logging.Logger
 import hudson.model.Item
 import hudson.model.AbstractProject
 import hudson.model.AbstractBuild
@@ -29,7 +28,8 @@ import com.cloudbees.plugins.flow.JobNotFoundException
 import hudson.model.ParametersAction
 import hudson.model.BooleanParameterValue
 import hudson.model.Action
-import hudson.model.StringParameterValue;
+import hudson.model.StringParameterValue
+import java.util.logging.Logger
 
 public class FlowDSL {
 
@@ -112,13 +112,13 @@ public class FlowDelegate {
                 throw new RuntimeException("You can't use 'parallel' inside a 'parallel' block")
             }
             parallel.set(true);
-            println "Parallel execution {"
+            LOGGER.fine("Parallel execution {")
             closure()
             for (JobInvocation job : parallelJobs.get()) {
                 results.put(job.name, job)//job.runAndContinue())
             }
-            println "}"
-            println "Waiting for jobs : ${parallelJobs.get()}"
+            LOGGER.fine("}")
+            LOGGER.fine("Waiting for jobs : ${parallelJobs.get()}")
             parallelJobs.get().clear()
             if (!oldJobs.isEmpty()) {
                 parallelJobs.set(oldJobs)
@@ -144,22 +144,20 @@ public class FlowDelegate {
             if (failuresContext.get().isEmpty()) {
                 //List<String> oldContext = failuresContext.get()
                 failuresContext.set(new ArrayList<String>())
-                println "Guarded {"
+                LOGGER.fine("Guarded {")
                 try {
                     guardedClosure()
                 } catch (Throwable t) {
                     // Do we need to do something here ?
                 }
-                print "}"
                 //if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
                 //List<String> oldRescureContext = failuresContext.get()
                 failuresContext.set(new ArrayList<String>())
-                println " Rescuing {"
+                LOGGER.fine("} Rescuing {")
                 rescueClosure()
-                println "}"
+                LOGGER.fine("}")
                 //}
                 //failuresContext.set(oldRescureContext.addAll(failuresContext.get()))
-                //println ""
                 //failuresContext.set(oldContext)
                 //failuresContext.set(new ArrayList<String>())
             }
@@ -229,6 +227,8 @@ public class FlowDelegate {
 
 public class JobInvocation {
 
+    private static final Logger LOGGER = Logger.getLogger(JobInvocation.class.getName());
+
     def String name
     def Map args
     // TODO : remove Jenkins dependency
@@ -255,7 +255,7 @@ public class JobInvocation {
     def runAndWait() {
         // TODO : remove Jenkins dependency
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
-        println "Jenkins is running job : ${name} with args : ${args} and blocking"
+        LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and blocking")
         build = future.get();
         result = build.getResult();
         return this;
@@ -264,7 +264,7 @@ public class JobInvocation {
     def runAndContinue() {
         // TODO : remove Jenkins dependency
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
-        println "Jenkins is running job : ${name} with args : ${args} and continuing"
+        LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and continuing")
         return this;
     }
 

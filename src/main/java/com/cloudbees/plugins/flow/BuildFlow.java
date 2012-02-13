@@ -86,7 +86,6 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
         }
     }
 
-
     @Override
     public DescribableList<Publisher, Descriptor<Publisher>> getPublishersList() {
         return new DescribableList<Publisher,Descriptor<Publisher>>(this);
