@@ -2,6 +2,7 @@ package dsl
 
 import hudson.model.Result
 import hudson.model.AbstractBuild
+import com.cloudbees.plugins.flow.JobNotFoundException
 
 class BuildTest extends DSLTestCase {
 
@@ -13,6 +14,12 @@ class BuildTest extends DSLTestCase {
         build("job1", p1: "p1", p2: "p2")
     }"""
 
+    public void testBuildWithoutJob() {
+        assertException(JobNotFoundException.class) {
+            run(successBuild)
+        }
+    }
+
     public void testBuildWithoutReturn() {
         def job1 = createJob("job1")
         run(successBuild)
@@ -23,7 +30,7 @@ class BuildTest extends DSLTestCase {
         def job1 = createJob("job1")
         run(successBuildParam)
         assertSuccess(job1)
-        // assert job1.getActions().size() == 2   // TODO : test it ????
+        assert job1.getBuilds().lastBuild.getActions().size() == 2
     }
 
     def failBuild = """flow {

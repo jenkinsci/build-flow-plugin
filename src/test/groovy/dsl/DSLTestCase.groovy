@@ -48,4 +48,16 @@ abstract class DSLTestCase extends HudsonTestCase {
     def assertFailure = { job ->
         assert Result.FAILURE == job.getBuilds().getFirstBuild().getResult()
     }
+
+    def assertException(Class<? extends Exception> exClass, Closure closure) {
+        def thrown = false
+        try {
+            closure()
+        } catch (Exception e) {
+            if (exClass.isAssignableFrom(e.getClass())) {
+                thrown = true
+            }
+        }
+        assert thrown
+    }
 }

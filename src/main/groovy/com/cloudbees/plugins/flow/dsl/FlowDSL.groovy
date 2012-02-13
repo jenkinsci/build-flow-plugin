@@ -159,9 +159,9 @@ public class FlowDelegate {
                 println "}"
                 //}
                 //failuresContext.set(oldRescureContext.addAll(failuresContext.get()))
-                println ""
+                //println ""
                 //failuresContext.set(oldContext)
-                failuresContext.set(new ArrayList<String>())
+                //failuresContext.set(new ArrayList<String>())
             }
         } ]
     }
@@ -177,7 +177,6 @@ public class FlowDelegate {
                     retryContext.set(true)
                     failuresContext.get().clear()
                 }
-
                 // TODO : here handle failure context cleaning
             }
         }

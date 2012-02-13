@@ -51,4 +51,20 @@ class ParallelTest extends DSLTestCase {
         assertAllSuccess(jobs)
         assert Result.SUCCESS == ret
     }
+
+    def parParBuild = """flow {
+        parallel {
+            build("job1")
+            parallel {
+                build("job1")
+            }
+        }
+    }"""
+
+    public void testParallelParallel() {
+        def job1 = createJob("job1")
+        assertException(RuntimeException.class) {
+            run(parParBuild)
+        }
+    }
 }
