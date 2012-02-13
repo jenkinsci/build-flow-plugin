@@ -102,7 +102,7 @@ public class FlowDelegate {
     def parallel(closure) {
         // TODO : handle parallel inside parallel
         if (failuresContext.get().isEmpty()) {
-            Map<String, String> results = new HashMap<String, String>()
+            Map<String, JobInvocation> results = new HashMap<String, JobInvocation>()
             List<JobInvocation> oldJobs = new ArrayList<JobInvocation>()
             if (parallel.get()) {
                 oldJobs = parallelJobs.get()
@@ -112,10 +112,10 @@ public class FlowDelegate {
                 throw new RuntimeException("You can't use 'parallel' inside a 'parallel' block")
             }
             parallel.set(true);
-            closure()
             println "Parallel execution {"
+            closure()
             for (JobInvocation job : parallelJobs.get()) {
-                results.put(job.name, job.runAndContinue())
+                results.put(job.name, job)//job.runAndContinue())
             }
             println "}"
             println "Waiting for jobs : ${parallelJobs.get()}"
@@ -142,7 +142,7 @@ public class FlowDelegate {
             rescueClosure.delegate = deleg
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
             if (failuresContext.get().isEmpty()) {
-                List<String> oldContext = failuresContext.get()
+                //List<String> oldContext = failuresContext.get()
                 failuresContext.set(new ArrayList<String>())
                 println "Guarded {"
                 try {
@@ -151,18 +151,22 @@ public class FlowDelegate {
                     // Do we need to do something here ?
                 }
                 print "}"
-                if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
-                    println " Rescuing {"
-                    rescueClosure()
-                    println "}"
-                }
+                //if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
+                //List<String> oldRescureContext = failuresContext.get()
+                failuresContext.set(new ArrayList<String>())
+                println " Rescuing {"
+                rescueClosure()
+                println "}"
+                //}
+                //failuresContext.set(oldRescureContext.addAll(failuresContext.get()))
                 println ""
-                failuresContext.set(oldContext)
+                //failuresContext.set(oldContext)
+                failuresContext.set(new ArrayList<String>())
             }
         } ]
     }
 
-    // TODO : support 3.times guarded {} for retry / failed, dunno how to do that with guard keyword
+    // TODO use guard keyword instead, dunno how to do it
     def retry(retryClosure) {
         retryContext.set(true)
         return {
@@ -171,7 +175,9 @@ public class FlowDelegate {
                 retryClosure()
                 if (!failuresContext.get().isEmpty()) {
                     retryContext.set(true)
+                    failuresContext.get().clear()
                 }
+
                 // TODO : here handle failure context cleaning
             }
         }
@@ -189,6 +195,7 @@ public class FlowDelegate {
             JobInvocation job = findJob(name, args, cause)
             if (parallel.get()) {
                 // if parallel enabled, push the job in a threadlocal list and let other run it for you
+                job.runAndContinue()
                 parallelJobs.get().add(job)
             } else {
                 job.runAndWait()
@@ -218,7 +225,6 @@ public class FlowDelegate {
     def methodMissing(String name, Object args) {
         throw new MissingMethodException("Method ${name} doesn't exist."); // TODO : add the DSL grammar for help
     }
-
     // TODO : add restrictions for System.exit, etc ...
 }
 
