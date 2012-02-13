@@ -41,7 +41,7 @@ public class FlowDSL {
     }
 
     def Result executeFlowScript(String dsl, Cause cause) {
-        // TODO : add all restrictions, etc ...
+        // TODO : add restrictions for System.exit, etc ...
         FlowDelegate flow = new FlowDelegate(cause)
         Script dslScript = new GroovyShell().parse(dsl)
         dslScript.metaClass = createEMC(dslScript.class, {
@@ -69,7 +69,7 @@ public class FlowDelegate {
     private ThreadLocal<List<String>> failuresContext = new ThreadLocal<List<String>>()
     private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
 
-    def Cause cause
+    def Cause cause      // TODO : enhance cause
 
     public FlowDelegate(Cause c) {
         cause = c
@@ -80,11 +80,16 @@ public class FlowDelegate {
     }
 
     def failed() {
-        // TODO : return the right Result based on failures priority
+        Result r = Result.SUCCESS
         if (failuresContext.get().isEmpty()) {
             return Result.SUCCESS
         }
-        return Result.FAILURE
+        failuresContext.get().each { Result res ->
+            if (res.isWorseThan(r)) {
+                r = res
+            }
+        }
+        return r
     }
 
     def build(String jobName) {
@@ -100,9 +105,8 @@ public class FlowDelegate {
     }
 
     def parallel(closure) {
-        // TODO : handle parallel inside parallel
         if (failuresContext.get().isEmpty()) {
-            Map<String, JobInvocation> results = new HashMap<String, JobInvocation>()
+            Map<String, JobInvocation> results = new HashMap<String, JobInvocation>() // TODO : return an enhanced map
             List<JobInvocation> oldJobs = new ArrayList<JobInvocation>()
             if (parallel.get()) {
                 oldJobs = parallelJobs.get()
@@ -125,8 +129,6 @@ public class FlowDelegate {
             }
             parallel.set(false);
             results.values().each {
-                // TODO : enhance it
-                // TODO : remove Jenkins dependency
                 AbstractBuild<?, ?> build = it.future().get()
                 if (build.getResult() != Result.SUCCESS) {
                     failuresContext.get().add(it.result())
@@ -150,7 +152,7 @@ public class FlowDelegate {
                 } catch (Throwable t) {
                     // Do we need to do something here ?
                 }
-                //if (failuresContext.get().isEmpty()) { // TODO : check if we have to do try/catch or try/finally
+                //if (failuresContext.get().isEmpty()) {
                 //List<String> oldRescureContext = failuresContext.get()
                 failuresContext.set(new ArrayList<String>())
                 LOGGER.fine("} Rescuing {")
@@ -164,7 +166,6 @@ public class FlowDelegate {
         } ]
     }
 
-    // TODO use guard keyword instead, dunno how to do it
     def retry(retryClosure) {
         retryContext.set(true)
         return {
@@ -174,8 +175,8 @@ public class FlowDelegate {
                 if (!failuresContext.get().isEmpty()) {
                     retryContext.set(true)
                     failuresContext.get().clear()
+                    // TODO : here handle failure context cleaning
                 }
-                // TODO : here handle failure context cleaning
             }
         }
     }
@@ -216,13 +217,12 @@ public class FlowDelegate {
     }
 
     def propertyMissing(String name) {
-        throw new MissingPropertyException("Property ${name} doesn't exist."); // TODO : add the DSL grammar for help
+        throw new MissingPropertyException("Property ${name} doesn't exist.");
     }
 
     def methodMissing(String name, Object args) {
-        throw new MissingMethodException("Method ${name} doesn't exist."); // TODO : add the DSL grammar for help
+        throw new MissingMethodException("Method ${name} doesn't exist.");
     }
-    // TODO : add restrictions for System.exit, etc ...
 }
 
 public class JobInvocation {
@@ -231,19 +231,18 @@ public class JobInvocation {
 
     def String name
     def Map args
-    // TODO : remove Jenkins dependency
     def Cause cause
     def AbstractProject<?, ? extends AbstractBuild<?, ?>> project
     def AbstractBuild build
     def Result result = Result.SUCCESS
     def Future<? extends AbstractBuild<?, ?>> future
-    // TODO : remove Jenkins dependency
+
+    // TODO : add helpers for manipulation inside DSL
 
     public JobInvocation(String name, Map args, Cause cause) {
         this.name = name
         this.args = args
         this.cause = cause
-        // TODO : remove Jenkins dependency
         Item item = Jenkins.getInstance().getItem(name);
         if (item instanceof AbstractProject) {
             project = (AbstractProject<?, ? extends AbstractBuild<?,?>>) item;
@@ -253,7 +252,6 @@ public class JobInvocation {
     }
 
     def runAndWait() {
-        // TODO : remove Jenkins dependency
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
         LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and blocking")
         build = future.get();
@@ -262,7 +260,6 @@ public class JobInvocation {
     }
 
     def runAndContinue() {
-        // TODO : remove Jenkins dependency
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
         LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and continuing")
         return this;
