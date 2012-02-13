@@ -139,6 +139,9 @@ public class FlowDelegate {
     }
 
     def guard(guardedClosure) {
+        if (parallel.get() == true) {
+            throw new RuntimeException("You can't use 'guard' inside parallel bloc.")
+        }
         def deleg = this;
         [ rescue : { rescueClosure ->
             rescueClosure.delegate = deleg
@@ -167,6 +170,9 @@ public class FlowDelegate {
     }
 
     def retry(retryClosure) {
+        if (parallel.get() == true) {
+            throw new RuntimeException("You can't use 'retry' inside parallel bloc.")
+        }
         retryContext.set(true)
         return {
             if (retryContext.get()) {

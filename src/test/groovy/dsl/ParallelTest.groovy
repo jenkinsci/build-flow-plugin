@@ -67,4 +67,38 @@ class ParallelTest extends DSLTestCase {
             run(parParBuild)
         }
     }
+
+    def parGuardBuild = """flow {
+        parallel {
+            build("job1")
+            guard {
+                build("job1")
+            } rescue {
+                build("job1")
+            }
+        }
+    }"""
+
+    public void testParallelGuard() {
+        def job1 = createJob("job1")
+        assertException(RuntimeException.class) {
+            run(parGuardBuild)
+        }
+    }
+
+    def parRetryBuild = """flow {
+        parallel {
+            build("job1")
+            2.times retry {
+                build("job1")
+            }
+        }
+    }"""
+
+    public void testParallelRetry() {
+        def job1 = createJob("job1")
+        assertException(RuntimeException.class) {
+            run(parRetryBuild)
+        }
+    }
 }

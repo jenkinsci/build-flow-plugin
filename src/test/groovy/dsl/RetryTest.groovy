@@ -38,4 +38,61 @@ class RetryTest extends DSLTestCase {
         assertFailure(job1)
         assert Result.SUCCESS == ret // TODO : should return failure
     }
+
+    def retryGuardBuild =  """flow {
+        def a = 0, b = 0, c = 0
+        3.times retry {
+            guard {
+                build("job1")
+                b++
+            } rescue {
+                build("willFail")
+                c++
+            }
+            a++
+        }
+        assert a == 3
+        assert b == 3
+        assert c == 3
+    }"""
+
+    public void testRetryGuard() {
+        def fail = createFailJob("willFail")
+        def jobs = createJobs(["job1", "job2"])
+        def ret = run(retryGuardBuild)
+        assert Result.SUCCESS == ret // TODO : should return failure
+    }
+
+    def retryGuardParBuild =  """flow {
+        def a = 0, b = 0, c = 0
+        3.times retry {
+            guard {
+                build("job1")
+                b++
+            } rescue {
+                build("willFail")
+                c++
+            }
+            par = parallel {
+                j1 = build("job1")
+                assert !j1.future.done
+                j2 = bbuild("job2")
+                assert !j2.future.done
+            }
+            a++
+            par.values().each {
+                assert it.future.done
+            }
+        }
+        assert a == 3
+        assert b == 3
+        assert c == 3
+    }"""
+
+    public void testRetryGuardPar() {
+        def fail = createFailJob("willFail")
+        def jobs = createJobs(["job1", "job2"])
+        def ret = run(retryGuardBuild)
+        assert Result.SUCCESS == ret // TODO : should return failure
+    }
 }
