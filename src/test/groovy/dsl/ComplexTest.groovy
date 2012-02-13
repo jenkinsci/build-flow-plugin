@@ -13,39 +13,61 @@ public class ComplexTest extends DSLTestCase {
     def script = """
 	flow {
 
-        3.times retry {
-            build("job1")
-	    }
+	    assert cause != null
+	    assert cause.upstreamProject == "root"
+	    assert cause.upstreamBuild == 1
 
 	    println "\\nTriggered by '" + cause.upstreamProject + "' with build number '" + cause.upstreamBuild + "'\\n"
+
+	    def a = 0
+        3.times retry {
+            build("job1")
+	        a++
+	    }
+	    assert a == 1
 
 	    a = build("Job1")
 	    b = build("Job2", param1: "troulala", param2: "machin")
 	    c = build("Job3")
 
+	    assert a.future.done
+	    assert b.future.done
+	    assert c.future.done
+
 	    println "\\n" + a.result() + " " + b.result() + " " + c.result() + "\\n"
 
 	    par = parallel {
-	        build("jobp1")
-	        build("jobp2")
-	        build("jobp3")
-	        build("jobp4")
-	        build("jobp5")
-	        build("jobp6")
-	        build("jobp7")
+	        a = build("jobp1")
+            assert !a.future.done
+	        b = build("jobp2")
+            assert !b.future.done
+	        c = build("jobp3")
+            assert !c.future.done
+	        d = build("jobp4")
+            assert !d.future.done
+	        e = build("jobp5")
+            assert !e.future.done
+	        f = build("jobp6")
+            assert !f.future.done
+	        g = build("jobp7")
+            assert !g.future.done
 	    }
 
 	    println ""
-	    par.values().each { job -> println job.name + " => " + job.result() }
+	    par.values().each { job ->
+	        println job.name + " => " + job.result()
+	        assert job.future.done
+	    }
 	    println ""
 
-        build("job3")
+        assert build("job3").future.done
 
 	    guard {
-	        build("job1")
-	        build("job2")
+	        assert build("job1").future.done
+	        assert build("job2").future.done
 	    } rescue {
-	        build("job3")
+	        r = build("job3")
+	        assert r.future.done
 	    }
     }
 	"""
