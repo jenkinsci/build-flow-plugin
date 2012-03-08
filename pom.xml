@@ -102,8 +102,8 @@
   
   <repositories>
     <repository>
-      <id>m.g.o-public</id>
-      <url>http://maven.glassfish.org/content/groups/public/</url>
+      <id>jenkins-ci.rg</id>
+      <url>http://repo.jenkins-ci.org/public/</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -112,6 +112,12 @@
       </snapshots>
     </repository>
   </repositories>
+  <pluginRepositories>
+      <pluginRepository>
+          <id>jenkins-ci.rg</id>
+          <url>http://repo.jenkins-ci.org/public/</url>
+      </pluginRepository>
+  </pluginRepositories>
 
 </project>
 
