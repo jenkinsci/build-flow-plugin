@@ -25,6 +25,7 @@ import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import com.cloudbees.plugins.flow.FlowRun
 import com.cloudbees.plugins.flow.FlowCause
+import org.omg.PortableInterceptor.SUCCESSFUL
 
 public class FlowDSL {
 
@@ -49,7 +50,15 @@ public class FlowDSL {
             }
         }
         
-        def binding = new Binding([upstream: upstream])
+        def binding = new Binding([
+                upstream: upstream,
+                SUCCESS: SUCCESS,
+                UNSTABLE: Result.UNSTABLE,
+                FAILURE: Result.FAILURE,
+                ABORTED: Result.ABORTED,
+                NOT_BUILT: Result.NOT_BUILT
+        ])
+
         Script dslScript = new GroovyShell(binding).parse(dsl)
         dslScript.metaClass = createEMC(dslScript.class, {
             ExpandoMetaClass emc ->

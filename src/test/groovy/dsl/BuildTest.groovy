@@ -75,7 +75,7 @@ class BuildTest extends DSLTestCase {
         flow {
             a = build("job1")
             assert a != null
-            assert a.result() == hudson.model.Result.SUCCESS
+            assert a.result == SUCCESS
             assert a.name == "job1"
         }
     """
