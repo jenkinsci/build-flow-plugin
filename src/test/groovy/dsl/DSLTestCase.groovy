@@ -29,6 +29,12 @@ import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import static hudson.model.Result.FAILURE
+import java.util.logging.Logger
+import java.util.logging.Level
+import java.util.logging.Handler
+import java.util.logging.ConsoleHandler
+import com.cloudbees.plugins.flow.dsl.JobInvocation
+import com.cloudbees.plugins.flow.dsl.FlowDelegate
 
 abstract class DSLTestCase extends HudsonTestCase {
 

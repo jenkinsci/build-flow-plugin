@@ -170,19 +170,14 @@ public class FlowDelegate {
                 LOGGER.fine("Guarded {")
                 try {
                     guardedClosure()
-                } catch (Throwable t) {
-                    // Do we need to do something here ?
+                } finally {
+                    List<String> oldContext = failuresContext.get()
+                    failuresContext.set(new ArrayList<String>())
+                    LOGGER.fine("} Rescuing {")
+                    rescueClosure()
+                    LOGGER.fine("}")
+                    failuresContext.set(oldContext)
                 }
-                //if (failuresContext.get().isEmpty()) {
-                //List<String> oldRescureContext = failuresContext.get()
-                failuresContext.set(new ArrayList<String>())
-                LOGGER.fine("} Rescuing {")
-                rescueClosure()
-                LOGGER.fine("}")
-                //}
-                //failuresContext.set(oldRescureContext.addAll(failuresContext.get()))
-                //failuresContext.set(oldContext)
-                //failuresContext.set(new ArrayList<String>())
             }
         } ]
     }
