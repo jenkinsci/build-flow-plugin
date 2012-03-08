@@ -24,11 +24,9 @@ import static hudson.model.Result.SUCCESS
 class UpstreamTest extends DSLTestCase {
 
     def successBuild =  """
-        flow {
-            assert upstream != null
-            assert upstream.parent.name == "root"
-            assert upstream.number == 1
-        }
+        assert upstream != null
+        assert upstream.parent.name == "root"
+        assert upstream.number == 1
     """
 
     public void testUpstream() {

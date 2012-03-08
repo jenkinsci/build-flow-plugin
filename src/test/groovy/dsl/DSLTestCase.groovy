@@ -28,6 +28,7 @@ import jenkins.model.Jenkins
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import static hudson.model.Result.FAILURE
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -73,7 +74,7 @@ abstract class DSLTestCase extends HudsonTestCase {
     }
 
     def assertFailure = { job ->
-        assert Result.FAILURE == job.builds.lastBuild.result
+        assert FAILURE == job.builds.lastBuild.result
     }
 
     def assertException(Class<? extends Exception> exClass, Closure closure) {
@@ -91,10 +92,11 @@ abstract class DSLTestCase extends HudsonTestCase {
     void assertHasParameter(AbstractBuild build, String name, String value) {
         boolean found = false
         build.actions.each {action ->
-            if (action?.getParameter(name)?.value == value) {
-                found = true
-                return
-            }
+            if (action instanceof ParametersAction)
+                if (action.getParameter(name)?.value == value) {
+                    found = true
+                    return
+                }
         }
         assertTrue("build don't have expected parameter set " + name + "=" + value, found)
     }    

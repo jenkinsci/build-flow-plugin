@@ -59,7 +59,7 @@ public class FlowDSL {
                 NOT_BUILT: Result.NOT_BUILT
         ])
 
-        Script dslScript = new GroovyShell(binding).parse(dsl)
+        Script dslScript = new GroovyShell(binding).parse("flow { " + dsl + "}")
         dslScript.metaClass = createEMC(dslScript.class, {
             ExpandoMetaClass emc ->
             emc.flow = {
@@ -84,7 +84,7 @@ public class FlowDelegate {
 
     private ThreadLocal<Boolean> parallel = new ThreadLocal<Boolean>()
     private ThreadLocal<List<JobInvocation>> parallelJobs = new ThreadLocal<List<JobInvocation>>()
-    private ThreadLocal<List<String>> failuresContext = new ThreadLocal<List<String>>()
+    private ThreadLocal<List<Result>> failuresContext = new ThreadLocal<List<Result>>()
     private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
 
     def List<Cause> causes
@@ -95,7 +95,7 @@ public class FlowDelegate {
         causes = flowRun.causes
         parallel.set(false)
         parallelJobs.set(new ArrayList<String>())
-        failuresContext.set(new ArrayList<String>())
+        failuresContext.set(new ArrayList<Result>())
         retryContext.set(false)
     }
 
@@ -187,7 +187,11 @@ public class FlowDelegate {
         } ]
     }
 
+    
     def retry(retryClosure) {
+        return retry(SUCCESS, retryClosure)
+    }
+    def retry(Result result, retryClosure) {
         if (parallel.get() == true) {
             throw new RuntimeException("You can't use 'retry' inside parallel bloc.")
         }

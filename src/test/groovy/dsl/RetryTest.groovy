@@ -18,105 +18,99 @@
 package dsl
 
 import hudson.model.Result
+import static hudson.model.Result.SUCCESS
+import static hudson.model.Result.FAILURE
+import hudson.model.Job
 
 class RetryTest extends DSLTestCase {
 
     def successBuild =  """
-        flow {
-            def a = 0
-            3.times retry {
-                build("job1")
-                a++
-            }
-            println "closure run " + a
-            assert a == 1
+        3.times retry {
+            build("job1")
         }
     """
 
     public void testNoRetry() {
-        def job1 = createJob("job1")
+        Job job1 = createJob("job1")
         def ret = run(successBuild)
         assertSuccess(job1)
-        assert Result.SUCCESS == ret
+        assert job1.builds.size() == 1
+        assert SUCCESS == ret.result
     }
 
     def retryBuild =  """
-        flow {
-            def a = 0
-            3.times retry {
-                build("willFail")
-                a++
-            }
-            println "closure run " + a
-            assert a == 3
+        3.times retry {
+            build("willFail")
         }
     """
 
     public void testRetry() {
         def job1 = createFailJob("willFail")
         def ret = run(retryBuild)
-        assertFailure(job1)
-        assert Result.SUCCESS == ret // TODO : should return failure
+        
+        assertRan(job1, 3, FAILURE)
+        assert SUCCESS == ret.result // TODO : should return failure
     }
-
+    
     def retryGuardBuild =  """
-        flow {
-            def a = 0, b = 0, c = 0
-            3.times retry {
-                guard {
-                    build("job1")
-                    b++
-                } rescue {
-                    build("willFail")
-                    c++
-                }
-                a++
+        3.times retry {
+            guard {
+                build("willFail")
+            } rescue {
+                build("rescue")
             }
-            assert a == 3
-            assert b == 3
-            assert c == 3
         }
     """
 
     public void testRetryGuard() {
         def fail = createFailJob("willFail")
-        def jobs = createJobs(["job1", "job2"])
+        def rescue = createJob("rescue")
         def ret = run(retryGuardBuild)
-        assert Result.SUCCESS == ret // TODO : should return failure
+
+        assertRan(fail, 3, FAILURE)
+        assertRan(rescue, 3, SUCCESS)
+        assert SUCCESS == ret.result // TODO : should return failure
     }
 
     def retryGuardParBuild =  """
-        flow {
-            def a = 0, b = 0, c = 0
-            3.times retry {
-                guard {
-                    build("job1")
-                    b++
-                } rescue {
-                    build("willFail")
-                    c++
-                }
-                par = parallel {
-                    j1 = build("job1")
-                    assert !j1.future.done
-                    j2 = bbuild("job2")
-                    assert !j2.future.done
-                }
-                a++
-                par.values().each {
-                    assert it.future.done
-                }
+        def a = 0, b = 0, c = 0
+        3.times retry {
+            guard {
+                build("job1")
+                b++
+            } rescue {
+                build("willFail")
+                c++
             }
-            assert a == 3
-            assert b == 3
-            assert c == 3
+            par = parallel {
+                j1 = build("job1")
+                assert !j1.future.done
+                j2 = bbuild("job2")
+                assert !j2.future.done
+            }
+            a++
+            par.values().each {
+                assert it.future.done
+            }
         }
+        assert a == 3
+        assert b == 3
+        assert c == 3
     """
 
     public void testRetryGuardPar() {
         def fail = createFailJob("willFail")
         def jobs = createJobs(["job1", "job2"])
         def ret = run(retryGuardBuild)
-        assert Result.SUCCESS == ret // TODO : should return failure
+        assert SUCCESS == ret.result // TODO : should return failure
     }
+
+    private void assertRan(Job job, int times, Result result) {
+        assert job.builds.size() == times
+        job.builds.each { build ->
+            assert build.result == result
+        }
+    }
+
+
 }

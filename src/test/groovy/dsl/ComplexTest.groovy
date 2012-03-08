@@ -19,19 +19,17 @@ package dsl
 
 import hudson.model.Cause
 import hudson.model.FreeStyleBuild
-import hudson.model.FreeStyleProject
+import hudson.model.Job
 import hudson.model.Result
+import com.cloudbees.plugins.flow.FlowRun
+import static hudson.model.Result.SUCCESS
 
 public class ComplexTest extends DSLTestCase {
 
     def script = """
-	flow {
+	    assert upstream != null
 
-	    assert cause != null
-	    assert cause.upstreamProject == "root"
-	    assert cause.upstreamBuild == 1
-
-	    println "\\nTriggered by '" + cause.upstreamProject + "' with build number '" + cause.upstreamBuild + "'\\n"
+	    println "\\nTriggered by '" + upstream.parent + "' with build number '" + upstream.buildNumber + "'\\n"
 
 	    def a = 0
         3.times retry {
@@ -83,38 +81,25 @@ public class ComplexTest extends DSLTestCase {
 	        r = build("job3")
 	        assert r.future.done
 	    }
-    }
 	"""
 
 
     public void testComplexDSL() {
-        FreeStyleProject root = createFreeStyleProject("root");
+        Job root = createJob("root");
         FreeStyleBuild rootBuild = root.createExecutable();
-        FreeStyleProject job1 = createFreeStyleProject("Job1");
-        FreeStyleProject job2 = createFreeStyleProject("Job2");
-        FreeStyleProject job3 = createFreeStyleProject("Job3");
-        FreeStyleProject jobp1 = createFreeStyleProject("jobp1");
-        FreeStyleProject jobp2 = createFreeStyleProject("jobp2");
-        FreeStyleProject jobp3 = createFreeStyleProject("jobp3");
-        FreeStyleProject jobp4 = createFreeStyleProject("jobp4");
-        FreeStyleProject jobp5 = createFreeStyleProject("jobp5");
-        FreeStyleProject jobp6 = createFreeStyleProject("jobp6");
-        FreeStyleProject jobp7 = createFreeStyleProject("jobp7");
+        Job job1 = createJob("Job1");
+        Job job2 = createJob("Job2");
+        Job job3 = createJob("Job3");
+        Job jobp1 = createJob("jobp1");
+        Job jobp2 = createJob("jobp2");
+        Job jobp3 = createJob("jobp3");
+        Job jobp4 = createJob("jobp4");
+        Job jobp5 = createJob("jobp5");
+        Job jobp6 = createJob("jobp6");
+        Job jobp7 = createJob("jobp7");
 
-        Result flowResult = runWithCause(script, new Cause.UpstreamCause(rootBuild));
-
-        assertEquals(Result.SUCCESS, job1.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, job2.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, job3.getBuilds().getFirstBuild().getResult());
-
-        assertEquals(Result.SUCCESS, jobp1.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp2.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp3.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp4.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp5.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp6.getBuilds().getFirstBuild().getResult());
-        assertEquals(Result.SUCCESS, jobp7.getBuilds().getFirstBuild().getResult());
-
-        assertEquals(Result.SUCCESS, flowResult);
+        FlowRun flowResult = runWithCause(script, new Cause.UpstreamCause(rootBuild));
+        assertAllSuccess(job1, job2, job3, jobp1, jobp2, jobp3, jobp4, jobp5, jobp6, jobp7);
+        assertEquals(SUCCESS, flowResult.result);
     }
 }

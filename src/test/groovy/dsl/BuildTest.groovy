@@ -23,32 +23,25 @@ import hudson.model.ParametersAction
 import hudson.model.AbstractBuild
 import hudson.model.Action
 import static hudson.model.Result.SUCCESS
+import static hudson.model.Result.FAILURE
 
 class BuildTest extends DSLTestCase {
 
-    def successBuild =  """
-        flow {
-            build("job1")
-        }
-    """
+    def successBuild =  """    build("job1") """
 
-    public void testBuildWithoutJob() {
-        assertException(JobNotFoundException.class) {
-            run(successBuild)
-        }
+    public void testUnknownJob() {
+        def run = run(successBuild)
+        assert FAILURE == run.result
     }
 
     public void testBuildWithoutReturn() {
         def job1 = createJob("job1")
-        run(successBuild)
+        def run = run(successBuild)
+        assert SUCCESS == run.result
         assertSuccess(job1)
     }
 
-    def successBuildParam =  """
-        flow {
-            build("job1", param1: "one", param2: "two")
-        }
-    """
+    def successBuildParam =  """    build("job1", param1: "one", param2: "two") """
 
     public void testBuildWithParams() {
         def job1 = createJob("job1")
@@ -59,11 +52,7 @@ class BuildTest extends DSLTestCase {
         assertHasParameter(build, "param2", "two")
     }
 
-    def failBuild = """
-        flow {
-            build("willFail")
-        }
-    """
+    def failBuild = """    build("willFail") """
 
     public void testBuildWithoutReturnFailed() {
         def willFail = createFailJob("willFail");
@@ -72,12 +61,10 @@ class BuildTest extends DSLTestCase {
     }
 
     def returnBuild =  """
-        flow {
-            a = build("job1")
-            assert a != null
-            assert a.result == SUCCESS
-            assert a.name == "job1"
-        }
+        a = build("job1")
+        assert a != null
+        assert a.result == SUCCESS
+        assert a.name == "job1"
     """
 
     public void testBuildWithReturn() {

@@ -18,31 +18,29 @@
 package dsl
 
 import hudson.model.Result
+import static hudson.model.Result.FAILURE
+import static hudson.model.Result.SUCCESS
 
 class MultipleBuildsTest extends DSLTestCase {
 
     def successFlow =  """
-        flow {
-            build("job1")
-            build("job2")
-            build("job3")
-        }
+        build("job1")
+        build("job2")
+        build("job3")
     """
 
     public void testBuildsWithoutReturn() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def ret = run(successFlow)
         assertAllSuccess(jobs)
-        assert Result.SUCCESS == ret
+        assert SUCCESS == ret.result
     }
 
     def failingFlow = """
-        flow {
-            build("job1")
-            build("job2")
-            build("job3")
-            build("willFail")
-        }
+        build("job1")
+        build("job2")
+        build("job3")
+        build("willFail")
     """
 
     public void testBuildsWithoutReturnFailed() {
@@ -51,16 +49,14 @@ class MultipleBuildsTest extends DSLTestCase {
         def ret = run(failingFlow)
         assertAllSuccess(jobs)
         assertFailure(willFail)
-        assert Result.FAILURE == ret
+        assert FAILURE == ret.result
     }
 
     def interruptedByFailureFlow = """
-        flow {
-            build("job1")
-            build("willFail")
-            build("job2")
-            build("job3")
-        }
+        build("job1")
+        build("willFail")
+        build("job2")
+        build("job3")
     """
 
     public void testBuildsWithoutReturnFailedAndDontContinue() {
@@ -71,6 +67,6 @@ class MultipleBuildsTest extends DSLTestCase {
         jobs.get(1).getBuilds().isEmpty()
         jobs.get(2).getBuilds().isEmpty()
         assertFailure(willFail)
-        assert Result.FAILURE == ret
+        assert FAILURE == ret.result
     }
 }
