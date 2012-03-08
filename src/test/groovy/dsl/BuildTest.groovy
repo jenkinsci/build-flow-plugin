@@ -19,16 +19,17 @@ package dsl
 
 import com.cloudbees.plugins.flow.JobNotFoundException
 import hudson.model.Result
+import hudson.model.ParametersAction
+import hudson.model.AbstractBuild
+import hudson.model.Action
 
 class BuildTest extends DSLTestCase {
 
-    def successBuild =  """flow {
-        build("job1")
-    }"""
-
-    def successBuildParam =  """flow {
-        build("job1", p1: "p1", p2: "p2")
-    }"""
+    def successBuild =  """
+        flow {
+            build("job1")
+        }
+    """
 
     public void testBuildWithoutJob() {
         assertException(JobNotFoundException.class) {
@@ -42,16 +43,27 @@ class BuildTest extends DSLTestCase {
         assertSuccess(job1)
     }
 
+    def successBuildParam =  """
+        flow {
+            build("job1", param1: "one", param2: "two")
+        }
+    """
+
     public void testBuildWithParams() {
         def job1 = createJob("job1")
         run(successBuildParam)
-        assertSuccess(job1)
-        assert job1.getBuilds().lastBuild.getActions().size() == 2
+
+        def build = assertSuccess(job1)
+        assertHasParameter(build, "param1", "one")
+        assertHasParameter(build, "param2", "two")
     }
 
-    def failBuild = """flow {
-        build("willFail")
-    }"""
+
+    def failBuild = """
+        flow {
+            build("willFail")
+        }
+    """
 
     public void testBuildWithoutReturnFailed() {
         def willFail = createFailJob("willFail");
@@ -59,12 +71,14 @@ class BuildTest extends DSLTestCase {
         assertFailure(willFail)
     }
 
-    def returnBuild =  """flow {
-        a = build("job1")
-        assert a != null
-        assert a.result() == hudson.model.Result.SUCCESS
-        assert a.name == "job1"
-    }"""
+    def returnBuild =  """
+        flow {
+            a = build("job1")
+            assert a != null
+            assert a.result() == hudson.model.Result.SUCCESS
+            assert a.name == "job1"
+        }
+    """
 
     public void testBuildWithReturn() {
         def job1 = createJob("job1")

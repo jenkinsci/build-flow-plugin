@@ -21,6 +21,8 @@ import com.cloudbees.plugins.flow.dsl.FlowDSL
 import hudson.model.Result
 import org.jvnet.hudson.test.FailureBuilder
 import org.jvnet.hudson.test.HudsonTestCase
+import hudson.model.AbstractBuild
+import hudson.model.ParametersAction
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -51,17 +53,18 @@ abstract class DSLTestCase extends HudsonTestCase {
     }
 
     def assertSuccess = { job ->
-        assert Result.SUCCESS == job.getBuilds().getFirstBuild().getResult()
+        assert Result.SUCCESS == job.builds.lastBuild.result
+        return job.builds.lastBuild
     }
 
     def assertAllSuccess = { jobs ->
         jobs.each {
-            assert Result.SUCCESS == it.getBuilds().getFirstBuild().getResult()
+            assert Result.SUCCESS == it.builds.lastBuild.result
         }
     }
 
     def assertFailure = { job ->
-        assert Result.FAILURE == job.getBuilds().getFirstBuild().getResult()
+        assert Result.FAILURE == job.builds.lastBuild.result
     }
 
     def assertException(Class<? extends Exception> exClass, Closure closure) {
@@ -75,4 +78,15 @@ abstract class DSLTestCase extends HudsonTestCase {
         }
         assert thrown
     }
+
+    void assertHasParameter(AbstractBuild build, String name, String value) {
+        boolean found = false
+        build.actions.each {action ->
+            if (action?.getParameter(name)?.value == value) {
+                found = true
+                return
+            }
+        }
+        assertTrue("build don't have expected parameter set " + name + "=" + value, found)
+    }    
 }

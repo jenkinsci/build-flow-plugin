@@ -50,6 +50,8 @@ public class FlowDSL {
         flow.cleanAfterRun()
         return ret
     }
+
+    // TODO define a parseFlowScript to validate flow DSL and maintain jobs dependencygraph
 }
 
 public class FlowDelegate {

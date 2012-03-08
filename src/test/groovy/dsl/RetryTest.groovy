@@ -21,15 +21,17 @@ import hudson.model.Result
 
 class RetryTest extends DSLTestCase {
 
-    def successBuild =  """flow {
-        def a = 0
-        3.times retry {
-            build("job1")
-            a++
+    def successBuild =  """
+        flow {
+            def a = 0
+            3.times retry {
+                build("job1")
+                a++
+            }
+            println "closure run " + a
+            assert a == 1
         }
-        println "closure run " + a
-        assert a == 1
-    }"""
+    """
 
     public void testNoRetry() {
         def job1 = createJob("job1")
@@ -38,15 +40,17 @@ class RetryTest extends DSLTestCase {
         assert Result.SUCCESS == ret
     }
 
-    def retryBuild =  """flow {
-        def a = 0
-        3.times retry {
-            build("willFail")
-            a++
+    def retryBuild =  """
+        flow {
+            def a = 0
+            3.times retry {
+                build("willFail")
+                a++
+            }
+            println "closure run " + a
+            assert a == 3
         }
-        println "closure run " + a
-        assert a == 3
-    }"""
+    """
 
     public void testRetry() {
         def job1 = createFailJob("willFail")
@@ -55,22 +59,24 @@ class RetryTest extends DSLTestCase {
         assert Result.SUCCESS == ret // TODO : should return failure
     }
 
-    def retryGuardBuild =  """flow {
-        def a = 0, b = 0, c = 0
-        3.times retry {
-            guard {
-                build("job1")
-                b++
-            } rescue {
-                build("willFail")
-                c++
+    def retryGuardBuild =  """
+        flow {
+            def a = 0, b = 0, c = 0
+            3.times retry {
+                guard {
+                    build("job1")
+                    b++
+                } rescue {
+                    build("willFail")
+                    c++
+                }
+                a++
             }
-            a++
+            assert a == 3
+            assert b == 3
+            assert c == 3
         }
-        assert a == 3
-        assert b == 3
-        assert c == 3
-    }"""
+    """
 
     public void testRetryGuard() {
         def fail = createFailJob("willFail")
@@ -79,31 +85,33 @@ class RetryTest extends DSLTestCase {
         assert Result.SUCCESS == ret // TODO : should return failure
     }
 
-    def retryGuardParBuild =  """flow {
-        def a = 0, b = 0, c = 0
-        3.times retry {
-            guard {
-                build("job1")
-                b++
-            } rescue {
-                build("willFail")
-                c++
+    def retryGuardParBuild =  """
+        flow {
+            def a = 0, b = 0, c = 0
+            3.times retry {
+                guard {
+                    build("job1")
+                    b++
+                } rescue {
+                    build("willFail")
+                    c++
+                }
+                par = parallel {
+                    j1 = build("job1")
+                    assert !j1.future.done
+                    j2 = bbuild("job2")
+                    assert !j2.future.done
+                }
+                a++
+                par.values().each {
+                    assert it.future.done
+                }
             }
-            par = parallel {
-                j1 = build("job1")
-                assert !j1.future.done
-                j2 = bbuild("job2")
-                assert !j2.future.done
-            }
-            a++
-            par.values().each {
-                assert it.future.done
-            }
+            assert a == 3
+            assert b == 3
+            assert c == 3
         }
-        assert a == 3
-        assert b == 3
-        assert c == 3
-    }"""
+    """
 
     public void testRetryGuardPar() {
         def fail = createFailJob("willFail")
