@@ -23,6 +23,11 @@ import org.jvnet.hudson.test.FailureBuilder
 import org.jvnet.hudson.test.HudsonTestCase
 import hudson.model.AbstractBuild
 import hudson.model.ParametersAction
+import com.cloudbees.plugins.flow.BuildFlow
+import jenkins.model.Jenkins
+import static hudson.model.Result.SUCCESS
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -45,21 +50,25 @@ abstract class DSLTestCase extends HudsonTestCase {
     }
 
     def run = { script ->
-        return new FlowDSL().executeFlowScript(script, null)
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        return flow.scheduleBuild2(0).get()
     }
 
     def runWithCause = { script, cause ->
-        return new FlowDSL().executeFlowScript(script, cause)
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        return flow.scheduleBuild2(0, cause).get()
     }
 
     def assertSuccess = { job ->
-        assert Result.SUCCESS == job.builds.lastBuild.result
+        assert SUCCESS == job.builds.lastBuild.result
         return job.builds.lastBuild
     }
 
     def assertAllSuccess = { jobs ->
         jobs.each {
-            assert Result.SUCCESS == it.builds.lastBuild.result
+            assert SUCCESS == it.builds.lastBuild.result
         }
     }
 

@@ -21,6 +21,7 @@ import com.cloudbees.plugins.flow.dsl.FlowDSL;
 import hudson.model.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 
@@ -55,23 +56,21 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
     
     protected Runner createRunner() {
-        return new RunnerImpl(this, dsl);
+        return new RunnerImpl(dsl);
     }
     
     protected class RunnerImpl extends AbstractRunner {
 
-        private final Cause cause;
         private final String dsl;
 
-        public RunnerImpl(AbstractBuild<?, ?> build, String dsl) {
-            this.cause = new Cause.UpstreamCause(build);
+        public RunnerImpl(String dsl) {
             this.dsl = dsl;
         }
 
         protected Result doRun(BuildListener listener) throws Exception {
             Result r = null;
             try {
-                r = new FlowDSL().executeFlowScript("", cause);
+                r = new FlowDSL().executeFlowScript(FlowRun.this, dsl);
             } catch (Exception e) {
                 r = Executor.currentExecutor().abortResult();
                 throw e;

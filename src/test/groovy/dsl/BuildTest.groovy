@@ -22,6 +22,7 @@ import hudson.model.Result
 import hudson.model.ParametersAction
 import hudson.model.AbstractBuild
 import hudson.model.Action
+import static hudson.model.Result.SUCCESS
 
 class BuildTest extends DSLTestCase {
 
@@ -58,7 +59,6 @@ class BuildTest extends DSLTestCase {
         assertHasParameter(build, "param2", "two")
     }
 
-
     def failBuild = """
         flow {
             build("willFail")
@@ -82,8 +82,8 @@ class BuildTest extends DSLTestCase {
 
     public void testBuildWithReturn() {
         def job1 = createJob("job1")
-        def ret = run(returnBuild)
+        def run = run(returnBuild)
         assertSuccess(job1)
-        assert Result.SUCCESS == ret
+        assert SUCCESS == run.result
     }
 }

@@ -22,6 +22,9 @@ import java.util.concurrent.Future
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
+import static hudson.model.Result.SUCCESS
+import com.cloudbees.plugins.flow.FlowRun
+import com.cloudbees.plugins.flow.FlowCause
 
 public class FlowDSL {
 
@@ -32,10 +35,22 @@ public class FlowDSL {
         return emc
     }
 
-    def Result executeFlowScript(String dsl, Cause cause) {
+    def Result executeFlowScript(FlowRun flowRun, String dsl) {
         // TODO : add restrictions for System.exit, etc ...
-        FlowDelegate flow = new FlowDelegate(cause)
-        Script dslScript = new GroovyShell().parse(dsl)
+        FlowDelegate flow = new FlowDelegate(flowRun)
+
+        // Retrieve the upstream build if the flow was triggered by another job
+        AbstractBuild upstream = null;
+        flowRun.causes.each{ cause -> 
+            if (cause instanceof Cause.UpstreamCause) {
+                Job job = Jenkins.instance.getItemByFullName(cause.upstreamProject)
+                upstream = job?.getBuildByNumber(cause.upstreamBuild)
+                // TODO handle matrix jobs ?
+            }
+        }
+        
+        def binding = new Binding([upstream: upstream])
+        Script dslScript = new GroovyShell(binding).parse(dsl)
         dslScript.metaClass = createEMC(dslScript.class, {
             ExpandoMetaClass emc ->
             emc.flow = {
@@ -63,10 +78,12 @@ public class FlowDelegate {
     private ThreadLocal<List<String>> failuresContext = new ThreadLocal<List<String>>()
     private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
 
-    def Cause cause      // TODO : enhance cause
+    def List<Cause> causes
+    def FlowRun flowRun
 
-    public FlowDelegate(Cause c) {
-        cause = c
+    public FlowDelegate(FlowRun flowRun) {
+        this.flowRun = flowRun
+        causes = flowRun.causes
         parallel.set(false)
         parallelJobs.set(new ArrayList<String>())
         failuresContext.set(new ArrayList<String>())
@@ -74,9 +91,9 @@ public class FlowDelegate {
     }
 
     def failed() {
-        Result r = Result.SUCCESS
+        Result r = SUCCESS
         if (failuresContext.get().isEmpty()) {
-            return Result.SUCCESS
+            return SUCCESS
         }
         failuresContext.get().each { Result res ->
             if (res.isWorseThan(r)) {
@@ -87,9 +104,7 @@ public class FlowDelegate {
     }
 
     def build(String jobName) {
-        if (failuresContext.get().isEmpty()) {
-            executeJenkinsJobWithName(jobName);
-        }
+        executeJenkinsJobWithName(jobName);
     }
 
     def build(Map args, String jobName) {
@@ -124,7 +139,7 @@ public class FlowDelegate {
             parallel.set(false);
             results.values().each {
                 AbstractBuild<?, ?> build = it.future().get()
-                if (build.getResult() != Result.SUCCESS) {
+                if (build.getResult() != SUCCESS) {
                     failuresContext.get().add(it.result())
                 }
             }
@@ -182,15 +197,13 @@ public class FlowDelegate {
     }
 
     private def executeJenkinsJobWithName(String name) {
-        if (failuresContext.get().isEmpty()) {
-            return executeJenkinsJobWithNameAndArgs(name, [:])
-        }
+        return executeJenkinsJobWithNameAndArgs(name, [:])
     }
 
     private def executeJenkinsJobWithNameAndArgs(String name, Map args) {
         if (failuresContext.get().isEmpty()) {
             // ask for job with name ${name}
-            JobInvocation job = findJob(name, args, cause)
+            JobInvocation job = new JobInvocation(name, args, new FlowCause(flowRun))
             if (parallel.get()) {
                 // if parallel enabled, push the job in a threadlocal list and let other run it for you
                 job.runAndContinue()
@@ -198,15 +211,11 @@ public class FlowDelegate {
             } else {
                 job.runAndWait()
             }
-            if (job.result() != Result.SUCCESS) {
+            if (job.result() != SUCCESS) {
                 failuresContext.get().add(job.result())
             }
             return job;
         }
-    }
-
-    private def findJob(String name, Map args, Cause cause) {
-        return new JobInvocation(name, args, cause)
     }
 
     private def cleanAfterRun() {
@@ -234,7 +243,7 @@ public class JobInvocation {
     def Cause cause
     def AbstractProject<?, ? extends AbstractBuild<?, ?>> project
     def AbstractBuild build
-    def Result result = Result.SUCCESS
+    def Result result = SUCCESS
     def Future<? extends AbstractBuild<?, ?>> future
 
     // TODO : add helpers for manipulation inside DSL
