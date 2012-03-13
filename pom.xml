@@ -98,6 +98,11 @@
         	<version>1.8.5</version>
         	<scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jgrapht</groupId>
+            <artifactId>jgrapht</artifactId>
+            <version>0.7.3</version>
+        </dependency>
     </dependencies>
   
   <repositories>

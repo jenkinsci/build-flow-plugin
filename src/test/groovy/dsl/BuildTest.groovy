@@ -17,45 +17,59 @@
 
 package dsl
 
-import com.cloudbees.plugins.flow.JobNotFoundException
-import hudson.model.Result
-import hudson.model.ParametersAction
-import hudson.model.AbstractBuild
-import hudson.model.Action
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
+import hudson.model.Job
 
 class BuildTest extends DSLTestCase {
 
-    def successBuild =  """    build("job1") """
-
     public void testUnknownJob() {
-        def run = run(successBuild)
+        def run = run("""
+            build("unknown")
+        """)
         assert FAILURE == run.result
     }
 
-    public void testBuildWithoutReturn() {
-        def job1 = createJob("job1")
-        def run = run(successBuild)
+    public void testSingleBuild() {
+        Job job1 = createJob("job1")
+        def run = run("""
+            build("job1")
+        """)
         assert SUCCESS == run.result
         assertSuccess(job1)
     }
 
-    def successBuildParam =  """    build("job1", param1: "one", param2: "two") """
+    public void testSequentialBuilds() {
+        Job job1 = createJob("job1")
+        Job job2 = createJob("job2")
+        Job job3 = createJob("job3")
+        def run = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+        """)
+        assert SUCCESS == run.result
+        assertSuccess(job1)
+        assertSuccess(job2)
+        assertSuccess(job3)
+    }
 
     public void testBuildWithParams() {
-        def job1 = createJob("job1")
-        run(successBuildParam)
-
+        Job job1 = createJob("job1")
+        run("""
+            build("job1", param1: "one", param2: "two")
+        """)
         def build = assertSuccess(job1)
         assertHasParameter(build, "param1", "one")
         assertHasParameter(build, "param2", "two")
     }
 
-    def failBuild = """    build("willFail") """
+    def failBuild = """
+        build("willFail")
+    """
 
     public void testBuildWithoutReturnFailed() {
-        def willFail = createFailJob("willFail");
+        Job willFail = createFailJob("willFail");
         run(failBuild)
         assertFailure(willFail)
     }
@@ -68,7 +82,7 @@ class BuildTest extends DSLTestCase {
     """
 
     public void testBuildWithReturn() {
-        def job1 = createJob("job1")
+        Job job1 = createJob("job1")
         def run = run(returnBuild)
         assertSuccess(job1)
         assert SUCCESS == run.result

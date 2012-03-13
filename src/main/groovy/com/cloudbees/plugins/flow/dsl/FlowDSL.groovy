@@ -25,7 +25,6 @@ import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import com.cloudbees.plugins.flow.FlowRun
 import com.cloudbees.plugins.flow.FlowCause
-import org.omg.PortableInterceptor.SUCCESSFUL
 
 public class FlowDSL {
 
@@ -36,7 +35,7 @@ public class FlowDSL {
         return emc
     }
 
-    def Result executeFlowScript(FlowRun flowRun, String dsl) {
+    def void executeFlowScript(FlowRun flowRun, String dsl) {
         // TODO : add restrictions for System.exit, etc ...
         FlowDelegate flow = new FlowDelegate(flowRun)
 
@@ -69,10 +68,11 @@ public class FlowDSL {
                 cl()
             }
         })
-        dslScript.run()
-        def ret = flow.failed()
-        flow.cleanAfterRun()
-        return ret
+        try {
+            dslScript.run()
+        } finally {
+            flow.cleanAfterRun()
+        }
     }
 
     // TODO define a parseFlowScript to validate flow DSL and maintain jobs dependencygraph
@@ -95,17 +95,9 @@ public class FlowDelegate {
         retryContext.set(false)
     }
 
-    def failed() {
-        Result r = SUCCESS
-        if (failuresContext.get().isEmpty()) {
-            return SUCCESS
-        }
-        failuresContext.get().each { Result res ->
-            if (res.isWorseThan(r)) {
-                r = res
-            }
-        }
-        return r
+    def fail() {
+        // Stop the flow execution
+        throw new InterruptedException()
     }
 
     def build(String jobName) {
@@ -165,15 +157,14 @@ public class FlowDelegate {
     }
 
     private def executeJenkinsJobWithNameAndArgs(String name, Map args) {
-        if (failuresContext.get().isEmpty()) {
-            // ask for job with name ${name}
-            JobInvocation job = new JobInvocation(name, args, new FlowCause(flowRun))
-            job.runAndWait()
-            if (job.result() != SUCCESS) {
-                failuresContext.get().add(job.result())
-            }
-            return job;
+        // ask for job with name ${name}
+        JobInvocation job = new JobInvocation(name, args, new FlowCause(flowRun))
+        job.runAndWait()
+        flowRun.addBuild(job.build)
+        if (job.result.isWorseThan(SUCCESS)) {
+            fail();
         }
+        return job;
     }
 
     private def cleanAfterRun() {
@@ -208,7 +199,7 @@ public class JobInvocation {
         this.name = name
         this.args = args
         this.cause = cause
-        Item item = Jenkins.getInstance().getItem(name);
+        Item item = Jenkins.getInstance().getItemByFullName(name);
         if (item instanceof AbstractProject) {
             project = (AbstractProject<?, ? extends AbstractBuild<?,?>>) item;
         } else {

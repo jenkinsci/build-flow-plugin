@@ -49,7 +49,7 @@ class RetryTest extends DSLTestCase {
         def ret = run(retryBuild)
         
         assertRan(job1, 3, FAILURE)
-        assert SUCCESS == ret.result // TODO : should return failure
+        assert FAILURE == ret.result
     }
     
     def retryGuardBuild =  """
@@ -72,7 +72,7 @@ class RetryTest extends DSLTestCase {
         assert SUCCESS == ret.result // TODO : should return failure
     }
 
-    def retryGuardParBuild =  """
+    /*def retryGuardParBuild =  """
         def a = 0, b = 0, c = 0
         3.times retry {
             guard {
@@ -103,7 +103,7 @@ class RetryTest extends DSLTestCase {
         def jobs = createJobs(["job1", "job2"])
         def ret = run(retryGuardBuild)
         assert SUCCESS == ret.result // TODO : should return failure
-    }
+    }*/
 
     private void assertRan(Job job, int times, Result result) {
         assert job.builds.size() == times

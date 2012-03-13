@@ -18,12 +18,14 @@
 package com.cloudbees.plugins.flow;
 
 import com.cloudbees.plugins.flow.dsl.FlowDSL;
+import edu.washington.cac.nms.alertpub.DirectedAcyclicGraph;
 import hudson.model.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Logger;
-import jenkins.model.Jenkins;
+
+import org.jgrapht.DirectedGraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
@@ -35,10 +37,16 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
 	private String dsl;
+    
+    private DirectedGraph<AbstractBuild<?,?>, String> builds = new SimpleDirectedGraph<AbstractBuild<?,?>, String>(String.class);
+    
+    private transient ThreadLocal<AbstractBuild<?,?>> local = new ThreadLocal<AbstractBuild<?,?>>();
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();
+        this.builds.addVertex(this); // Initial vertex for the build DAG
+        local.set(this);
     }
 
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
@@ -49,6 +57,51 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     public BuildFlow getBuildFlow() {
         return project;
     }
+
+    public void addBuild(AbstractBuild<?,?> build) throws DirectedAcyclicGraph.CycleFoundException {
+        AbstractBuild<?, ?> from = local.get();
+        builds.addVertex(build);
+        String edge = from.toString() + " => " + build.toString();
+        LOGGER.fine("added build to execution graph " + edge);
+        builds.addEdge(from, build, edge);
+        local.set(build);
+    }
+
+    /**
+     * Compute the result of the flow execution by combining all results for triggered jobs
+     */
+    private void computeResult() {
+        Result r = Result.SUCCESS;
+        combineWithOutgoing(r, this);
+        setResult(r);
+    }
+
+    /**
+     * Compute the result for the flow from the local execution point.
+     * Designed for use by the DSL
+     */
+    public Result getLocalResult() {
+        Result r = Result.SUCCESS;
+        combineWithIncoming(r, local.get());
+        return r;
+    }
+    
+    private void combineWithOutgoing(Result r, AbstractBuild build) {
+        r.combine(build.getResult());
+        for (String edge : builds.outgoingEdgesOf(build)) {
+            build = builds.getEdgeTarget(edge);
+            combineWithOutgoing(r, build);
+        }
+    }
+
+    private void combineWithIncoming(Result r, AbstractBuild build) {
+        r.combine(build.getResult());
+        for (String edge : builds.incomingEdgesOf(build)) {
+            build = builds.getEdgeSource(edge);
+            combineWithIncoming(r, build);
+        }
+    }
+
 
     @Override
     public void run() {
@@ -68,15 +121,14 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         }
 
         protected Result doRun(BuildListener listener) throws Exception {
-            Result r = null;
             try {
-                r = new FlowDSL().executeFlowScript(FlowRun.this, dsl);
+                setResult(Result.SUCCESS);
+                new FlowDSL().executeFlowScript(FlowRun.this, dsl);
+                computeResult();
             } catch (Exception e) {
-                r = Executor.currentExecutor().abortResult();
+                setResult(Executor.currentExecutor().abortResult());
                 throw e;
             } finally {
-                // TODO : do we need this ?
-                if (r != null) setResult(r);
                 boolean failed=false;
                 for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
                     if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
@@ -85,7 +137,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                 }
                 if (failed) return Result.FAILURE;
             }
-            return r;
+            return getResult();
         }
 
         @Override
@@ -98,4 +150,5 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         }
 
     }
+
 }
