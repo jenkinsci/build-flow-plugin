@@ -82,8 +82,6 @@ public class FlowDelegate {
 
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
 
-    private ThreadLocal<Boolean> parallel = new ThreadLocal<Boolean>()
-    private ThreadLocal<List<JobInvocation>> parallelJobs = new ThreadLocal<List<JobInvocation>>()
     private ThreadLocal<List<Result>> failuresContext = new ThreadLocal<List<Result>>()
     private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
 
@@ -93,8 +91,6 @@ public class FlowDelegate {
     public FlowDelegate(FlowRun flowRun) {
         this.flowRun = flowRun
         causes = flowRun.causes
-        parallel.set(false)
-        parallelJobs.set(new ArrayList<String>())
         failuresContext.set(new ArrayList<Result>())
         retryContext.set(false)
     }
@@ -122,44 +118,7 @@ public class FlowDelegate {
         }
     }
 
-    def parallel(closure) {
-        if (failuresContext.get().isEmpty()) {
-            Map<String, JobInvocation> results = new HashMap<String, JobInvocation>() // TODO : return an enhanced map
-            List<JobInvocation> oldJobs = new ArrayList<JobInvocation>()
-            if (parallel.get()) {
-                oldJobs = parallelJobs.get()
-                parallelJobs.set(new ArrayList<JobInvocation>())
-            }
-            if (parallel.get()) {
-                throw new RuntimeException("You can't use 'parallel' inside a 'parallel' block")
-            }
-            parallel.set(true);
-            LOGGER.fine("Parallel execution {")
-            closure()
-            for (JobInvocation job : parallelJobs.get()) {
-                results.put(job.name, job)//job.runAndContinue())
-            }
-            LOGGER.fine("}")
-            LOGGER.fine("Waiting for jobs : ${parallelJobs.get()}")
-            parallelJobs.get().clear()
-            if (!oldJobs.isEmpty()) {
-                parallelJobs.set(oldJobs)
-            }
-            parallel.set(false);
-            results.values().each {
-                AbstractBuild<?, ?> build = it.future().get()
-                if (build.getResult() != SUCCESS) {
-                    failuresContext.get().add(it.result())
-                }
-            }
-            return results
-        }
-    }
-
     def guard(guardedClosure) {
-        if (parallel.get() == true) {
-            throw new RuntimeException("You can't use 'guard' inside parallel bloc.")
-        }
         def deleg = this;
         [ rescue : { rescueClosure ->
             rescueClosure.delegate = deleg
@@ -187,9 +146,6 @@ public class FlowDelegate {
         return retry(SUCCESS, retryClosure)
     }
     def retry(Result result, retryClosure) {
-        if (parallel.get() == true) {
-            throw new RuntimeException("You can't use 'retry' inside parallel bloc.")
-        }
         retryContext.set(true)
         return {
             if (retryContext.get()) {
@@ -212,13 +168,7 @@ public class FlowDelegate {
         if (failuresContext.get().isEmpty()) {
             // ask for job with name ${name}
             JobInvocation job = new JobInvocation(name, args, new FlowCause(flowRun))
-            if (parallel.get()) {
-                // if parallel enabled, push the job in a threadlocal list and let other run it for you
-                job.runAndContinue()
-                parallelJobs.get().add(job)
-            } else {
-                job.runAndWait()
-            }
+            job.runAndWait()
             if (job.result() != SUCCESS) {
                 failuresContext.get().add(job.result())
             }
@@ -227,8 +177,6 @@ public class FlowDelegate {
     }
 
     private def cleanAfterRun() {
-        parallel.remove()
-        parallelJobs.remove()
         failuresContext.remove()
         retryContext.remove()
     }
