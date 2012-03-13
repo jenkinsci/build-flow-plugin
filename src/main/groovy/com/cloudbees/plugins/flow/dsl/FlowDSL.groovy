@@ -82,7 +82,6 @@ public class FlowDelegate {
 
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
 
-    private ThreadLocal<List<Result>> failuresContext = new ThreadLocal<List<Result>>()
     private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
 
     def List<Cause> causes
@@ -91,7 +90,6 @@ public class FlowDelegate {
     public FlowDelegate(FlowRun flowRun) {
         this.flowRun = flowRun
         causes = flowRun.causes
-        failuresContext.set(new ArrayList<Result>())
         retryContext.set(false)
     }
 
@@ -101,13 +99,18 @@ public class FlowDelegate {
     }
 
     def build(String jobName) {
-        executeJenkinsJobWithName(jobName);
+        build([:], jobName)
     }
 
     def build(Map args, String jobName) {
-        if (failuresContext.get().isEmpty()) {
-            executeJenkinsJobWithNameAndArgs(jobName, args);
+        // ask for job with name ${name}
+        JobInvocation job = new JobInvocation(jobName, args, new FlowCause(flowRun))
+        job.runAndWait()
+        flowRun.addBuild(job.build)
+        if (job.result.isWorseThan(SUCCESS)) {
+            fail();
         }
+        return job;
     }
 
     def guard(guardedClosure) {
@@ -115,25 +118,20 @@ public class FlowDelegate {
         [ rescue : { rescueClosure ->
             rescueClosure.delegate = deleg
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
-            if (failuresContext.get().isEmpty()) {
-                //List<String> oldContext = failuresContext.get()
-                failuresContext.set(new ArrayList<String>())
-                LOGGER.fine("Guarded {")
-                try {
-                    guardedClosure()
-                } finally {
-                    List<String> oldContext = failuresContext.get()
-                    failuresContext.set(new ArrayList<String>())
-                    LOGGER.fine("} Rescuing {")
-                    rescueClosure()
-                    LOGGER.fine("}")
-                    failuresContext.set(oldContext)
-                }
+
+            LOGGER.fine("Guarded {")
+            try {
+                guardedClosure()
+            } finally {
+
+                LOGGER.fine("} Rescuing {")
+                rescueClosure()
+                LOGGER.fine("}")
             }
         } ]
     }
 
-    
+
     def retry(retryClosure) {
         return retry(SUCCESS, retryClosure)
     }
@@ -143,32 +141,14 @@ public class FlowDelegate {
             if (retryContext.get()) {
                 retryContext.set(false)
                 retryClosure()
-                if (!failuresContext.get().isEmpty()) {
+                if (flowRun.localResult.isWorseThan(SUCCESS)) {
                     retryContext.set(true)
-                    failuresContext.get().clear()
-                    // TODO : here handle failure context cleaning
                 }
             }
         }
     }
 
-    private def executeJenkinsJobWithName(String name) {
-        return executeJenkinsJobWithNameAndArgs(name, [:])
-    }
-
-    private def executeJenkinsJobWithNameAndArgs(String name, Map args) {
-        // ask for job with name ${name}
-        JobInvocation job = new JobInvocation(name, args, new FlowCause(flowRun))
-        job.runAndWait()
-        flowRun.addBuild(job.build)
-        if (job.result.isWorseThan(SUCCESS)) {
-            fail();
-        }
-        return job;
-    }
-
     private def cleanAfterRun() {
-        failuresContext.remove()
         retryContext.remove()
     }
 
