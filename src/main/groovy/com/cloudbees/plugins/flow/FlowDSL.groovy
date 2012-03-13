@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.cloudbees.plugins.flow.dsl
+package com.cloudbees.plugins.flow
 
 import com.cloudbees.plugins.flow.JobNotFoundException
 import java.util.concurrent.Future
@@ -25,6 +25,7 @@ import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import com.cloudbees.plugins.flow.FlowRun
 import com.cloudbees.plugins.flow.FlowCause
+import com.cloudbees.plugins.flow.FlowExecutionFailureException
 
 public class FlowDSL {
 
@@ -95,7 +96,7 @@ public class FlowDelegate {
 
     def fail() {
         // Stop the flow execution
-        throw new InterruptedException()
+        throw new FlowExecutionFailureException()
     }
 
     def build(String jobName) {

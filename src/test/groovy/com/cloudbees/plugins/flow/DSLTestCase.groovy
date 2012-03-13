@@ -15,9 +15,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
-import com.cloudbees.plugins.flow.dsl.FlowDSL
+import com.cloudbees.plugins.flow.FlowDSL
 import hudson.model.Result
 import org.jvnet.hudson.test.FailureBuilder
 import org.jvnet.hudson.test.HudsonTestCase
@@ -33,8 +33,8 @@ import java.util.logging.Logger
 import java.util.logging.Level
 import java.util.logging.Handler
 import java.util.logging.ConsoleHandler
-import com.cloudbees.plugins.flow.dsl.JobInvocation
-import com.cloudbees.plugins.flow.dsl.FlowDelegate
+import com.cloudbees.plugins.flow.JobInvocation
+import com.cloudbees.plugins.flow.FlowDelegate
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -71,6 +71,10 @@ abstract class DSLTestCase extends HudsonTestCase {
     def assertSuccess = { job ->
         assert SUCCESS == job.builds.lastBuild.result
         return job.builds.lastBuild
+    }
+
+    def assertDidNotRun = { job ->
+        assert 0 == job.builds.size()
     }
 
     def assertAllSuccess = { jobs ->

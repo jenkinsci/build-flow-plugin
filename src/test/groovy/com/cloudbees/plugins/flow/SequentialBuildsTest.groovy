@@ -15,58 +15,39 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
-import hudson.model.Result
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
 
-class MultipleBuildsTest extends DSLTestCase {
+class SequentialBuildsTest extends DSLTestCase {
 
-    def successFlow =  """
-        build("job1")
-        build("job2")
-        build("job3")
-    """
-
-    public void testBuildsWithoutReturn() {
+    public void testSequentialBuilds() {
         def jobs = createJobs(["job1", "job2", "job3"])
-        def ret = run(successFlow)
+        def run = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+        """)
         assertAllSuccess(jobs)
-        assert SUCCESS == ret.result
+        assert SUCCESS == run.result
     }
 
-    def failingFlow = """
-        build("job1")
-        build("job2")
-        build("job3")
-        build("willFail")
-    """
-
-    public void testBuildsWithoutReturnFailed() {
+    public void testSequentialBuildsWithFailure() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def willFail = createFailJob("willFail");
-        def ret = run(failingFlow)
+        def notRan = createJob("notRan")
+        def ret = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willFail")
+            build("notRan")
+        """)
         assertAllSuccess(jobs)
         assertFailure(willFail)
+        assertDidNotRun(notRan)
         assert FAILURE == ret.result
     }
 
-    def interruptedByFailureFlow = """
-        build("job1")
-        build("willFail")
-        build("job2")
-        build("job3")
-    """
-
-    public void testBuildsWithoutReturnFailedAndDontContinue() {
-        def jobs = createJobs(["job1", "job2", "job3"])
-        def willFail = createFailJob("willFail");
-        def ret = run(interruptedByFailureFlow)
-        assertSuccess(jobs.get(0))
-        jobs.get(1).getBuilds().isEmpty()
-        jobs.get(2).getBuilds().isEmpty()
-        assertFailure(willFail)
-        assert FAILURE == ret.result
-    }
 }

@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
 import hudson.model.Result
 import static hudson.model.Result.SUCCESS
@@ -69,7 +69,7 @@ class RetryTest extends DSLTestCase {
 
         assertRan(fail, 3, FAILURE)
         assertRan(rescue, 3, SUCCESS)
-        assert SUCCESS == ret.result // TODO : should return failure
+        assert FAILURE == ret.result
     }
 
     /*def retryGuardParBuild =  """

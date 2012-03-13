@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
@@ -35,56 +35,45 @@ class BuildTest extends DSLTestCase {
         def run = run("""
             build("job1")
         """)
-        assert SUCCESS == run.result
         assertSuccess(job1)
-    }
-
-    public void testSequentialBuilds() {
-        Job job1 = createJob("job1")
-        Job job2 = createJob("job2")
-        Job job3 = createJob("job3")
-        def run = run("""
-            build("job1")
-            build("job2")
-            build("job3")
-        """)
         assert SUCCESS == run.result
-        assertSuccess(job1)
-        assertSuccess(job2)
-        assertSuccess(job3)
     }
 
     public void testBuildWithParams() {
         Job job1 = createJob("job1")
-        run("""
-            build("job1", param1: "one", param2: "two")
+        def run = run("""
+            build("job1",
+                  param1: "one",
+                  param2: "two")
         """)
         def build = assertSuccess(job1)
         assertHasParameter(build, "param1", "one")
         assertHasParameter(build, "param2", "two")
+        assert SUCCESS == run.result
     }
 
-    def failBuild = """
-        build("willFail")
-    """
-
-    public void testBuildWithoutReturnFailed() {
+    public void testJobFailure() {
         Job willFail = createFailJob("willFail");
-        run(failBuild)
+        def run = run("""
+            build("willFail")
+        """)
         assertFailure(willFail)
+        assert SUCCESS == run.result
     }
 
-    def returnBuild =  """
-        a = build("job1")
-        assert a != null
-        assert a.result == SUCCESS
-        assert a.name == "job1"
-    """
-
-    public void testBuildWithReturn() {
+    public void testParametersFromBuild() {
         Job job1 = createJob("job1")
-        def run = run(returnBuild)
+        Job job2 = createJob("job2")
+        def run = run("""
+            b = build("job1")
+            build("job2",
+                  param1: b.result.name,
+                  param2: b.name)
+        """)
         assertSuccess(job1)
+        def build = assertSuccess(job2)
+        assertHasParameter(build, "param1", "SUCCESS")
+        assertHasParameter(build, "param2", "job1")
         assert SUCCESS == run.result
     }
 }

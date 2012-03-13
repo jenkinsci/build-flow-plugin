@@ -15,39 +15,49 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
-import hudson.model.Result
 import static hudson.model.Result.SUCCESS
+import hudson.model.Job
+import static hudson.model.Result.FAILURE
 
 class GuardTest extends DSLTestCase {
 
-    def successBuild =  """
-        guard {
-            build("job1")
-            build("job2")
-            build("job3")
-        } rescue {
-            build("clean")
-        }
-    """
-
     public void testGuardPass() {
         def jobs = createJobs(["job1", "job2", "job3", "clean"])
-        def ret = run(successBuild)
+        def ret = run("""
+            guard {
+                build("job1")
+                build("job2")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """)
         assertAllSuccess(jobs)
         assert SUCCESS == ret.result
     }
 
-    public void testGuardWithFail() {
-        def jobs = createJobs(["job1", "job3", "clean"])
-        def failure = createFailJob("job2")
-        def ret = run(successBuild)
+    /*public void testGuardWithFail() {
+        Job job1 = createJob("job1");
+        def failure = createFailJob("fails")
+        Job job3 = createJob("job3");
+        Job clean = createJob("clean");
+
+        def ret = run("""
+            guard {
+                build("job1")
+                build("fails")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """)
+        assertSuccess(job1)
         assertFailure(failure)
-        assertSuccess(jobs.get(0))
-        jobs.get(1).getBuilds().isEmpty()
-        assertSuccess(jobs.get(2))
-        assert SUCCESS == ret.result
+        assertDidNotRun(job3)
+        assertSuccess(clean)
+        assert FAILURE == ret.result
     }
 
      def successBuildPar =  """
@@ -110,5 +120,5 @@ class GuardTest extends DSLTestCase {
         def ret = run(successBuildParRetry)
         assertAllSuccess(jobs)
         assert SUCCESS == ret.result
-    }
+    }*/
 }

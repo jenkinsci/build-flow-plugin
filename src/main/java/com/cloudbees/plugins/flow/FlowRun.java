@@ -17,7 +17,6 @@
 
 package com.cloudbees.plugins.flow;
 
-import com.cloudbees.plugins.flow.dsl.FlowDSL;
 import edu.washington.cac.nms.alertpub.DirectedAcyclicGraph;
 import hudson.model.*;
 import java.io.File;
@@ -80,7 +79,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
      * Compute the result for the flow from the local execution point.
      * Designed for use by the DSL
      */
-    public Result getLocalResult() {
+    /* package */ Result getLocalResult() {
         Result r = Result.SUCCESS;
         combineWithIncoming(r, local.get());
         return r;
@@ -124,11 +123,8 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
             try {
                 setResult(Result.SUCCESS);
                 new FlowDSL().executeFlowScript(FlowRun.this, dsl);
-                computeResult();
-            } catch (Exception e) {
-                setResult(Executor.currentExecutor().abortResult());
-                throw e;
             } finally {
+                computeResult();
                 boolean failed=false;
                 for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
                     if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {

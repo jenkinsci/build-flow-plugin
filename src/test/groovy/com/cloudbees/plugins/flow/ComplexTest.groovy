@@ -15,13 +15,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
 import hudson.model.Cause
 import hudson.model.FreeStyleBuild
 import hudson.model.Job
-import hudson.model.Result
-import com.cloudbees.plugins.flow.FlowRun
+
 import static hudson.model.Result.SUCCESS
 
 public class ComplexTest extends DSLTestCase {

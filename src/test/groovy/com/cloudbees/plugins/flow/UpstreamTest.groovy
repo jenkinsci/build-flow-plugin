@@ -15,25 +15,30 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-package dsl
+package com.cloudbees.plugins.flow
 
 import hudson.model.Cause
-import hudson.model.Result
+
 import static hudson.model.Result.SUCCESS
+import hudson.model.Job
 
 class UpstreamTest extends DSLTestCase {
 
-    def successBuild =  """
-        assert upstream != null
-        assert upstream.parent.name == "root"
-        assert upstream.number == 1
-    """
-
     public void testUpstream() {
+
+        Job job1 = createJob("job1")
         def root = createFreeStyleProject("root").createExecutable()
         def cause = new Cause.UpstreamCause(root)
-        def ret = runWithCause(successBuild, cause)
-        assert SUCCESS == ret.result
+        def run = runWithCause("""
+            build("job1",
+                  param1: upstream.parent.name,
+                  param2: upstream.number)
+        """, cause)
+        def build = assertSuccess(job1)
+        assertHasParameter(build, "param1", "root")
+        assertHasParameter(build, "param2", "1")
+
+        assert SUCCESS == run.result
     }
 
 }
