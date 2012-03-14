@@ -35,6 +35,10 @@ import java.util.logging.Handler
 import java.util.logging.ConsoleHandler
 import com.cloudbees.plugins.flow.JobInvocation
 import com.cloudbees.plugins.flow.FlowDelegate
+import hudson.Launcher
+import hudson.model.BuildListener
+import hudson.tasks.Builder
+import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -50,9 +54,9 @@ abstract class DSLTestCase extends HudsonTestCase {
          return jobs
     }
 
-    def createFailJob = {String name ->
+    def createFailJob = {String name, int failures ->
         def job = createJob(name)
-        job.getBuildersList().add(new FailureBuilder())
+        job.getBuildersList().add(new ConfigurableFailureBuilder(failures));
         return job
     }
 

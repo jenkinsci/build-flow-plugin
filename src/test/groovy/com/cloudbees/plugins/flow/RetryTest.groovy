@@ -24,48 +24,55 @@ import hudson.model.Job
 
 class RetryTest extends DSLTestCase {
 
-    def successBuild =  """
-        3.times retry {
-            build("job1")
-        }
-    """
-
     public void testNoRetry() {
         Job job1 = createJob("job1")
-        def ret = run(successBuild)
-        assertSuccess(job1)
-        assert job1.builds.size() == 1
+        def ret = run("""
+            retry(3) {
+                build("job1")
+            }
+        """)
+        assertRan(job1, 1, SUCCESS)
         assert SUCCESS == ret.result
     }
 
-    def retryBuild =  """
-        3.times retry {
-            build("willFail")
-        }
-    """
-
     public void testRetry() {
         def job1 = createFailJob("willFail")
-        def ret = run(retryBuild)
-        
+        def ret = run("""
+            retry(3) {
+                build("willFail")
+            }
+        """)
         assertRan(job1, 3, FAILURE)
         assert FAILURE == ret.result
     }
-    
-    def retryGuardBuild =  """
-        3.times retry {
-            guard {
-                build("willFail")
-            } rescue {
-                build("rescue")
-            }
-        }
-    """
 
+    public void testRetryThenSuccess() {
+        def job1 = createFailJob("willFail2times", 2)
+        def ret = run("""
+            retry(3) {
+                build("willFail2times")
+            }
+        """)
+        assert job1.builds.size() == 3
+        assert job1.builds[2].result == FAILURE
+        assert job1.builds[1].result == FAILURE
+        assert job1.builds[0].result == SUCCESS
+
+        assert SUCCESS == ret.result
+    }
+    
     public void testRetryGuard() {
         def fail = createFailJob("willFail")
         def rescue = createJob("rescue")
-        def ret = run(retryGuardBuild)
+        def ret = run("""
+            retry(3) {
+                guard {
+                    build("willFail")
+                } rescue {
+                    build("rescue")
+                }
+            }
+        """)
 
         assertRan(fail, 3, FAILURE)
         assertRan(rescue, 3, SUCCESS)

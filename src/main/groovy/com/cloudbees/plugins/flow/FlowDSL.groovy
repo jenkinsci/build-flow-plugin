@@ -17,15 +17,11 @@
 
 package com.cloudbees.plugins.flow
 
-import com.cloudbees.plugins.flow.JobNotFoundException
 import java.util.concurrent.Future
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
 import static hudson.model.Result.SUCCESS
-import com.cloudbees.plugins.flow.FlowRun
-import com.cloudbees.plugins.flow.FlowCause
-import com.cloudbees.plugins.flow.FlowExecutionFailureException
 
 public class FlowDSL {
 
@@ -96,7 +92,7 @@ public class FlowDelegate {
 
     def fail() {
         // Stop the flow execution
-        throw new FlowExecutionFailureException()
+        throw new JobExecutionFailureException()
     }
 
     def build(String jobName) {
@@ -104,13 +100,13 @@ public class FlowDelegate {
     }
 
     def build(Map args, String jobName) {
+        if (flowRun.localResult.isWorseThan(SUCCESS)) {
+            fail()
+        }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(jobName, args, new FlowCause(flowRun))
         job.runAndWait()
         flowRun.addBuild(job.build)
-        if (job.result.isWorseThan(SUCCESS)) {
-            fail();
-        }
         return job;
     }
 
@@ -124,7 +120,6 @@ public class FlowDelegate {
             try {
                 guardedClosure()
             } finally {
-
                 LOGGER.fine("} Rescuing {")
                 rescueClosure()
                 LOGGER.fine("}")
@@ -133,18 +128,13 @@ public class FlowDelegate {
     }
 
 
-    def retry(retryClosure) {
-        return retry(SUCCESS, retryClosure)
-    }
-    def retry(Result result, retryClosure) {
-        retryContext.set(true)
-        return {
-            if (retryContext.get()) {
-                retryContext.set(false)
-                retryClosure()
-                if (flowRun.localResult.isWorseThan(SUCCESS)) {
-                    retryContext.set(true)
-                }
+    def retry(int attempts, retryClosure) {
+        Run origin = flowRun.localBuild
+        while( attempts-- > 0) {
+            flowRun.localBuild = origin
+            retryClosure()
+            if (flowRun.localResult.isBetterOrEqualTo(SUCCESS)) {
+                return;
             }
         }
     }

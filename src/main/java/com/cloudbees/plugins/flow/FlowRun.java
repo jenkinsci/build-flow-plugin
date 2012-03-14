@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 
+import static hudson.model.Result.SUCCESS;
+
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
  *
@@ -37,9 +39,9 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     
 	private String dsl;
     
-    private DirectedGraph<AbstractBuild<?,?>, String> builds = new SimpleDirectedGraph<AbstractBuild<?,?>, String>(String.class);
+    private DirectedGraph<Run<?,?>, String> builds = new SimpleDirectedGraph<Run<?,?>, String>(String.class);
     
-    private transient ThreadLocal<AbstractBuild<?,?>> local = new ThreadLocal<AbstractBuild<?,?>>();
+    private transient ThreadLocal<Run<?,?>> local = new ThreadLocal<Run<?,?>>();
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
@@ -57,8 +59,16 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         return project;
     }
 
+    /* package */ Run<?,?> getLocalBuild() {
+        return local.get();
+    }
+
+    /* package */ void setLocalBuild(Run<?,?> run) {
+        local.set(run);
+    }
+
     public void addBuild(AbstractBuild<?,?> build) throws DirectedAcyclicGraph.CycleFoundException {
-        AbstractBuild<?, ?> from = local.get();
+        Run<?, ?> from = local.get();
         builds.addVertex(build);
         String edge = from.toString() + " => " + build.toString();
         LOGGER.fine("added build to execution graph " + edge);
@@ -70,9 +80,8 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
      * Compute the result of the flow execution by combining all results for triggered jobs
      */
     private void computeResult() {
-        Result r = Result.SUCCESS;
-        combineWithOutgoing(r, this);
-        setResult(r);
+        // Result r = combineWithOutgoing(SUCCESS, this);
+        setResult(getLocalResult());
     }
 
     /**
@@ -80,25 +89,25 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
      * Designed for use by the DSL
      */
     /* package */ Result getLocalResult() {
-        Result r = Result.SUCCESS;
-        combineWithIncoming(r, local.get());
-        return r;
+        return combineWithIncoming(SUCCESS, local.get());
     }
     
-    private void combineWithOutgoing(Result r, AbstractBuild build) {
-        r.combine(build.getResult());
+    private Result combineWithOutgoing(Result r, Run build) {
+        r = r.combine(build.getResult());
         for (String edge : builds.outgoingEdgesOf(build)) {
             build = builds.getEdgeTarget(edge);
-            combineWithOutgoing(r, build);
+            r = combineWithOutgoing(r, build);
         }
+        return r;
     }
 
-    private void combineWithIncoming(Result r, AbstractBuild build) {
-        r.combine(build.getResult());
+    private Result combineWithIncoming(Result r, Run build) {
+        r = r.combine(build.getResult());
         for (String edge : builds.incomingEdgesOf(build)) {
             build = builds.getEdgeSource(edge);
-            combineWithIncoming(r, build);
+            r = combineWithIncoming(r, build);
         }
+        return r;
     }
 
 
@@ -121,7 +130,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
         protected Result doRun(BuildListener listener) throws Exception {
             try {
-                setResult(Result.SUCCESS);
+                setResult(SUCCESS);
                 new FlowDSL().executeFlowScript(FlowRun.this, dsl);
             } finally {
                 computeResult();
