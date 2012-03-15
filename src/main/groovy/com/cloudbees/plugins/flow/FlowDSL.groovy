@@ -68,7 +68,7 @@ public class FlowDSL {
         try {
             dslScript.run()
         } finally {
-            flow.cleanAfterRun()
+            //
         }
     }
 
@@ -79,15 +79,12 @@ public class FlowDelegate {
 
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
 
-    private ThreadLocal<Boolean> retryContext = new ThreadLocal<Boolean>()
-
     def List<Cause> causes
     def FlowRun flowRun
 
     public FlowDelegate(FlowRun flowRun) {
         this.flowRun = flowRun
         causes = flowRun.causes
-        retryContext.set(false)
     }
 
     def fail() {
@@ -100,13 +97,14 @@ public class FlowDelegate {
     }
 
     def build(Map args, String jobName) {
-        if (flowRun.localResult.isWorseThan(SUCCESS)) {
+        if (flowRun.result.isWorseThan(SUCCESS)) {
             fail()
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(jobName, args, new FlowCause(flowRun))
         job.runAndWait()
         flowRun.addBuild(job.build)
+        flowRun.setResult(job.result)
         return job;
     }
 
@@ -116,31 +114,30 @@ public class FlowDelegate {
             rescueClosure.delegate = deleg
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
 
-            LOGGER.fine("Guarded {")
             try {
                 guardedClosure()
             } finally {
-                LOGGER.fine("} Rescuing {")
+                // Force result to SUCCESS so that rescue closure will execute
+                Result r = flowRun.result
+                flowRun.result = SUCCESS
                 rescueClosure()
-                LOGGER.fine("}")
+                // restore result, as the worst from guarded and rescue closures
+                flowRun.result = r.combine(flowRun.result)
             }
         } ]
     }
 
 
     def retry(int attempts, retryClosure) {
-        Run origin = flowRun.localBuild
+        Result origin = flowRun.result
         while( attempts-- > 0) {
-            flowRun.localBuild = origin
+            // Restore the pre-retry result state to ignore failures
+            flowRun.result = origin
             retryClosure()
-            if (flowRun.localResult.isBetterOrEqualTo(SUCCESS)) {
+            if (flowRun.result.isBetterOrEqualTo(SUCCESS)) {
                 return;
             }
         }
-    }
-
-    private def cleanAfterRun() {
-        retryContext.remove()
     }
 
     def propertyMissing(String name) {

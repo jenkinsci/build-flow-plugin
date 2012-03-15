@@ -24,24 +24,24 @@ import hudson.model.Job
 class BuildTest extends DSLTestCase {
 
     public void testUnknownJob() {
-        def run = run("""
+        def flow = run("""
             build("unknown")
         """)
-        assert FAILURE == run.result
+        assert FAILURE == flow.result
     }
 
     public void testSingleBuild() {
         Job job1 = createJob("job1")
-        def run = run("""
+        def flow = run("""
             build("job1")
         """)
         assertSuccess(job1)
-        assert SUCCESS == run.result
+        assert SUCCESS == flow.result
     }
 
     public void testBuildWithParams() {
         Job job1 = createJob("job1")
-        def run = run("""
+        def flow = run("""
             build("job1",
                   param1: "one",
                   param2: "two")
@@ -49,22 +49,52 @@ class BuildTest extends DSLTestCase {
         def build = assertSuccess(job1)
         assertHasParameter(build, "param1", "one")
         assertHasParameter(build, "param2", "two")
-        assert SUCCESS == run.result
+        assert SUCCESS == flow.result
     }
 
     public void testJobFailure() {
         Job willFail = createFailJob("willFail");
-        def run = run("""
+        def flow = run("""
             build("willFail")
         """)
         assertFailure(willFail)
-        assert SUCCESS == run.result
+        assert FAILURE == flow.result
+    }
+
+    public void testSequentialBuilds() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def flow = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+        """)
+        assertAllSuccess(jobs)
+        assert SUCCESS == flow.result
+        println flow.builds.edgeSet()
+    }
+
+    public void testSequentialBuildsWithFailure() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willFail = createFailJob("willFail")
+        def notRan = createJob("notRan")
+        def flow = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willFail")
+            build("notRan")
+        """)
+        assertAllSuccess(jobs)
+        assertFailure(willFail)
+        assertDidNotRun(notRan)
+        assert FAILURE == flow.result
+        println flow.builds.edgeSet()
     }
 
     public void testParametersFromBuild() {
         Job job1 = createJob("job1")
         Job job2 = createJob("job2")
-        def run = run("""
+        def flow = run("""
             b = build("job1")
             build("job2",
                   param1: b.result.name,
@@ -74,6 +104,6 @@ class BuildTest extends DSLTestCase {
         def build = assertSuccess(job2)
         assertHasParameter(build, "param1", "SUCCESS")
         assertHasParameter(build, "param2", "job1")
-        assert SUCCESS == run.result
+        assert SUCCESS == flow.result
     }
 }

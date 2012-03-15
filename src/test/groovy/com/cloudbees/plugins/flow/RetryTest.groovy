@@ -26,29 +26,29 @@ class RetryTest extends DSLTestCase {
 
     public void testNoRetry() {
         Job job1 = createJob("job1")
-        def ret = run("""
+        def flow = run("""
             retry(3) {
                 build("job1")
             }
         """)
         assertRan(job1, 1, SUCCESS)
-        assert SUCCESS == ret.result
+        assert SUCCESS == flow.result
     }
 
     public void testRetry() {
         def job1 = createFailJob("willFail")
-        def ret = run("""
+        def flow = run("""
             retry(3) {
                 build("willFail")
             }
         """)
         assertRan(job1, 3, FAILURE)
-        assert FAILURE == ret.result
+        assert FAILURE == flow.result
     }
 
     public void testRetryThenSuccess() {
         def job1 = createFailJob("willFail2times", 2)
-        def ret = run("""
+        def flow = run("""
             retry(3) {
                 build("willFail2times")
             }
@@ -58,14 +58,14 @@ class RetryTest extends DSLTestCase {
         assert job1.builds[1].result == FAILURE
         assert job1.builds[0].result == SUCCESS
 
-        assert SUCCESS == ret.result
-        println ret.builds.edgeSet()
+        assert SUCCESS == flow.result
+        println flow.builds.edgeSet()
     }
     
     public void testRetryGuard() {
         def fail = createFailJob("willFail")
         def rescue = createJob("rescue")
-        def ret = run("""
+        def flow = run("""
             retry(3) {
                 guard {
                     build("willFail")
@@ -77,8 +77,8 @@ class RetryTest extends DSLTestCase {
 
         assertRan(fail, 3, FAILURE)
         assertRan(rescue, 3, SUCCESS)
-        assert FAILURE == ret.result
-        println ret.builds.edgeSet()
+        assert FAILURE == flow.result
+        println flow.builds.edgeSet()
     }
 
     /*def retryGuardParBuild =  """

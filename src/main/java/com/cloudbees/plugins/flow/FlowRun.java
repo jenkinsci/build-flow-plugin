@@ -41,20 +41,20 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     private DirectedGraph<Run<?,?>, String> builds = new SimpleDirectedGraph<Run<?,?>, String>(String.class);
 
-    private transient ThreadLocal<Run<?,?>> local = new ThreadLocal<Run<?,?>>();
+    private transient ThreadLocal<Run<?,?>> last = new ThreadLocal<Run<?,?>>();
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();
         this.builds.addVertex(this); // Initial vertex for the build DAG
-        local.set(this);
+        last.set(this);
     }
 
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
         super(project, buildDir);
         this.dsl = project.getDsl();
         this.builds.addVertex(this); // Initial vertex for the build DAG
-        local.set(this);
+        last.set(this);
     }
 
     public DirectedGraph<Run<?, ?>, String> getBuilds() {
@@ -66,56 +66,33 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
 
     /* package */ Run<?,?> getLocalBuild() {
-        return local.get();
+        return last.get();
     }
 
     /* package */ void setLocalBuild(Run<?,?> run) {
-        local.set(run);
+        last.set(run);
     }
 
     public void addBuild(AbstractBuild<?,?> build) throws DirectedAcyclicGraph.CycleFoundException {
-        Run<?, ?> from = local.get();
+        Run<?, ?> from = last.get();
         builds.addVertex(build);
         String edge = from.toString() + " => " + build.toString();
         LOGGER.fine("added build to execution graph " + edge);
         builds.addEdge(from, build, edge);
-        local.set(build);
+        last.set(build);
     }
 
     /**
-     * Compute the result of the flow execution by combining all results for triggered jobs
+     * {Run#setResult} only let result get worst. For the build-flow we support result reset to manage
+     * retry or try+finally logic
      */
-    private void computeResult() {
-        // Result r = combineWithOutgoing(SUCCESS, this);
-        setResult(getLocalResult());
-    }
+    @Override
+    public void setResult(Result result) {
+        // result only can change when building
+        assert isBuilding();
 
-    /**
-     * Compute the result for the flow from the local execution point.
-     * Designed for use by the DSL
-     */
-    /* package */ Result getLocalResult() {
-        return combineWithIncoming(SUCCESS, local.get());
+        this.result = result;
     }
-    
-    private Result combineWithOutgoing(Result r, Run build) {
-        r = r.combine(build.getResult());
-        for (String edge : builds.outgoingEdgesOf(build)) {
-            build = builds.getEdgeTarget(edge);
-            r = combineWithOutgoing(r, build);
-        }
-        return r;
-    }
-
-    private Result combineWithIncoming(Result r, Run build) {
-        r = r.combine(build.getResult());
-        for (String edge : builds.incomingEdgesOf(build)) {
-            build = builds.getEdgeSource(edge);
-            r = combineWithIncoming(r, build);
-        }
-        return r;
-    }
-
 
     @Override
     public void run() {
@@ -139,7 +116,6 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                 setResult(SUCCESS);
                 new FlowDSL().executeFlowScript(FlowRun.this, dsl);
             } finally {
-                computeResult();
                 boolean failed=false;
                 for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
                     if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
