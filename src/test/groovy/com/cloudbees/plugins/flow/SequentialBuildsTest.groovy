@@ -31,11 +31,12 @@ class SequentialBuildsTest extends DSLTestCase {
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == run.result
+        println ret.builds.edgeSet()
     }
 
     public void testSequentialBuildsWithFailure() {
         def jobs = createJobs(["job1", "job2", "job3"])
-        def willFail = createFailJob("willFail");
+        def willFail = createFailJob("willFail")
         def notRan = createJob("notRan")
         def ret = run("""
             build("job1")
@@ -48,6 +49,7 @@ class SequentialBuildsTest extends DSLTestCase {
         assertFailure(willFail)
         assertDidNotRun(notRan)
         assert FAILURE == ret.result
+        println ret.builds.edgeSet()
     }
 
 }

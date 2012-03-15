@@ -59,6 +59,7 @@ class RetryTest extends DSLTestCase {
         assert job1.builds[0].result == SUCCESS
 
         assert SUCCESS == ret.result
+        println ret.builds.edgeSet()
     }
     
     public void testRetryGuard() {
@@ -77,6 +78,7 @@ class RetryTest extends DSLTestCase {
         assertRan(fail, 3, FAILURE)
         assertRan(rescue, 3, SUCCESS)
         assert FAILURE == ret.result
+        println ret.builds.edgeSet()
     }
 
     /*def retryGuardParBuild =  """

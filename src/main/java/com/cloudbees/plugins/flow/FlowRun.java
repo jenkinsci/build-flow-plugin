@@ -38,9 +38,9 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
 	private String dsl;
-    
+
     private DirectedGraph<Run<?,?>, String> builds = new SimpleDirectedGraph<Run<?,?>, String>(String.class);
-    
+
     private transient ThreadLocal<Run<?,?>> local = new ThreadLocal<Run<?,?>>();
 
     public FlowRun(BuildFlow job) throws IOException {
@@ -53,6 +53,12 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
         super(project, buildDir);
         this.dsl = project.getDsl();
+        this.builds.addVertex(this); // Initial vertex for the build DAG
+        local.set(this);
+    }
+
+    public DirectedGraph<Run<?, ?>, String> getBuilds() {
+        return builds;
     }
 
     public BuildFlow getBuildFlow() {

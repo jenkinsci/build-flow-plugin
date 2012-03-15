@@ -54,7 +54,7 @@ abstract class DSLTestCase extends HudsonTestCase {
          return jobs
     }
 
-    def createFailJob = {String name, int failures ->
+    def createFailJob = {String name, int failures = Integer.MAX_VALUE ->
         def job = createJob(name)
         job.getBuildersList().add(new ConfigurableFailureBuilder(failures));
         return job
