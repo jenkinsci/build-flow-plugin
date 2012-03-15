@@ -17,7 +17,6 @@
 
 package com.cloudbees.plugins.flow
 
-import java.util.concurrent.Future
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
@@ -101,11 +100,34 @@ public class FlowDelegate {
             fail()
         }
         // ask for job with name ${name}
-        JobInvocation job = new JobInvocation(jobName, args, new FlowCause(flowRun))
-        job.runAndWait()
-        flowRun.addBuild(job.build)
+        JobInvocation job = new JobInvocation(jobName)
+        job.run(new FlowCause(flowRun), getActions(args))
+        flowRun.addBuild(job)
         flowRun.setResult(job.result)
         return job;
+    }
+
+    def getActions(Map args) {
+        List<Action> actions = new ArrayList<Action>();
+        for (Map.Entry param: args) {
+            String paramName = param.key
+            Object paramValue = param.value
+            if (paramValue instanceof Closure) {
+                paramValue = getClosureValue(paramValue)
+            }
+            if (paramValue instanceof Boolean) {
+                actions.add(new ParametersAction(new BooleanParameterValue(paramName, (Boolean) paramValue)))
+            }
+            else {
+                actions.add(new ParametersAction(new StringParameterValue(paramName, paramValue.toString())))
+            }
+            //TODO For now we only support String and boolean parameters
+        }
+        return actions
+    }
+
+    def getClosureValue(closure) {
+        return closure()
     }
 
     def guard(guardedClosure) {
@@ -127,7 +149,6 @@ public class FlowDelegate {
         } ]
     }
 
-
     def retry(int attempts, retryClosure) {
         Result origin = flowRun.result
         while( attempts-- > 0) {
@@ -146,88 +167,5 @@ public class FlowDelegate {
 
     def methodMissing(String name, Object args) {
         throw new MissingMethodException("Method ${name} doesn't exist.");
-    }
-}
-
-public class JobInvocation {
-
-    private static final Logger LOGGER = Logger.getLogger(JobInvocation.class.getName());
-
-    def String name
-    def Map args
-    def Cause cause
-    def AbstractProject<?, ? extends AbstractBuild<?, ?>> project
-    def AbstractBuild build
-    def Result result = SUCCESS
-    def Future<? extends AbstractBuild<?, ?>> future
-
-    // TODO : add helpers for manipulation inside DSL
-
-    public JobInvocation(String name, Map args, Cause cause) {
-        this.name = name
-        this.args = args
-        this.cause = cause
-        Item item = Jenkins.getInstance().getItemByFullName(name);
-        if (item instanceof AbstractProject) {
-            project = (AbstractProject<?, ? extends AbstractBuild<?,?>>) item;
-        } else {
-            throw new JobNotFoundException("Item '${name}' not found (or isn't a job).")
-        }
-    }
-
-    def runAndWait() {
-        future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
-        LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and blocking")
-        build = future.get();
-        result = build.getResult();
-        return this;
-    }
-
-    def runAndContinue() {
-        future = project.scheduleBuild2(project.getQuietPeriod(), cause, getActions());
-        LOGGER.fine("Jenkins is running job : ${name} with args : ${args} and continuing")
-        return this;
-    }
-
-    def result() {
-        return result;
-    }
-
-    def build() {
-        if (build == null) {
-            build = future.get()
-        }
-        return build
-    }
-
-    def future() {
-        return future
-    }
-
-    def String toString() {
-        return "Job : ${name} with ${args}"
-    }
-
-    def getActions() {
-        List<Action> actions = new ArrayList<Action>();
-        for (Object param: args) {
-            String paramName = param.key
-            Object paramValue = param.value
-            if (paramValue instanceof Closure) {
-                paramValue = getClosureValue(paramValue)
-            }
-            if (paramValue instanceof Boolean) {
-                actions.add(new ParametersAction(new BooleanParameterValue(paramName, (Boolean) paramValue)))
-            }
-            else {
-                //TODO For now we will only support String and boolean parameters
-                actions.add(new ParametersAction(new StringParameterValue(paramName, paramValue.toString())))
-            }
-        }
-        return actions
-    }
-
-    def getClosureValue(closure) {
-        return closure()
     }
 }

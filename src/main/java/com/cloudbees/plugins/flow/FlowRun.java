@@ -17,10 +17,14 @@
 
 package com.cloudbees.plugins.flow;
 
-import edu.washington.cac.nms.alertpub.DirectedAcyclicGraph;
 import hudson.model.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import org.jgrapht.DirectedGraph;
@@ -39,25 +43,31 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     
 	private String dsl;
 
-    private DirectedGraph<Run<?,?>, String> builds = new SimpleDirectedGraph<Run<?,?>, String>(String.class);
+    private DirectedGraph<JobInvocation, String> builds = new SimpleDirectedGraph<JobInvocation, String>(String.class);
 
-    private transient ThreadLocal<Run<?,?>> last = new ThreadLocal<Run<?,?>>();
+    private transient ThreadLocal<JobInvocation> last = new ThreadLocal<JobInvocation>();
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();
-        this.builds.addVertex(this); // Initial vertex for the build DAG
-        last.set(this);
+        JobInvocation start = new JobInvocation(this);
+        this.builds.addVertex(start); // Initial vertex for the build DAG
+        setLast(start);
     }
 
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
         super(project, buildDir);
         this.dsl = project.getDsl();
-        this.builds.addVertex(this); // Initial vertex for the build DAG
-        last.set(this);
+        JobInvocation start = new JobInvocation(this);
+        this.builds.addVertex(start); // Initial vertex for the build DAG
+        setLast(start);
     }
 
-    public DirectedGraph<Run<?, ?>, String> getBuilds() {
+    private void setLast(JobInvocation start) {
+        last.set(start);
+    }
+
+    public DirectedGraph<JobInvocation, String> getBuilds() {
         return builds;
     }
 
@@ -65,21 +75,14 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         return project;
     }
 
-    /* package */ Run<?,?> getLocalBuild() {
-        return last.get();
-    }
 
-    /* package */ void setLocalBuild(Run<?,?> run) {
-        last.set(run);
-    }
-
-    public void addBuild(AbstractBuild<?,?> build) throws DirectedAcyclicGraph.CycleFoundException {
-        Run<?, ?> from = last.get();
+    public void addBuild(JobInvocation build) {
+        JobInvocation from = last.get();
         builds.addVertex(build);
         String edge = from.toString() + " => " + build.toString();
         LOGGER.fine("added build to execution graph " + edge);
         builds.addEdge(from, build, edge);
-        last.set(build);
+        setLast(build);
     }
 
     /**
@@ -135,7 +138,6 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         public void cleanUp(BuildListener listener) throws Exception {
             super.cleanUp(listener);
         }
-
     }
 
 }
