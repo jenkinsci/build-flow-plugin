@@ -39,6 +39,7 @@ import hudson.Launcher
 import hudson.model.BuildListener
 import hudson.tasks.Builder
 import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
+import hudson.model.Job
 
 abstract class DSLTestCase extends HudsonTestCase {
 
@@ -113,5 +114,12 @@ abstract class DSLTestCase extends HudsonTestCase {
                 }
         }
         assertTrue("build don't have expected parameter set " + name + "=" + value, found)
-    }    
+    }
+
+    void assertRan(Job job, int times, Result result) {
+        assert job.builds.size() == times
+        job.builds.each { build ->
+            assert build.result == result
+        }
+    }
 }

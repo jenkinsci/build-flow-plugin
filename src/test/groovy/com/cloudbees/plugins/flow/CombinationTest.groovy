@@ -22,9 +22,47 @@ import hudson.model.FreeStyleBuild
 import hudson.model.Job
 
 import static hudson.model.Result.SUCCESS
+import static hudson.model.Result.FAILURE
 
-public class ComplexTest extends DSLTestCase {
+public class CombinationTest extends DSLTestCase {
 
+    public void testRetryWithGuard() {
+        Job job1 = createJob("job1")
+        Job willFail = createFailJob("willFail")
+        def flow = run("""
+            retry(3) {
+                guard {
+                    build("job1")
+                } rescue {
+                    build("willFail")
+                }
+            }
+        """)
+        assertRan(job1, 3, SUCCESS)
+        assertRan(willFail, 3, FAILURE)
+        assert FAILURE == flow.result
+    }
+
+    public void testGuardWithParallel() {
+        def jobs = createJobs(["job1", "job2", "rescue"])
+        Job willFail = createFailJob("willFail")
+        def flow = run("""
+            guard {
+                parallel {
+                    build("job1")
+                    build("job2")
+                    build("willFail")
+                }
+            } rescue {
+                build("rescue")
+            }
+        """)
+        assertAllSuccess(jobs)
+        assertRan(willFail, 1, FAILURE)
+        assert FAILURE == flow.result
+    }
+
+/*
     def script = """
 	    assert upstream != null
 
@@ -101,4 +139,5 @@ public class ComplexTest extends DSLTestCase {
         assertAllSuccess(job1, job2, job3, jobp1, jobp2, jobp3, jobp4, jobp5, jobp6, jobp7);
         assertEquals(SUCCESS, flowResult.result);
     }
+    */
 }

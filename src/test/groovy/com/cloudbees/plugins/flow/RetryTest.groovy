@@ -81,45 +81,6 @@ class RetryTest extends DSLTestCase {
         println flow.builds.edgeSet()
     }
 
-    /*def retryGuardParBuild =  """
-        def a = 0, b = 0, c = 0
-        3.times retry {
-            guard {
-                build("job1")
-                b++
-            } rescue {
-                build("willFail")
-                c++
-            }
-            par = parallel {
-                j1 = build("job1")
-                assert !j1.future.done
-                j2 = bbuild("job2")
-                assert !j2.future.done
-            }
-            a++
-            par.values().each {
-                assert it.future.done
-            }
-        }
-        assert a == 3
-        assert b == 3
-        assert c == 3
-    """
-
-    public void testRetryGuardPar() {
-        def fail = createFailJob("willFail")
-        def jobs = createJobs(["job1", "job2"])
-        def ret = run(retryGuardBuild)
-        assert SUCCESS == ret.result // TODO : should return failure
-    }*/
-
-    private void assertRan(Job job, int times, Result result) {
-        assert job.builds.size() == times
-        job.builds.each { build ->
-            assert build.result == result
-        }
-    }
 
 
 }
