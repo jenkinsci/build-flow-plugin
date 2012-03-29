@@ -47,12 +47,34 @@ class RetryTest extends DSLTestCase {
     }
 
     public void testRetryThenSuccess() {
-        def job1 = createFailJob("willFail2times", 2)
-        def flow = run("""
+        testRetryThenSuccess("""
             retry(3) {
                 build("willFail2times")
             }
         """)
+    }
+
+    public void testNoQuotesNotation() {
+        testRetryThenSuccess("""
+            retry 3, {
+                build("willFail2times")
+            }
+        """)
+    }
+
+/*
+    public void testNTimesNotation() {
+        testRetryThenSuccess("""
+            3.times retry {
+                build("willFail2times")
+            }
+        """)
+    }
+*/
+
+    public void testRetryThenSuccess(String script) {
+        def job1 = createFailJob("willFail2times", 2)
+        def flow = run(script)
         assert job1.builds.size() == 3
         assert job1.builds[2].result == FAILURE
         assert job1.builds[1].result == FAILURE

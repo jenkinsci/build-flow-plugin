@@ -48,7 +48,6 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     private Mode mode = SEQUENCE;
 
-
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();

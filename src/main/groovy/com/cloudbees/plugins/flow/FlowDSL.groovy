@@ -44,7 +44,7 @@ public class FlowDSL {
                 // TODO handle matrix jobs ?
             }
         }
-        
+
         def binding = new Binding([
                 upstream: upstream,
                 SUCCESS: SUCCESS,
@@ -77,7 +77,6 @@ public class FlowDSL {
 public class FlowDelegate {
 
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
-
     def List<Cause> causes
     def FlowRun flowRun
 
