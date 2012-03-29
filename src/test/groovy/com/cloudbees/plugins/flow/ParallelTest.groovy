@@ -18,6 +18,8 @@
 package com.cloudbees.plugins.flow
 
 import static hudson.model.Result.SUCCESS
+import hudson.model.Result
+import static hudson.model.Result.FAILURE
 
 class ParallelTest extends DSLTestCase {
 
@@ -36,5 +38,45 @@ class ParallelTest extends DSLTestCase {
         println flow.builds.edgeSet()
     }
 
+    public void testFailOnParallelFailed() {
+        createJobs(["job1", "job2"])
+        createFailJob("willFail")
+        def job4 = createJob("job4")
+        def flow = run("""
+            parallel {
+                build("job1")
+                build("job2")
+                build("willfail")
+            }
+            build("job4")
+        """)
+        assertDidNotRun(job4)
+        assert FAILURE == flow.result
+        println flow.builds.edgeSet()
+    }
+
+    public void testGetParallelResults() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def job4 = createJob("job4")
+        def flow = run("""
+            join = parallel {
+                build("job1")
+                build("job2")
+                build("job3")
+            }
+            println join
+            build("job4",
+                   r1: join["job1"].result.name,
+                   r2: join["job2"].result.name,
+                   r3: join["job3"].result.name)
+        """)
+        assertAllSuccess(jobs)
+        assertSuccess(job4)
+        assertHasParameter(job4, "r1", "SUCCESS")
+        assertHasParameter(job4, "r2", "SUCCESS")
+        assertHasParameter(job4, "r3", "SUCCESS")
+        assert SUCCESS == flow.result
+        println flow.builds.edgeSet()
+    }
 
 }

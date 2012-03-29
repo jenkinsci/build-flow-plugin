@@ -20,16 +20,15 @@ package com.cloudbees.plugins.flow;
 import hudson.model.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 
+import static com.cloudbees.plugins.flow.Mode.PARALLEL;
+import static com.cloudbees.plugins.flow.Mode.SEQUENCE;
 import static hudson.model.Result.SUCCESS;
 
 /**
@@ -45,26 +44,58 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     private DirectedGraph<JobInvocation, String> builds = new SimpleDirectedGraph<JobInvocation, String>(String.class);
 
-    private transient ThreadLocal<JobInvocation> last = new ThreadLocal<JobInvocation>();
+    private transient Set<JobInvocation> lastCompleted;
+
+    private Mode mode = SEQUENCE;
+
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();
         JobInvocation start = new JobInvocation(this);
-        this.builds.addVertex(start); // Initial vertex for the build DAG
-        setLast(start);
+        builds.addVertex(start); // Initial vertex for the build DAG
+        setLastCompleted(start);
     }
 
     public FlowRun(BuildFlow project, File buildDir) throws IOException {
         super(project, buildDir);
         this.dsl = project.getDsl();
         JobInvocation start = new JobInvocation(this);
-        this.builds.addVertex(start); // Initial vertex for the build DAG
-        setLast(start);
+        builds.addVertex(start); // Initial vertex for the build DAG
+        setLastCompleted(start);
     }
 
-    private void setLast(JobInvocation start) {
-        last.set(start);
+    /* package */ void setParallel() {
+        mode = PARALLEL;
+    }
+
+    /* package */ Map<String, Run> setSequence() throws InterruptedException, ExecutionException {
+        Map<String, Run> runs = new HashMap<String, Run>();
+        // Wait for completion of concurrent jobInvocations
+        for (JobInvocation up : lastCompleted) {
+            for (String e : builds.outgoingEdgesOf(up)){
+                Run r = builds.getEdgeTarget(e).getBuild();
+                while(r.isBuilding()) Thread.sleep(1000);
+                runs.put(r.getParent().getName(), r);
+                setResult(getResult().combine(r.getResult()));
+            }
+        }
+        mode = SEQUENCE;
+        return runs;
+    }
+
+    /* package */ void schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+        job.run(new FlowCause(this),actions);
+        addBuild(job);
+        if (mode == SEQUENCE) {
+            job.waitForCompletion();
+            setResult(job.getResult());
+        }
+    }
+
+    
+    private void setLastCompleted(JobInvocation job) {
+        lastCompleted = Collections.singleton(job);
     }
 
     public DirectedGraph<JobInvocation, String> getBuilds() {
@@ -76,13 +107,16 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
 
 
-    public void addBuild(JobInvocation build) {
-        JobInvocation from = last.get();
+    public void addBuild(JobInvocation build) throws ExecutionException, InterruptedException {
         builds.addVertex(build);
-        String edge = from.toString() + " => " + build.toString();
-        LOGGER.fine("added build to execution graph " + edge);
-        builds.addEdge(from, build, edge);
-        setLast(build);
+        for (JobInvocation up : lastCompleted) {
+            String edge = up.getBuild().toString() + " => " + build.toString();
+            LOGGER.fine("added build to execution graph " + edge);
+            builds.addEdge(up, build, edge);
+        }
+        if (mode == SEQUENCE) {
+            setLastCompleted(build);
+        }
     }
 
     /**

@@ -104,6 +104,10 @@ abstract class DSLTestCase extends HudsonTestCase {
         assert thrown
     }
 
+    void assertHasParameter(Job job, String name, String value) {
+        assertHasParameter(job.builds.lastBuild, name, value)
+    }
+
     void assertHasParameter(AbstractBuild build, String name, String value) {
         boolean found = false
         build.actions.each {action ->

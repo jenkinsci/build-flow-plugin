@@ -94,16 +94,14 @@ public class FlowDelegate {
     def build(String jobName) {
         build([:], jobName)
     }
-
+    
     def build(Map args, String jobName) {
         if (flowRun.result.isWorseThan(SUCCESS)) {
             fail()
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(jobName)
-        job.run(new FlowCause(flowRun), getActions(args))
-        flowRun.addBuild(job)
-        flowRun.setResult(job.result)
+        flowRun.schedule(job, getActions(args));
         return job;
     }
 
@@ -160,6 +158,13 @@ public class FlowDelegate {
             }
         }
     }
+    
+    Map<String, Run> parallel(closure) {
+        flowRun.setParallel() 
+        closure()
+        return flowRun.setSequence()
+    }
+    
 
     def propertyMissing(String name) {
         throw new MissingPropertyException("Property ${name} doesn't exist.");

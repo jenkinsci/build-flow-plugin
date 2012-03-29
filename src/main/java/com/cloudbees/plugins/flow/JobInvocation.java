@@ -59,4 +59,9 @@ public class JobInvocation {
     public String toString() {
         return "running job :" + name;
     }
+
+    public void waitForCompletion() throws ExecutionException, InterruptedException {
+        Run run = getBuild();
+        while(run.isBuilding()) Thread.sleep(1000);
+    }
 }
