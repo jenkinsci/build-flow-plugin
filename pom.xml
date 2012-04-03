@@ -51,8 +51,8 @@
   </developers>
 
   <scm>
-    <connection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:ndeloof/build-flow-plugin.git</developerConnection>
+    <connection>scm:git:ssh://git@github.com:jenkinsci/build-flow-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:jenkinsci/build-flow-plugin.git</developerConnection>
   </scm>
   
     <build>
