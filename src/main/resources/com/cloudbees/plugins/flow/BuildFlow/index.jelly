@@ -19,11 +19,11 @@
     <l:layout title="${it.displayName}">
         <st:include page="sidepanel.jelly" />
         <l:main-panel>
-            <h1><img src="${h.rootUrl}/plugin/build-flow-plugin/images/24x24/flow.png"/>
+            <h1><img src="${h.resUrl}/plugin/build-flow-plugin/images/24x24/flow.png"/>
                 ${it.pronoun} ${it.displayName}</h1>
 
-            TODO : display flow status for FlowRuns
-
+            <st:include page="main.jelly" />
+            <st:include page="permalinks.jelly" />
         </l:main-panel>
     </l:layout>
 </j:jelly>

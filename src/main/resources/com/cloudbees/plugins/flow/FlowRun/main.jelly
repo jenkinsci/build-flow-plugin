@@ -1,0 +1,47 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+
+    <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/graph/js-graph-it.js"></script>
+    <link rel="stylesheet" src="${resURL}/plugin/build-flow-plugin/graph/js-graph-it.css"/>
+    <style type="text/css">
+        .canvas {
+            font-family: tahoma;
+        }
+        .block {
+            position: absolute;
+            border: 1px solid #7DAB76;
+            background-color: #BAFFB0;
+            padding: 3px;
+        }
+        .connector {
+            background-color: #FF9900;
+        }
+        .source-label, .middle-label, .destination-label {
+            padding: 5px;
+        }
+    </style>
+
+
+    <div class="canvas" id="mainCanvas"
+         style="width: 100%; height: 300px;">
+
+        <h1 class="block" id="h1_block"
+            style="left: 10px; top:10px;">
+            h1 block
+        </h1>
+        <h2 class="block" id="h2_block"
+            style="left: 200px; top: 100px;">
+            h2 block
+        </h2>
+        <div class="connector h1_block h2_block">
+            <img src="${resURL}/plugin/build-flow-plugin/graph/arrow.gif" class="connector-end"/>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        initPageObjects();
+    </script>
+
+
+
+</j:jelly>
