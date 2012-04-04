@@ -20,6 +20,8 @@ package com.cloudbees.plugins.flow;
 import hudson.model.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -135,6 +137,10 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         public void cleanUp(BuildListener listener) throws Exception {
             super.cleanUp(listener);
         }
+    }
+    
+    public String id(Run run) throws UnsupportedEncodingException {
+        return URLEncoder.encode(run.toString(), "UTF-8");
     }
 
 }

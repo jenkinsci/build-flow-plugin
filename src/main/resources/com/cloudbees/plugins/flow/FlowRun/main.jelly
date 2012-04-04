@@ -1,47 +1,58 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
 
-    <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/graph/js-graph-it.js"></script>
     <link rel="stylesheet" src="${resURL}/plugin/build-flow-plugin/graph/js-graph-it.css"/>
     <style type="text/css">
         .canvas {
             font-family: tahoma;
+            position:relative;
         }
-        .block {
+        h2.block {
             position: absolute;
             border: 1px solid #7DAB76;
             background-color: #BAFFB0;
-            padding: 3px;
+            padding: 3px 5px 3px 10px;
+            border-radius: 0 3px 3px 10px;
+            box-shadow: 5px 5px 5px #888;
+            width: 200px;
         }
-        .connector {
-            background-color: #FF9900;
-        }
-        .source-label, .middle-label, .destination-label {
-            padding: 5px;
+
+        h1.block {
+            position: absolute;
+            border: 1px solid #000;
+            background-color: #888;
+            border-radius: 10px;
+            box-shadow: 5px 5px 5px #888;
+            width:20px;
+            height:20px;
         }
     </style>
 
 
-    <div class="canvas" id="mainCanvas"
-         style="width: 100%; height: 300px;">
+    <div class="canvas"
+         style="width: 100%; height: 300px">
 
-        <h1 class="block" id="h1_block"
-            style="left: 10px; top:10px;">
-            h1 block
-        </h1>
-        <h2 class="block" id="h2_block"
-            style="left: 200px; top: 100px;">
-            h2 block
-        </h2>
-        <div class="connector h1_block h2_block">
-            <img src="${resURL}/plugin/build-flow-plugin/graph/arrow.gif" class="connector-end"/>
-        </div>
+        <j:set var="g" value="${it.builds}"/>
+        <j:set var="n" value="${it}"/>
+        <j:set var="x" value="10"/>
+        <j:set var="y" value="10"/>
+
+        <h1 class="block" id="${it.id(it)}" style="left: 107px; top:0px;"/>
+
+        <j:while test="${not empty g.outgoingEdgesOf(n)}">
+            <j:set var="x" value="10"/>
+            <j:set var="y" value="${y+50}"/>
+            <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
+                <j:set var="v" value="${g.getEdgeTarget(e)}"/>
+                <j:set var="x" value="${x + 250*(i)}"/>
+
+                <h2 class="block" id="${it.id(v)}" style="left: ${x}px; top:${y}px;">
+                    <img src="${rootURL}/images/24x24/${v.iconColor.image}"/> ${v}
+                </h2>
+            </j:forEach>
+            <j:set var="n" value="${v}"/>
+        </j:while>
+        
     </div>
-
-    <script type="text/javascript">
-        initPageObjects();
-    </script>
-
-
 
 </j:jelly>
