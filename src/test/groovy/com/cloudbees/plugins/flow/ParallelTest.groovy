@@ -26,11 +26,11 @@ class ParallelTest extends DSLTestCase {
     public void testParallel() {
         def jobs = createJobs(["job1", "job2", "job3", "job4"])
         def flow = run("""
-            parallel {
-                build("job1")
-                build("job2")
-                build("job3")
-            }
+            parallel(
+                { build("job1") },
+                { build("job2") },
+                { build("job3") }
+            )
             build("job4")
         """)
         assertAllSuccess(jobs)
@@ -43,11 +43,11 @@ class ParallelTest extends DSLTestCase {
         createFailJob("willFail")
         def job4 = createJob("job4")
         def flow = run("""
-            parallel {
-                build("job1")
-                build("job2")
-                build("willfail")
-            }
+            parallel (
+                { build("job1") },
+                { build("job2") },
+                { build("willfail") }
+            )
             build("job4")
         """)
         assertDidNotRun(job4)
@@ -59,22 +59,19 @@ class ParallelTest extends DSLTestCase {
         def jobs = createJobs(["job1", "job2", "job3"])
         def job4 = createJob("job4")
         def flow = run("""
-            join = parallel {
-                build("job1")
-                build("job2")
-                build("job3")
-            }
-            println join
+            join = parallel (
+                { build("job1") },
+                { build("job2") },
+                { build("job3") }
+            )
             build("job4",
-                   r1: join["job1"].result.name,
-                   r2: join["job2"].result.name,
-                   r3: join["job3"].result.name)
+                   r1: join[0].result.name,
+                   r2: join[1].lastBuild.parent.name)
         """)
         assertAllSuccess(jobs)
         assertSuccess(job4)
         assertHasParameter(job4, "r1", "SUCCESS")
-        assertHasParameter(job4, "r2", "SUCCESS")
-        assertHasParameter(job4, "r3", "SUCCESS")
+        assertHasParameter(job4, "r2", "job2")
         assert SUCCESS == flow.result
         println flow.builds.edgeSet()
     }

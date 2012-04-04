@@ -21,6 +21,10 @@ import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
 import static hudson.model.Result.SUCCESS
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 
 public class FlowDSL {
 
@@ -31,9 +35,9 @@ public class FlowDSL {
         return emc
     }
 
-    def void executeFlowScript(FlowRun flowRun, String dsl) {
+    def void executeFlowScript(FlowRun flowRun, String dsl, BuildListener listener) {
         // TODO : add restrictions for System.exit, etc ...
-        FlowDelegate flow = new FlowDelegate(flowRun)
+        FlowDelegate flow = new FlowDelegate(flowRun, listener)
 
         // Retrieve the upstream build if the flow was triggered by another job
         AbstractBuild upstream = null;
@@ -79,9 +83,11 @@ public class FlowDelegate {
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
     def List<Cause> causes
     def FlowRun flowRun
+    BuildListener listener
 
-    public FlowDelegate(FlowRun flowRun) {
+    public FlowDelegate(FlowRun flowRun, BuildListener listener) {
         this.flowRun = flowRun
+        this.listener = listener
         causes = flowRun.causes
     }
 
@@ -95,12 +101,14 @@ public class FlowDelegate {
     }
     
     def build(Map args, String jobName) {
-        if (flowRun.result.isWorseThan(SUCCESS)) {
+        if (flowRun.state.result.isWorseThan(SUCCESS)) {
             fail()
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(jobName)
-        flowRun.schedule(job, getActions(args));
+        listener.logger.println("Trigger job ${jobName}")
+        Run r = flowRun.schedule(job, getActions(args));
+        listener.logger.println("Completed ${r}")
         return job;
     }
 
@@ -134,34 +142,61 @@ public class FlowDelegate {
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
 
             try {
+                listener.logger.println("guard {")
                 guardedClosure()
             } finally {
                 // Force result to SUCCESS so that rescue closure will execute
-                Result r = flowRun.result
-                flowRun.result = SUCCESS
+                Result r = flowRun.state.result
+                flowRun.state.result = SUCCESS
+                listener.logger.println("} rescue {")
                 rescueClosure()
+                listener.logger.println("}")
                 // restore result, as the worst from guarded and rescue closures
-                flowRun.result = r.combine(flowRun.result)
+                flowRun.state.result = r.combine(flowRun.state.result)
             }
         } ]
     }
 
     def retry(int attempts, retryClosure) {
-        Result origin = flowRun.result
+        Result origin = flowRun.state.result
+        int i
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
-            flowRun.result = origin
+            flowRun.state.result = origin
+            listener.logger.println("retry (attempt $i++} {")
             retryClosure()
-            if (flowRun.result.isBetterOrEqualTo(SUCCESS)) {
+            if (flowRun.state.result.isBetterOrEqualTo(SUCCESS)) {
+                listener.logger.println("}")
                 return;
             }
+            listener.logger.println("} // failed")
         }
     }
-    
-    Map<String, Run> parallel(closure) {
-        flowRun.setParallel() 
-        closure()
-        return flowRun.setSequence()
+
+    def parallel(Closure ... closures) {
+        ExecutorService pool = Executors.newCachedThreadPool()
+        Set<Run> upstream = flowRun.state.lastCompleted
+        Set<Run> lastCompleted = new HashSet<Run>()
+        def results = []
+
+        listener.logger.println("parallel {")
+
+        closures.eachWithIndex { closure, idx ->
+            pool.submit( {
+                flowRun.state = new FlowState(SUCCESS, upstream)
+                closure()
+                lastCompleted.addAll(flowRun.state.lastCompleted)
+                results[idx] = flowRun.state
+            } )
+        }
+        pool.shutdown()
+        pool.awaitTermination(1, TimeUnit.DAYS)
+        flowRun.state.lastCompleted = lastCompleted
+        results.each {
+            flowRun.state.result = flowRun.state.result.combine(it.result)
+        }
+        listener.logger.println("}")
+        return results
     }
     
 

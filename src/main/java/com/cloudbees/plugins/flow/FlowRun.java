@@ -18,7 +18,7 @@
 package com.cloudbees.plugins.flow;
 
 import hudson.model.*;
-import java.io.File;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -27,8 +27,6 @@ import java.util.logging.Logger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 
-import static com.cloudbees.plugins.flow.Mode.PARALLEL;
-import static com.cloudbees.plugins.flow.Mode.SEQUENCE;
 import static hudson.model.Result.SUCCESS;
 
 /**
@@ -42,62 +40,40 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     
 	private String dsl;
 
-    private DirectedGraph<JobInvocation, String> builds = new SimpleDirectedGraph<JobInvocation, String>(String.class);
+    private DirectedGraph<Run, String> builds = new SimpleDirectedGraph<Run, String>(String.class);
+
+    private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
 
     private transient Set<JobInvocation> lastCompleted;
-
-    private Mode mode = SEQUENCE;
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
         this.dsl = job.getDsl();
-        JobInvocation start = new JobInvocation(this);
-        builds.addVertex(start); // Initial vertex for the build DAG
-        setLastCompleted(start);
+        builds.addVertex(this); // Initial vertex for the build DAG
+        state.set(new FlowState(SUCCESS, this));
     }
 
-    public FlowRun(BuildFlow project, File buildDir) throws IOException {
-        super(project, buildDir);
-        this.dsl = project.getDsl();
-        JobInvocation start = new JobInvocation(this);
-        builds.addVertex(start); // Initial vertex for the build DAG
-        setLastCompleted(start);
-    }
-
-    /* package */ void setParallel() {
-        mode = PARALLEL;
-    }
-
-    /* package */ Map<String, Run> setSequence() throws InterruptedException, ExecutionException {
-        Map<String, Run> runs = new HashMap<String, Run>();
-        // Wait for completion of concurrent jobInvocations
-        for (JobInvocation up : lastCompleted) {
-            for (String e : builds.outgoingEdgesOf(up)){
-                Run r = builds.getEdgeTarget(e).getBuild();
-                while(r.isBuilding()) Thread.sleep(1000);
-                runs.put(r.getParent().getName(), r);
-                setResult(getResult().combine(r.getResult()));
-            }
-        }
-        mode = SEQUENCE;
-        return runs;
-    }
-
-    /* package */ void schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+    /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         job.run(new FlowCause(this),actions);
-        addBuild(job);
-        if (mode == SEQUENCE) {
-            job.waitForCompletion();
-            setResult(job.getResult());
-        }
+        addBuild(job.getBuild());
+        job.waitForCompletion();
+        getState().setResult(job.getResult());
+        return job.getBuild();
     }
 
-    
+    /* package */ FlowState getState() {
+        return state.get();
+    }
+
+    /* package */ void setState(FlowState s) {
+        state.set(s);
+    }
+
     private void setLastCompleted(JobInvocation job) {
         lastCompleted = Collections.singleton(job);
     }
 
-    public DirectedGraph<JobInvocation, String> getBuilds() {
+    public DirectedGraph<Run, String> getBuilds() {
         return builds;
     }
 
@@ -106,28 +82,14 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
 
 
-    public void addBuild(JobInvocation build) throws ExecutionException, InterruptedException {
+    public void addBuild(Run build) throws ExecutionException, InterruptedException {
         builds.addVertex(build);
-        for (JobInvocation up : lastCompleted) {
-            String edge = up.getBuild().toString() + " => " + build.toString();
+        for (Run up : state.get().getLastCompleted()) {
+            String edge = up.toString() + " => " + build.toString();
             LOGGER.fine("added build to execution graph " + edge);
             builds.addEdge(up, build, edge);
         }
-        if (mode == SEQUENCE) {
-            setLastCompleted(build);
-        }
-    }
-
-    /**
-     * {Run#setResult} only let result get worst. For the build-flow we support result reset to manage
-     * retry or try+finally logic
-     */
-    @Override
-    public void setResult(Result result) {
-        // result only can change when building
-        assert isBuilding();
-
-        this.result = result;
+        state.get().setLastCompleted(build);
     }
 
     @Override
@@ -150,7 +112,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         protected Result doRun(BuildListener listener) throws Exception {
             try {
                 setResult(SUCCESS);
-                new FlowDSL().executeFlowScript(FlowRun.this, dsl);
+                new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
             } finally {
                 boolean failed=false;
                 for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
@@ -159,8 +121,10 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                     }
                 }
                 if (failed) return Result.FAILURE;
+                
+
             }
-            return getResult();
+            return getState().getResult();
         }
 
         @Override

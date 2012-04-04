@@ -48,11 +48,11 @@ public class CombinationTest extends DSLTestCase {
         Job willFail = createFailJob("willFail")
         def flow = run("""
             guard {
-                parallel {
-                    build("job1")
-                    build("job2")
-                    build("willFail")
-                }
+                parallel (
+                    { build("job1") },
+                    { build("job2") },
+                    { build("willFail") }
+                )
             } rescue {
                 build("rescue")
             }
@@ -62,82 +62,33 @@ public class CombinationTest extends DSLTestCase {
         assert FAILURE == flow.result
     }
 
-/*
-    def script = """
-	    assert upstream != null
+    public void testParallelSubFlows() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        Job willFail = createFailJob("willFail")
+        Job job5 = createJob("job5")
 
-	    println "\\nTriggered by '" + upstream.parent + "' with build number '" + upstream.buildNumber + "'\\n"
-
-	    def a = 0
-        3.times retry {
-            build("job1")
-	        a++
-	    }
-	    assert a == 1
-
-	    a = build("Job1")
-	    b = build("Job2", param1: "troulala", param2: "machin")
-	    c = build("Job3")
-
-	    assert a.future.done
-	    assert b.future.done
-	    assert c.future.done
-
-	    println "\\n" + a.result() + " " + b.result() + " " + c.result() + "\\n"
-
-	    par = parallel {
-	        a = build("jobp1")
-            assert !a.future.done
-	        b = build("jobp2")
-            assert !b.future.done
-	        c = build("jobp3")
-            assert !c.future.done
-	        d = build("jobp4")
-            assert !d.future.done
-	        e = build("jobp5")
-            assert !e.future.done
-	        f = build("jobp6")
-            assert !f.future.done
-	        g = build("jobp7")
-            assert !g.future.done
-	    }
-
-	    println ""
-	    par.values().each { job ->
-	        println job.name + " => " + job.result()
-	        assert job.future.done
-	    }
-	    println ""
-
-        assert build("job3").future.done
-
-	    guard {
-	        assert build("job1").future.done
-	        assert build("job2").future.done
-	    } rescue {
-	        r = build("job3")
-	        assert r.future.done
-	    }
-	"""
-
-
-    public void testComplexDSL() {
-        Job root = createJob("root");
-        FreeStyleBuild rootBuild = root.createExecutable();
-        Job job1 = createJob("Job1");
-        Job job2 = createJob("Job2");
-        Job job3 = createJob("Job3");
-        Job jobp1 = createJob("jobp1");
-        Job jobp2 = createJob("jobp2");
-        Job jobp3 = createJob("jobp3");
-        Job jobp4 = createJob("jobp4");
-        Job jobp5 = createJob("jobp5");
-        Job jobp6 = createJob("jobp6");
-        Job jobp7 = createJob("jobp7");
-
-        FlowRun flowResult = runWithCause(script, new Cause.UpstreamCause(rootBuild));
-        assertAllSuccess(job1, job2, job3, jobp1, jobp2, jobp3, jobp4, jobp5, jobp6, jobp7);
-        assertEquals(SUCCESS, flowResult.result);
+        def flow = run("""
+            parallel (
+                {
+                    guard {
+                        build("job1")
+                    } rescue {
+                        build("job2")
+                    }
+                },
+                {
+                    build("job3")
+                    retry(3) {
+                        build("willFail")
+                    }
+                }
+            )
+            build("job5")
+        """)
+        assertAllSuccess(jobs)
+        assertRan(willFail, 3, FAILURE)
+        assertDidNotRun(job5)
+        assert FAILURE == flow.result
+        println flow.builds.edgeSet()
     }
-    */
 }

@@ -30,15 +30,6 @@ public class JobInvocation {
         }
     }
 
-    /**
-     * Used to setup the initial vertex for the FlowRun execution Graph
-     */
-    /* package */ JobInvocation(FlowRun flowRun) {
-        this.name = flowRun.getDisplayName();
-        this.project = flowRun.getProject();
-        this.build = flowRun;
-    }
-
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         return this;
