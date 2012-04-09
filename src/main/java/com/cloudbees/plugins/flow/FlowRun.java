@@ -19,15 +19,17 @@ package com.cloudbees.plugins.flow;
 
 import hudson.model.*;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import org.jgrapht.DirectedGraph;
+import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.graph.SimpleDirectedGraph;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
 import static hudson.model.Result.SUCCESS;
 
@@ -47,6 +49,13 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
 
     private transient Set<JobInvocation> lastCompleted;
+
+    public FlowRun(BuildFlow job, File buildDir) throws IOException {
+        super(job, buildDir);
+        this.dsl = job.getDsl();
+        builds.addVertex(this); // Initial vertex for the build DAG
+        state.set(new FlowState(SUCCESS, this));
+    }
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
@@ -81,6 +90,10 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     public BuildFlow getBuildFlow() {
         return project;
+    }
+
+    public void doGetDot(StaplerRequest req, StaplerResponse rsp) throws IOException {
+        new DOTExporter().export(rsp.getWriter(), builds);
     }
 
 

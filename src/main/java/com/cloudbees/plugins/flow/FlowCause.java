@@ -7,7 +7,7 @@ import hudson.model.Cause;
  */
 public class FlowCause extends Cause {
 
-    private final FlowRun flowRun;
+    private final transient FlowRun flowRun;
 
     public FlowCause(FlowRun flowRun) {
         this.flowRun = flowRun;
