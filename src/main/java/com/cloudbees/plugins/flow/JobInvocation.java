@@ -20,9 +20,9 @@ public class JobInvocation {
     private AbstractBuild build;
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
-    public JobInvocation(String name) {
+    public JobInvocation(FlowRun run, String name) {
         this.name = name;
-        Item item = Jenkins.getInstance().getItemByFullName(name);
+        Item item = Jenkins.getInstance().getItem(name, run.getProject().getParent());
         if (item instanceof AbstractProject) {
             project = (AbstractProject<?, ? extends AbstractBuild<?,?>>) item;
         } else {

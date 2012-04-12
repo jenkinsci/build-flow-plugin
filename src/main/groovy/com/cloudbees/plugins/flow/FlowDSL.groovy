@@ -105,7 +105,7 @@ public class FlowDelegate {
             fail()
         }
         // ask for job with name ${name}
-        JobInvocation job = new JobInvocation(jobName)
+        JobInvocation job = new JobInvocation(flowRun, jobName)
         listener.logger.println("Trigger job ${jobName}")
         Run r = flowRun.schedule(job, getActions(args));
         listener.logger.println("Completed ${r}")
