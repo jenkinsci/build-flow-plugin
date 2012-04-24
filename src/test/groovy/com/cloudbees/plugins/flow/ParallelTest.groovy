@@ -55,6 +55,30 @@ class ParallelTest extends DSLTestCase {
         println flow.builds.edgeSet()
     }
 
+
+    public void testFailOnJobSequenceFailed() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        createFailJob("willFail")
+        def job4 = createJob("job4")
+        def flow = run("""
+            parallel (
+                {
+                    build("job1")
+                    build("job2")
+                },
+                {
+                    build("job3")
+                    build("willfail")
+                }
+            )
+            build("job4")
+        """)
+        assertDidNotRun(job4)
+        assertAllSuccess(jobs)
+        assert FAILURE == flow.result
+        println flow.builds.edgeSet()
+    }
+
     public void testGetParallelResults() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def job4 = createJob("job4")
