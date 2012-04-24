@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.424</version>
+    <version>1.447</version>
   </parent>
 
   <groupId>com.cloudbees.plugins</groupId>
@@ -48,6 +48,10 @@
       <id>henryju</id>
       <name>Julien Henry</name>
     </developer>
+    <developer>
+      <id>mathieuancelin</id>
+      <name>Mathieu Ancelin</name>
+    </developer>
   </developers>
 
   <scm>
@@ -58,14 +62,6 @@
   
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.jenkins-ci.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-                <version>1.79</version>
-                <configuration>
-                   <maskClasses>groovy. org.codehaus.groovy. groovyjarjarasm.</maskClasses>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
@@ -92,6 +88,7 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>1.8.5</version>
+            <scope>provided</scope> <!-- from jenkins-core -->
         </dependency>
         <dependency>
         	<groupId>org.mockito</groupId>
