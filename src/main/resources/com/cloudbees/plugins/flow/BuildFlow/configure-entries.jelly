@@ -22,6 +22,8 @@
 
   <p:config-disableBuild/>
   
+  <p:config-concurrentBuild/>
+  
   <p:config-trigger/>
     
   <f:section title="${%Advanced Project Options configure-common}">
