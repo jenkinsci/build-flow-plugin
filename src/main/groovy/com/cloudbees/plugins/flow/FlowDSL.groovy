@@ -205,6 +205,6 @@ public class FlowDelegate {
     }
 
     def methodMissing(String name, Object args) {
-        throw new MissingMethodException("Method ${name} doesn't exist.");
+        throw new MissingMethodException(name, this.class, args);
     }
 }
