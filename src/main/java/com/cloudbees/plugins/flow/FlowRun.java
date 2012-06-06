@@ -18,7 +18,6 @@
 package com.cloudbees.plugins.flow;
 
 import hudson.model.*;
-
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
@@ -28,8 +27,11 @@ import java.util.logging.Logger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.graph.SimpleDirectedGraph;
+
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
 
 import static hudson.model.Result.SUCCESS;
 
@@ -42,7 +44,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
-	private String dsl;
+    private String dsl;
 
     private DirectedGraph<Run, String> builds = new SimpleDirectedGraph<Run, String>(String.class);
 
@@ -59,7 +61,8 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
-        this.dsl = job.getDsl();
+        //this.getBuilds().getLastBuild().getBuildVariables()
+        this.dsl = substituteParameters(job.getDsl());
         builds.addVertex(this); // Initial vertex for the build DAG
         state.set(new FlowState(SUCCESS, this));
     }
@@ -136,8 +139,6 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                     }
                 }
                 if (failed) return Result.FAILURE;
-                
-
             }
             return getState().getResult();
         }
@@ -156,4 +157,40 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         return URLEncoder.encode(run.toString(), "UTF-8");
     }
 
+    private String substituteParameters(String original) {
+       Map <String, String> subs = getSubstitutions();
+       String replaced = original;
+       
+       for(String key : subs.keySet()) {
+           replaced = replaced.replace("${" + key + "}", "\"" + subs.get(key) +  "\"");
+       }
+        
+       return replaced;
+    }
+    
+    private Map<String,String> getSubstitutions() {
+        Map<String,String> substitucions = new HashMap<String,String>();
+        substitucions.put("JOB_NAME", project.getFullName());
+        String hudsonName = Hudson.getInstance().getDisplayName().toLowerCase();
+        substitucions.put("BUILD_TAG", hudsonName + "-" + this.getProject().getName() + "-" + String.valueOf(this.getNumber()));
+        substitucions.put("BUILD_ID", this.getId());
+        substitucions.put("BUILD_NUMBER", String.valueOf(this.getNumber()));
+        
+        //get global properties
+        for (NodeProperty nodeProperty: Hudson.getInstance().getGlobalNodeProperties()) {
+            if (nodeProperty instanceof EnvironmentVariablesNodeProperty) {
+                substitucions.putAll( ((EnvironmentVariablesNodeProperty)nodeProperty).getEnvVars() );
+            }
+        }
+        
+        //get node-specific global properties
+        for(NodeProperty nodeProperty : this.getBuiltOn().getNodeProperties()){
+            if(nodeProperty instanceof EnvironmentVariablesNodeProperty) {
+                substitucions.putAll( ((EnvironmentVariablesNodeProperty)nodeProperty).getEnvVars() );
+            }
+        }
+        
+        substitucions.putAll(this.getBuildVariables());
+        return substitucions;
+    }
 }
