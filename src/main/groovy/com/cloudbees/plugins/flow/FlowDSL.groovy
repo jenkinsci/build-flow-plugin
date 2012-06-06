@@ -25,6 +25,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
+import hudson.slaves.NodeProperty
+import hudson.slaves.EnvironmentVariablesNodeProperty
 
 public class FlowDSL {
 
@@ -49,7 +51,19 @@ public class FlowDSL {
             }
         }
 
+        def envMap = [:]
+        def getEnvVars = { NodeProperty nodeProperty ->
+            if (nodeProperty instanceof EnvironmentVariablesNodeProperty) {
+                envMap.putAll( nodeProperty.envVars );
+            }
+        }
+        Jenkins.instance.globalNodeProperties.each(getEnvVars)
+        flowRun.builtOn.nodeProperties.each(getEnvVars)
+
         def binding = new Binding([
+                build: flowRun,
+                out: listener.logger,
+                env: envMap,
                 upstream: upstream,
                 SUCCESS: SUCCESS,
                 UNSTABLE: Result.UNSTABLE,
