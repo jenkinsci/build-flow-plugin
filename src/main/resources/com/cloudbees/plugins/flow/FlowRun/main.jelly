@@ -47,7 +47,8 @@
                 <j:set var="x" value="${x + 250*(i)}"/>
 
                 <h2 class="block" id="${it.id(v)}" style="left: ${x}px; top:${y}px;">
-                    <img src="${rootURL}/images/24x24/${v.iconColor.image}"/> ${v}
+                    <img src="${rootURL}/images/24x24/${v.iconColor.image}"/>
+                    <a href="${v.getAbsoluteUrl()}">${v}</a>
                 </h2>
             </j:forEach>
             <j:set var="n" value="${v}"/>

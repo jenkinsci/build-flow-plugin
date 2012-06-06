@@ -25,6 +25,7 @@ import hudson.tasks.Publisher;
 import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
 import java.io.IOException;
+import java.util.Hashtable;
 import javax.servlet.ServletException;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -108,8 +109,8 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
         
     }
 
-	public AbstractProject<?, ?> asProject() {
-		return (AbstractProject) this;
-	} 
-    
+    public AbstractProject<?, ?> asProject() {
+	return (AbstractProject) this;
+    } 
+        
 }
