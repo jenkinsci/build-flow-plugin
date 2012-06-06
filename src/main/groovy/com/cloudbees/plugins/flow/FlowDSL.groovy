@@ -27,6 +27,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
+import java.util.concurrent.CopyOnWriteArrayList
 
 public class FlowDSL {
 
@@ -190,11 +191,10 @@ public class FlowDelegate {
     def parallel(Closure ... closures) {
         ExecutorService pool = Executors.newCachedThreadPool()
         Set<Run> upstream = flowRun.state.lastCompleted
-        Set<Run> lastCompleted = new HashSet<Run>()
-        def results = []
+        Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
+        def results = new CopyOnWriteArrayList();
 
         listener.logger.println("parallel {")
-
         closures.eachWithIndex { closure, idx ->
             pool.submit( {
                 flowRun.state = new FlowState(SUCCESS, upstream)
