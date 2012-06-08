@@ -66,6 +66,7 @@ public class FlowDSL {
                 out: listener.logger,
                 env: envMap,
                 upstream: upstream,
+                params: flowRun.getBuildVariables(),
                 SUCCESS: SUCCESS,
                 UNSTABLE: Result.UNSTABLE,
                 FAILURE: Result.FAILURE,
