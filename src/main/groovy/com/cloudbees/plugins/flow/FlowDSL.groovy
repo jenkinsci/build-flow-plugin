@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit
 import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import java.util.concurrent.CopyOnWriteArrayList
+import hudson.console.HyperlinkNote
 
 public class FlowDSL {
 
@@ -122,9 +123,10 @@ public class FlowDelegate {
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
-        listener.logger.println("Trigger job ${jobName}")
+        def p = job.getProject()
+        listener.logger.println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
         Run r = flowRun.schedule(job, getActions(args));
-        listener.logger.println("Completed ${r}")
+        listener.logger.println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
         return job;
     }
 
