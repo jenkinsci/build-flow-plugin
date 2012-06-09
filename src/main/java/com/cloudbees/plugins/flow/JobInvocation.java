@@ -47,6 +47,10 @@ public class JobInvocation {
         return build;
     }
 
+    public AbstractProject<?, ? extends AbstractBuild<?, ?>> getProject() {
+        return project;
+    }
+
     public String toString() {
         return "running job :" + name;
     }
