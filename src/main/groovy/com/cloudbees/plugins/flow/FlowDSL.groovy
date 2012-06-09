@@ -24,7 +24,7 @@ import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Callable
+
 import java.util.concurrent.TimeUnit
 import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
@@ -65,7 +65,6 @@ public class FlowDSL {
 
         def binding = new Binding([
                 build: flowRun,
-                out: listener.logger,
                 env: envMap,
                 upstream: upstream,
                 params: flowRun.getBuildVariables(),
@@ -85,6 +84,9 @@ public class FlowDSL {
                 cl.resolveStrategy = Closure.DELEGATE_FIRST
                 cl()
             }
+            emc.println = {
+                String s -> flow.println s
+            }
         })
         try {
             dslScript.run()
@@ -102,11 +104,29 @@ public class FlowDelegate {
     def List<Cause> causes
     def FlowRun flowRun
     BuildListener listener
+    int indent = 0
 
     public FlowDelegate(FlowRun flowRun, BuildListener listener) {
         this.flowRun = flowRun
         this.listener = listener
         causes = flowRun.causes
+    }
+
+    def out() {
+        return listener.logger
+    }
+
+    // TODO Assuring proper indent should be done in the listener?
+    def println_with_indent(Closure f) {
+        for (int i = 0; i < indent; ++i) {
+            out().print("    ")
+        }
+        f()
+        out().println()
+    }
+
+    def println(String s) {
+        println_with_indent { out().println(s) }
     }
 
     def fail() {
@@ -125,9 +145,9 @@ public class FlowDelegate {
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         def p = job.getProject()
-        listener.logger.println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
+        println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
         Run r = flowRun.schedule(job, getActions(args));
-        listener.logger.println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
+        println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
         return job;
     }
 
@@ -163,15 +183,22 @@ public class FlowDelegate {
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
 
             try {
-                listener.logger.println("guard {")
+                println("guard {")
+                ++indent
                 guardedClosure()
             } finally {
+                --indent
                 // Force result to SUCCESS so that rescue closure will execute
                 Result r = flowRun.state.result
                 flowRun.state.result = SUCCESS
-                listener.logger.println("} rescue {")
-                rescueClosure()
-                listener.logger.println("}")
+                println("} rescue {")
+                ++indent
+                try {
+                    rescueClosure()
+                } finally {
+                    --indent
+                    println("}")
+                }
                 // restore result, as the worst from guarded and rescue closures
                 flowRun.state.result = r.combine(flowRun.state.result)
             }
@@ -184,13 +211,19 @@ public class FlowDelegate {
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
             flowRun.state.result = origin
-            listener.logger.println("retry (attempt $i++} {")
+            println("retry (attempt $i++} {")
+            ++indent
+
             retryClosure()
+
+            --indent
+
             if (flowRun.state.result.isBetterOrEqualTo(SUCCESS)) {
-                listener.logger.println("}")
+                println("}")
                 return;
             }
-            listener.logger.println("} // failed")
+
+            println("} // failed")
         }
     }
 
@@ -200,22 +233,28 @@ public class FlowDelegate {
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
         def results = new CopyOnWriteArrayList();
 
-        listener.logger.println("parallel {")
-        closures.eachWithIndex { closure, idx ->
-            pool.submit( {
-                flowRun.state = new FlowState(SUCCESS, upstream)
-                closure()
-                lastCompleted.addAll(flowRun.state.lastCompleted)
-                results[idx] = flowRun.state
-            } )
+        println("parallel {")
+        ++indent
+
+        try {
+            closures.eachWithIndex { closure, idx ->
+                pool.submit( {
+                    flowRun.state = new FlowState(SUCCESS, upstream)
+                    closure()
+                    lastCompleted.addAll(flowRun.state.lastCompleted)
+                    results[idx] = flowRun.state
+                } )
+            }
+            pool.shutdown()
+            pool.awaitTermination(1, TimeUnit.DAYS)
+            flowRun.state.lastCompleted = lastCompleted
+            results.each {
+                flowRun.state.result = flowRun.state.result.combine(it.result)
+            }
+        } finally {
+            --indent
+            println("}")
         }
-        pool.shutdown()
-        pool.awaitTermination(1, TimeUnit.DAYS)
-        flowRun.state.lastCompleted = lastCompleted
-        results.each {
-            flowRun.state.result = flowRun.state.result.combine(it.result)
-        }
-        listener.logger.println("}")
         return results
     }
     
