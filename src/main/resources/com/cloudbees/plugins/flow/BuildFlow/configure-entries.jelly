@@ -21,11 +21,13 @@
   </f:entry>
 
   <p:config-disableBuild/>
-  
+
   <p:config-concurrentBuild/>
-  
-  <p:config-trigger/>
-    
+
+  <p:config-trigger>
+      <p:config-upstream-pseudo-trigger />
+  </p:config-trigger>
+
   <f:section title="${%Advanced Project Options configure-common}">
     <f:advanced>
       <p:config-quietPeriod />
@@ -35,6 +37,6 @@
       <st:include page="configure-advanced.jelly" optional="true" />
     </f:advanced>
   </f:section>
-    
 
+  <p:config-publishers />
 </j:jelly>

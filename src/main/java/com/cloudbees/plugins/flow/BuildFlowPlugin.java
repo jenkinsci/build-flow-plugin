@@ -18,11 +18,11 @@
 package com.cloudbees.plugins.flow;
 
 import hudson.Plugin;
+import hudson.model.Items;
 
 /**
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
 public class BuildFlowPlugin extends Plugin {
-
 
 }
