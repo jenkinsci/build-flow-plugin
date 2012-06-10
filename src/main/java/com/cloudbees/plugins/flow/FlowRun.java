@@ -65,8 +65,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         state.set(new FlowState(SUCCESS, this));
     }
 
-    // TODO This doesn't just schedule a job invocation. This schedules and waits for the run to complete.
-    /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+    /* package */ Run run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         Boolean could_run = job.run(new FlowCause(this),actions);
         if(could_run) {
             addBuild(job.getBuild());
