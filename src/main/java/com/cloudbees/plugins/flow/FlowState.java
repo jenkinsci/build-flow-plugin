@@ -16,11 +16,13 @@ public class FlowState {
     private Set<Run> lastCompleted;
 
     public FlowState(Result result, Set<Run> previous) {
+        assert result != null;
         this.result = result;
         setLastCompleted(previous);
     }
 
     public FlowState(Result result, Run previous) {
+        assert result != null;
         this.result = result;
         setLastCompleted(previous);
     }
@@ -30,6 +32,7 @@ public class FlowState {
     }
 
     public void setResult(Result result) {
+        assert result != null;
         this.result = result;
     }
 

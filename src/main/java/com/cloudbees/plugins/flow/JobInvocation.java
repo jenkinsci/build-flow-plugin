@@ -30,9 +30,9 @@ public class JobInvocation {
         }
     }
 
-    /* package */ JobInvocation run(Cause cause, List<Action> actions) {
+    /* package */ Boolean run(Cause cause, List<Action> actions) {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
-        return this;
+        return future != null;
     }
 
 
@@ -53,10 +53,5 @@ public class JobInvocation {
 
     public String toString() {
         return "running job :" + name;
-    }
-
-    public void waitForCompletion() throws ExecutionException, InterruptedException {
-        Run run = getBuild();
-        while(run.isBuilding()) Thread.sleep(1000);
     }
 }

@@ -65,12 +65,16 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         state.set(new FlowState(SUCCESS, this));
     }
 
+    // TODO This doesn't just schedule a job invocation. This schedules and waits for the run to complete.
     /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        job.run(new FlowCause(this),actions);
-        addBuild(job.getBuild());
-        job.waitForCompletion();
-        getState().setResult(job.getResult());
-        return job.getBuild();
+        Boolean could_run = job.run(new FlowCause(this),actions);
+        if(could_run) {
+            addBuild(job.getBuild());
+            getState().setResult(job.getResult());
+            return job.getBuild();
+        } else {
+            return null;
+        }
     }
 
     /* package */ FlowState getState() {
@@ -98,7 +102,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
 
 
-    public void addBuild(Run build) throws ExecutionException, InterruptedException {
+    public synchronized void addBuild(Run build) throws ExecutionException, InterruptedException {
         builds.addVertex(build);
         for (Run up : state.get().getLastCompleted()) {
             String edge = up.toString() + " => " + build.toString();
