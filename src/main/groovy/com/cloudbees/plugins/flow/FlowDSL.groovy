@@ -117,21 +117,21 @@ public class FlowDelegate {
         causes = flowRun.causes
     }
 
-    def out() {
+    def getOut() {
         return listener.logger
     }
 
     // TODO Assuring proper indent should be done in the listener?
     def println_with_indent(Closure f) {
         for (int i = 0; i < indent; ++i) {
-            out().print("    ")
+            out.print("    ")
         }
         f()
-        out().println()
+        out.println()
     }
 
     def println(String s) {
-        println_with_indent { out().println(s) }
+        println_with_indent { out.println(s) }
     }
 
     def fail() {
@@ -244,7 +244,7 @@ public class FlowDelegate {
         ExecutorService pool = Executors.newCachedThreadPool()
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
-        def results = new CopyOnWriteArrayList<Result>()
+        def results = new CopyOnWriteArrayList<FlowState>()
         def tasks = new ArrayList<Future<FlowState>>()
 
         println("parallel {")
@@ -268,7 +268,7 @@ public class FlowDelegate {
                 try {
                     def final_state = task.get()
                     Result result = final_state.result
-                    results.add(result)
+                    results.add(final_state)
                     current_state.result = current_state.result.combine(result)
                 } catch(ExecutionException e)
                 {

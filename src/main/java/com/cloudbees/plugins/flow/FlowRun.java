@@ -143,8 +143,6 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                     }
                 }
                 if (failed) return Result.FAILURE;
-                
-
             }
             return getState().getResult();
         }
