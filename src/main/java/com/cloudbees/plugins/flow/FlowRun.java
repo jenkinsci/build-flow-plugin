@@ -153,7 +153,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
     
     public String id(Run run) throws UnsupportedEncodingException {
-        return URLEncoder.encode(run.toString(), "UTF-8");
+        return URLEncoder.encode(run.getParent().getFullDisplayName() + run.getNumber(), "UTF-8");
     }
 
 }
