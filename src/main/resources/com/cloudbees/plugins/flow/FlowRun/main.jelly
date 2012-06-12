@@ -7,11 +7,19 @@
     <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jquery.jsPlumb-1.3.9-all-min.js "></script>
     <style type="text/css">
         .start {
+            width: 40%;
+            height:30px;
+        }
+        space {
+            width: 40%;
+            height: 60px;
+        }
+        .starter {
             border:solid 2px black;
             border-radius: 10px;
             box-shadow: 1px 1px 5px black;
-            width:10px;
-            height:10px;
+            width:30px;
+            height:30px;
         }
         .build {
             border:solid 1px black;
@@ -19,6 +27,7 @@
             box-shadow: 2px 2px 5px black;
             margin-top: 15px;
             padding: 2px;
+            width: 40%;
         }
         flow {
             width:100%;
@@ -26,7 +35,8 @@
     </style>
 
     <div id="flow">
-        <div id="${it.id(it)}" class="start"> </div>
+        <div id="${it.id(it)}" class="build">${it.getParent().getFullDisplayName()} <![CDATA[#]]>${it.getNumber()}</div>
+        <div class="space"><![CDATA[ &nbsp; ]]></div>
         <j:set var="g" value="${it.builds}"/>
         <j:set var="n" value="${it}"/>
         <j:while test="${not empty g.outgoingEdgesOf(n)}">
@@ -36,32 +46,40 @@
                     <img src="${rootURL}/images/24x24/${v.iconColor.image}"/>
                     <a href="${v.getAbsoluteUrl()}">${v}</a>
                 </div>
+                <div class="space"><![CDATA[ &nbsp; ]]></div>
             </j:forEach>
             <j:set var="n" value="${v}"/>
         </j:while>
     </div>
 
     <script type="text/javascript">
-        jsPlumb.importDefaults({
-            PaintStyle:{ lineWidth:2, strokeStyle:"orange", outlineColor:"black", outlineWidth:1 },
-            Connector:[ "Flowchart", { curviness: 30 } ],
-            Endpoint:[ "Dot", { radius: 1 } ],
-            ConnectionOverlays : [[ "Arrow", {location:1,
-                            id:"arrow",
-                            length:14,
-                            foldback:0.8
-                }]],
-            Anchor : [ "BottomCenter", "TopCenter" ]
-        });
-
         jsPlumb.ready(function() {
-            var e;
+            jsPlumb.importDefaults({
+                PaintStyle:{ lineWidth:2, strokeStyle:"orange", outlineColor:"black", outlineWidth:1 },
+                Connector:[ "Flowchart", { curviness: 30 } ],
+                Endpoint:[ "Dot", { radius: 1 } ],
+                ConnectionOverlays : [[ "Arrow", {location:1,
+                                id:"arrow",
+                                length:14,
+                                foldback:0.8
+                    }]],
+                Anchor : "Continuous"
+            });
         <j:set var="n" value="${it}"/>
         <j:while test="${not empty g.outgoingEdgesOf(n)}">
-            e = jsPlumb.addEndpoint("${it.id(n)}");
+            jsPlumb.addEndpoint("${it.id(n)}");
             <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
                 <j:set var="v" value="${g.getEdgeTarget(e)}"/>
-                jsPlumb.connect({ source:e, target:jsPlumb.addEndpoint("${it.id(v)}")});
+            jsPlumb.addEndpoint("${it.id(v)}");
+            </j:forEach>
+            <j:set var="n" value="${v}"/>
+        </j:while>
+        <j:set var="n" value="${it}"/>
+        <j:while test="${not empty g.outgoingEdgesOf(n)}">
+            <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
+                <j:set var="v" value="${g.getEdgeTarget(e)}"/>
+            jsPlumb.connect({ source:"${it.id(n)}",
+                target:"${it.id(v)}"});
             </j:forEach>
             <j:set var="n" value="${v}"/>
         </j:while>
