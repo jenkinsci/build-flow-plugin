@@ -1,58 +1,61 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
 
-    <link rel="stylesheet" src="${resURL}/plugin/build-flow-plugin/graph/js-graph-it.css"/>
-    <style type="text/css">
-        .canvas {
-            font-family: tahoma;
-            position:relative;
-        }
-        h2.block {
-            position: absolute;
-            border: 1px solid #7DAB76;
-            background-color: #BAFFB0;
-            padding: 3px 5px 3px 10px;
-            border-radius: 0 3px 3px 10px;
-            box-shadow: 5px 5px 5px #888;
-            width: 200px;
-        }
 
-        h1.block {
-            position: absolute;
-            border: 1px solid #000;
-            background-color: #888;
+    <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jquery.min.js"></script>
+    <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jquery.jsPlumb-1.3.9-all.js "></script>
+    <style type="text/css">
+        .start {
+            border:solid 2px black;
             border-radius: 10px;
-            box-shadow: 5px 5px 5px #888;
-            width:20px;
-            height:20px;
+            box-shadow: 1px 1px 5px black;
+            width:10px;
+            height:10px;
+        }
+        .build {
+            border:solid 1px black;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px black;
+            margin-top: 15px;
+            padding: 2px;
+        }
+        flow {
+            width:100%;
         }
     </style>
 
-
-    <div class="canvas"
-         style="width: 100%; height: 300px">
-
+    <div id="flow">
+        <div id="${it.id(it)}" class="start"> </div>
         <j:set var="g" value="${it.builds}"/>
         <j:set var="n" value="${it}"/>
-        <j:set var="x" value="10"/>
-        <j:set var="y" value="10"/>
-
-        <h1 class="block" id="${it.id(it)}" style="left: 107px; top:0px;"/>
-
         <j:while test="${not empty g.outgoingEdgesOf(n)}">
-            <j:set var="x" value="10"/>
-            <j:set var="y" value="${y+50}"/>
             <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
                 <j:set var="v" value="${g.getEdgeTarget(e)}"/>
-                <j:set var="x" value="${x + 250*(i)}"/>
-
-                <h2 class="block" id="${it.id(v)}" style="left: ${x}px; top:${y}px;">
-                    <img src="${rootURL}/images/24x24/${v.iconColor.image}"/> ${v}
-                </h2>
+                <div class="build" id="${it.id(v)}">
+                    <img src="${rootURL}/images/24x24/${v.iconColor.image}"/>
+                    <a href="${v.getAbsoluteUrl()}">${v}</a>
+                </div>
             </j:forEach>
             <j:set var="n" value="${v}"/>
         </j:while>
-        
     </div>
+
+    <script type="text/javascript">
+        jsPlumb.ready(function() {
+            var e;
+        <j:set var="n" value="${it}"/>
+        <j:while test="${not empty g.outgoingEdgesOf(n)}">
+            e = jsPlumb.addEndpoint("${it.id(n)}");
+            <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
+                <j:set var="v" value="${g.getEdgeTarget(e)}"/>
+                jsPlumb.connect({ source:e,
+                                  target:jsPlumb.addEndpoint("${it.id(v)}"),
+                                  anchors:["BottomCenter", "TopCenter"] });
+            </j:forEach>
+            <j:set var="n" value="${v}"/>
+        </j:while>
+        });
+    </script>
 
 </j:jelly>
