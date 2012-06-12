@@ -7,8 +7,13 @@
     <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jquery.jsPlumb-1.3.9-all-min.js "></script>
     <style type="text/css">
         .start {
-            width: 40%;
-            height:30px;
+            border:solid 2px black;
+            border-radius: 10px;
+            box-shadow: 1px 1px 5px black;
+            width:10px;
+            height:10px;
+            position:relative;
+            left:95px;
         }
         space {
             width: 40%;
@@ -25,9 +30,10 @@
             border:solid 1px black;
             border-radius: 4px;
             box-shadow: 2px 2px 5px black;
-            margin-top: 15px;
+            margin-top: 30px;
             padding: 2px;
-            width: 40%;
+            height:20px;
+            width:200px;
         }
         flow {
             width:100%;
@@ -35,7 +41,8 @@
     </style>
 
     <div id="flow">
-        <div id="${it.id(it)}" class="build">${it.getParent().getFullDisplayName()} <![CDATA[#]]>${it.getNumber()}</div>
+        <!--<div id="${it.id(it)}" class="build">${it.getParent().getFullDisplayName()} <![CDATA[#]]>${it.getNumber()}</div>-->
+        <div id="${it.id(it)}" class="start"> </div>
         <div class="space"><![CDATA[ &nbsp; ]]></div>
         <j:set var="g" value="${it.builds}"/>
         <j:set var="n" value="${it}"/>
