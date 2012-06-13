@@ -31,6 +31,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
+import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
 
 /**
@@ -64,12 +65,15 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         state.set(new FlowState(SUCCESS, this));
     }
 
-    /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        job.run(new FlowCause(this),actions);
-        addBuild(job.getBuild());
-        job.waitForCompletion();
-        getState().setResult(job.getResult());
-        return job.getBuild();
+    /* package */ Run run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+        Boolean could_run = job.run(new FlowCause(this),actions);
+        if(could_run) {
+            addBuild(job.getBuild());
+            getState().setResult(job.getResult());
+            return job.getBuild();
+        } else {
+            return null;
+        }
     }
 
     /* package */ FlowState getState() {
