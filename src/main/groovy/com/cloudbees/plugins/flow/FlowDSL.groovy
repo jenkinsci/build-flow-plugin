@@ -17,6 +17,7 @@
 
 package com.cloudbees.plugins.flow
 
+import java.util.List;
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
@@ -130,6 +131,7 @@ public class FlowDelegate {
 
     def getActions(Map args) {
         List<Action> actions = new ArrayList<Action>();
+        List<ParameterValue> params = [];
         for (Map.Entry param: args) {
             String paramName = param.key
             Object paramValue = param.value
@@ -137,13 +139,14 @@ public class FlowDelegate {
                 paramValue = getClosureValue(paramValue)
             }
             if (paramValue instanceof Boolean) {
-                actions.add(new ParametersAction(new BooleanParameterValue(paramName, (Boolean) paramValue)))
+                params.add(new BooleanParameterValue(paramName, (Boolean) paramValue))
             }
             else {
-                actions.add(new ParametersAction(new StringParameterValue(paramName, paramValue.toString())))
+                params.add(new StringParameterValue(paramName, paramValue.toString()))
             }
             //TODO For now we only support String and boolean parameters
         }
+        actions.add(new ParametersAction(params));
         return actions
     }
 
