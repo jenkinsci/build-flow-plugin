@@ -33,30 +33,40 @@
         <div id="${it.id(it)}" class="start"> </div>
         <j:set var="g" value="${it.builds}"/>
         <j:set var="n" value="${it}"/>
+        <table>
         <j:while test="${not empty g.outgoingEdgesOf(n)}">
+            <tr>
             <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
+                <td>
                 <j:set var="v" value="${g.getEdgeTarget(e)}"/>
                 <div class="build" id="${it.id(v)}">
                     <img src="${rootURL}/images/24x24/${v.iconColor.image}"/>
                     <a href="${v.getAbsoluteUrl()}">${v}</a>
                 </div>
+                </td>
             </j:forEach>
             <j:set var="n" value="${v}"/>
+            </tr>
+            <tr><td><div class="space"> </div></td></tr>
         </j:while>
+        </table>
     </div>
 
     <script type="text/javascript">
         jsPlumb.ready(function() {
             jsPlumb.importDefaults({
+                //PaintStyle:{ lineWidth:2, strokeStyle:"orange" },
                 PaintStyle:{ lineWidth:2, strokeStyle:"orange", outlineColor:"black", outlineWidth:1 },
-                Connector:[ "Flowchart", { curviness: 30 } ],
+                Connector:[ "StateMachine", { curviness: 10, margin: 0, proximityLimit: 150 } ],
                 Endpoint:[ "Dot", { radius: 1 } ],
                 ConnectionOverlays : [[ "Arrow", {location:1,
                                 id:"arrow",
                                 length:14,
                                 foldback:0.8
                     }]],
-                Anchor : "Continuous"
+                //Anchor : "Continuous"
+                Anchor : ["BottomCenter", "TopCenter"]
+
             });
         <j:set var="n" value="${it}"/>
         <j:while test="${not empty g.outgoingEdgesOf(n)}">
