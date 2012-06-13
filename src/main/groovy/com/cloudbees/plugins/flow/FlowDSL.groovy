@@ -120,13 +120,34 @@ public class FlowDelegate {
     
     def build(Map args, String jobName) {
         if (flowRun.state.result.isWorseThan(SUCCESS)) {
+            listener.logger.println("Skipping ${jobName}")
             fail()
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         def p = job.getProject()
         listener.logger.println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
-        Run r = flowRun.schedule(job, getActions(args));
+
+        // Run and wait for the job to complete. If r is not null then r is a completed Run.
+        Run r = flowRun.run(job, getActions(args));
+
+        // If a job cannot be scheduled to run then notify the user and fail. There are several ways
+        // a job will fail to be scheduled.  For example:
+        //
+        // parallel(
+        //  { build("job1") }
+        //  { build("job1") }
+        // )
+        //
+        // If job1 cannot be executed concurrently then one of the builds will fail because Jenkins
+        // will block job1 from being scheduled concurrently. 
+        //
+        // TODO This should examine the reason before deciding if to fail or not.
+        if (null == r) {
+            listener.logger.println("Failed to start ${jobName}.")
+            fail();
+        }
+
         listener.logger.println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
         return job;
     }
