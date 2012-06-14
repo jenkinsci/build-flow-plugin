@@ -30,6 +30,7 @@ import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import java.util.concurrent.CopyOnWriteArrayList
 import hudson.console.HyperlinkNote
+import org.tuenti.lock.FlowLock
 
 public class FlowDSL {
 
@@ -219,6 +220,18 @@ public class FlowDelegate {
         return results
     }
     
+    def locksection (String name, lockClosure){
+        if (flowRun.state.result.isWorseThan(SUCCESS)) {
+            fail()
+        }
+        try {
+           FlowLock lock = new FlowLock(name, flowRun, listener);
+           lock.getLock();
+           lockClosure();
+        } finally {
+           lock.releaseLock();
+        }
+    }
 
     def propertyMissing(String name) {
         throw new MissingPropertyException("Property ${name} doesn't exist.");
