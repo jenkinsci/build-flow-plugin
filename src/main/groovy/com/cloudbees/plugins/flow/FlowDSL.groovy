@@ -24,12 +24,17 @@ import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Callable
+
 import java.util.concurrent.TimeUnit
 import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import java.util.concurrent.CopyOnWriteArrayList
 import hudson.console.HyperlinkNote
+import java.util.concurrent.Future
+import java.util.concurrent.Callable
+
+import static hudson.model.Result.FAILURE
+import java.util.concurrent.ExecutionException
 
 public class FlowDSL {
 
@@ -65,7 +70,6 @@ public class FlowDSL {
 
         def binding = new Binding([
                 build: flowRun,
-                out: listener.logger,
                 env: envMap,
                 upstream: upstream,
                 params: flowRun.getBuildVariables(),
@@ -85,11 +89,14 @@ public class FlowDSL {
                 cl.resolveStrategy = Closure.DELEGATE_FIRST
                 cl()
             }
+            emc.println = {
+                String s -> flow.println s
+            }
         })
         try {
             dslScript.run()
-        } finally {
-            //
+        } catch(JobExecutionFailureException e) {
+            flowRun.state.result = FAILURE;
         }
     }
 
@@ -102,11 +109,29 @@ public class FlowDelegate {
     def List<Cause> causes
     def FlowRun flowRun
     BuildListener listener
+    int indent = 0
 
     public FlowDelegate(FlowRun flowRun, BuildListener listener) {
         this.flowRun = flowRun
         this.listener = listener
         causes = flowRun.causes
+    }
+
+    def getOut() {
+        return listener.logger
+    }
+
+    // TODO Assuring proper indent should be done in the listener?
+    def synchronized println_with_indent(Closure f) {
+        for (int i = 0; i < indent; ++i) {
+            out.print("    ")
+        }
+        f()
+        out.println()
+    }
+
+    def println(String s) {
+        println_with_indent { out.println(s) }
     }
 
     def fail() {
@@ -120,14 +145,22 @@ public class FlowDelegate {
     
     def build(Map args, String jobName) {
         if (flowRun.state.result.isWorseThan(SUCCESS)) {
+            println("Skipping ${jobName}")
             fail()
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
+
         def p = job.getProject()
-        listener.logger.println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
-        Run r = flowRun.schedule(job, getActions(args));
-        listener.logger.println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
+        println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
+        Run r = flowRun.run(job, getActions(args));
+
+        if (null == r) {
+            println("Failed to start ${jobName}.")
+            fail();
+        }
+
+        println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
         return job;
     }
 
@@ -163,15 +196,22 @@ public class FlowDelegate {
             rescueClosure.resolveStrategy = Closure.DELEGATE_FIRST
 
             try {
-                listener.logger.println("guard {")
+                println("guard {")
+                ++indent
                 guardedClosure()
             } finally {
+                --indent
                 // Force result to SUCCESS so that rescue closure will execute
                 Result r = flowRun.state.result
                 flowRun.state.result = SUCCESS
-                listener.logger.println("} rescue {")
-                rescueClosure()
-                listener.logger.println("}")
+                println("} rescue {")
+                ++indent
+                try {
+                    rescueClosure()
+                } finally {
+                    --indent
+                    println("}")
+                }
                 // restore result, as the worst from guarded and rescue closures
                 flowRun.state.result = r.combine(flowRun.state.result)
             }
@@ -184,13 +224,19 @@ public class FlowDelegate {
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
             flowRun.state.result = origin
-            listener.logger.println("retry (attempt $i++} {")
+            println("retry (attempt $i++} {")
+            ++indent
+
             retryClosure()
+
+            --indent
+
             if (flowRun.state.result.isBetterOrEqualTo(SUCCESS)) {
-                listener.logger.println("}")
+                println("}")
                 return;
             }
-            listener.logger.println("} // failed")
+
+            println("} // failed")
         }
     }
 
@@ -198,24 +244,47 @@ public class FlowDelegate {
         ExecutorService pool = Executors.newCachedThreadPool()
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
-        def results = new CopyOnWriteArrayList();
+        def results = new CopyOnWriteArrayList<FlowState>()
+        def tasks = new ArrayList<Future<FlowState>>()
 
-        listener.logger.println("parallel {")
-        closures.eachWithIndex { closure, idx ->
-            pool.submit( {
-                flowRun.state = new FlowState(SUCCESS, upstream)
-                closure()
-                lastCompleted.addAll(flowRun.state.lastCompleted)
-                results[idx] = flowRun.state
-            } )
+        println("parallel {")
+        ++indent
+
+        def current_state = flowRun.state
+        try {
+
+            closures.each {closure ->
+                Closure<FlowState> track_closure = {
+                    flowRun.state = new FlowState(SUCCESS, upstream)
+                    closure()
+                    lastCompleted.addAll(flowRun.state.lastCompleted)
+                    return flowRun.state
+                }
+
+                tasks.add(pool.submit(track_closure as Callable))
+            }
+
+            tasks.each {task ->
+                try {
+                    def final_state = task.get()
+                    Result result = final_state.result
+                    results.add(final_state)
+                    current_state.result = current_state.result.combine(result)
+                } catch(ExecutionException e)
+                {
+                    // TODO perhaps rethrow?
+                    current_state.result = FAILURE
+                }
+            }
+
+            pool.shutdown()
+            pool.awaitTermination(1, TimeUnit.DAYS)
+            current_state.setLastCompleted(lastCompleted)
+        } finally {
+            flowRun.state = current_state
+            --indent
+            println("}")
         }
-        pool.shutdown()
-        pool.awaitTermination(1, TimeUnit.DAYS)
-        flowRun.state.lastCompleted = lastCompleted
-        results.each {
-            flowRun.state.result = flowRun.state.result.combine(it.result)
-        }
-        listener.logger.println("}")
         return results
     }
     

@@ -31,6 +31,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
+import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
 
 /**
@@ -64,12 +65,15 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         state.set(new FlowState(SUCCESS, this));
     }
 
-    /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        job.run(new FlowCause(this),actions);
-        addBuild(job.getBuild());
-        job.waitForCompletion();
-        getState().setResult(job.getResult());
-        return job.getBuild();
+    /* package */ Run run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+        Boolean could_run = job.run(new FlowCause(this),actions);
+        if(could_run) {
+            addBuild(job.getBuild());
+            getState().setResult(job.getResult());
+            return job.getBuild();
+        } else {
+            return null;
+        }
     }
 
     /* package */ FlowState getState() {
@@ -97,7 +101,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
     }
 
 
-    public void addBuild(Run build) throws ExecutionException, InterruptedException {
+    public synchronized void addBuild(Run build) throws ExecutionException, InterruptedException {
         builds.addVertex(build);
         for (Run up : state.get().getLastCompleted()) {
             String edge = up.toString() + " => " + build.toString();
@@ -125,6 +129,9 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
         }
 
         protected Result doRun(BuildListener listener) throws Exception {
+            if(!preBuild(listener, project.getPublishersList()))
+                return FAILURE;
+
             try {
                 setResult(SUCCESS);
                 new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
@@ -136,18 +143,19 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
                     }
                 }
                 if (failed) return Result.FAILURE;
-                
-
             }
             return getState().getResult();
         }
 
         @Override
         public void post2(BuildListener listener) throws IOException, InterruptedException {
+            if(!performAllBuildSteps(listener, project.getPublishersList(), true))
+                setResult(FAILURE);
         }
 
         @Override
         public void cleanUp(BuildListener listener) throws Exception {
+            performAllBuildSteps(listener, project.getPublishersList(), false);
             super.cleanUp(listener);
         }
     }
