@@ -122,7 +122,7 @@ public class FlowDelegate {
     }
 
     // TODO Assuring proper indent should be done in the listener?
-    def println_with_indent(Closure f) {
+    def synchronized println_with_indent(Closure f) {
         for (int i = 0; i < indent; ++i) {
             out.print("    ")
         }
