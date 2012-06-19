@@ -36,5 +36,6 @@
     </f:advanced>
   </f:section>
     
+  <p:config-publishers2 />
 
 </j:jelly>
