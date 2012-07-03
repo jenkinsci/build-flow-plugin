@@ -60,12 +60,14 @@ public final class ResourceAllocator {
         while (holder != null) {
             if (holderIsNotRunning(holder)) {
                 logger.println("Resource " + resourceName + " currently use by : " + holder.toString()
-                    + " which is not running, freeing it");
+                    + " which is not running, freying it");
                 this.asyncFree(resourceName);
+
             } else {
-                logger.println("Waiting ressource : " + resourceName + " currently use by : " + resourceHolders.get(resourceName).toString());
+                logger.println("Waiting ressource : " + resourceName + " currently use by " + resourceHolders.get(resourceName).toString());
+                wait();
             }
-            wait();
+            
             holder = resourceHolders.get(resourceName);
         }
 
@@ -90,6 +92,6 @@ public final class ResourceAllocator {
     }
     
     private void asyncFree(String n) {
-        resourceHolders.remove(n);
+        resourceHolders.remove(n); 
     }
 }
