@@ -22,6 +22,7 @@ import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
 import static hudson.model.Result.SUCCESS
+import static hudson.model.Result.UNSTABLE
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Callable
@@ -30,6 +31,7 @@ import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import java.util.concurrent.CopyOnWriteArrayList
 import hudson.console.HyperlinkNote
+import org.tuenti.lock.FlowLock
 
 public class FlowDSL {
 
@@ -219,6 +221,20 @@ public class FlowDelegate {
         return results
     }
     
+    def locksection (String name, lockClosure) {
+        FlowLock lock = null;
+        if (shouldNotContinue()) {
+            listener.logger.println("Current status is ${currentStatus}, skipping lock section")
+            return
+        } 
+        try {
+            lock = new FlowLock(name, flowRun, listener);
+            lock.getLock();
+            lockClosure();
+        } finally {
+            lock.releaseLock();
+        }
+    }
 
     def propertyMissing(String name) {
         throw new MissingPropertyException("Property ${name} doesn't exist.");
@@ -226,5 +242,9 @@ public class FlowDelegate {
 
     def methodMissing(String name, Object args) {
         throw new MissingMethodException(name, this.class, args);
+    }
+    
+    def shouldNotContinue() {
+        return flowRun.state.result.isWorseThan(UNSTABLE)
     }
 }
