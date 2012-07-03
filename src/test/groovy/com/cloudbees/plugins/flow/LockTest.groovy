@@ -44,4 +44,18 @@ class LockTest extends DSLTestCase {
         println flow.builds.edgeSet()
         assertRan(job1, 1, FAILURE)
     }
+    
+    public void testSkipLockSection() {
+       def job1 = createFailJob("job1")
+       def job2 = createJob("job2")
+       def flow = run("""
+            build("job1")
+            locksection("lock1") {
+              build("job2")
+            }
+        """)
+       println flow.builds.edgeSet()
+       assertRan(job1, 1, FAILURE)
+       assertDidNotRun(job2)
+    }
 }
