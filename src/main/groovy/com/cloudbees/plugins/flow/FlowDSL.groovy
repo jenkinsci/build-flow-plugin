@@ -124,16 +124,20 @@ public class FlowDelegate {
         }
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
-        def p = job.getProject()
+        Job p = job.getProject()
         listener.logger.println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
-        Run r = flowRun.schedule(job, getActions(args));
+
+
+        Run r = flowRun.schedule(job, getActions(p, args));
         listener.logger.println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
         return job;
     }
 
-    def getActions(Map args) {
+    def getActions(Job job, Map args) {
+
         List<Action> actions = new ArrayList<Action>();
         List<ParameterValue> params = [];
+        Set<String> addedParams = new HashSet<String>();
         for (Map.Entry param: args) {
             String paramName = param.key
             Object paramValue = param.value
@@ -146,8 +150,40 @@ public class FlowDelegate {
             else {
                 params.add(new StringParameterValue(paramName, paramValue.toString()))
             }
+            addedParams.add(paramName);
             //TODO For now we only support String and boolean parameters
         }
+
+
+        /* Add default values from defined params in the target job */
+        List<Action> originalActions = job.getActions();
+        
+
+        List<ParameterDefinition> jobParams = null;
+        for(Action action:originalActions) {
+            if (action instanceof ParametersDefinitionProperty) {
+                ParametersDefinitionProperty parametersAction = (ParametersDefinitionProperty) action;
+                jobParams = parametersAction.getParameterDefinitions();
+            }
+        }
+
+        if (jobParams != null) {
+
+            for (ParameterDefinition originalParam: jobParams) {
+
+                String paramName = originalParam.getName()
+                ParameterValue originalParamValue = originalParam.getDefaultParameterValue();
+
+                if (addedParams.contains(paramName)){
+                    //Already filled parameter
+                    continue;
+                }
+
+                params.add(originalParamValue)
+            }
+        }
+
+        //Additionnal parameters not available in the target job
         actions.add(new ParametersAction(params));
         return actions
     }
