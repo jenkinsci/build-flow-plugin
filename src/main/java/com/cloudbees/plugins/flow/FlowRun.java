@@ -71,7 +71,7 @@ public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
             addBuild(job.getBuild());
         } catch (Exception e) {
             
-            throw new CouldNotScheduleJobException("Could not schedule job" 
+            throw new CouldNotScheduleJobException("Could not schedule job " 
                     + job.getProject().getName() +", ensure its not already enqueued with same parameters", e);
         }
         job.waitForCompletion();
