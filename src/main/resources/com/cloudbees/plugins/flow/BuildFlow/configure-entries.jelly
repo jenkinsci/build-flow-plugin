@@ -24,7 +24,7 @@
 
   <f:section title="${%Flow Definition}">
     <f:entry field="dsl" title="${%DSL}">
-      <f:textarea/>
+      <f:textarea codemirror-mode="groovy" codemirror-config="mode:'text/x-groovy'"/>
     </f:entry>
   </f:section>
 
