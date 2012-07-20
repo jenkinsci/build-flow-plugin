@@ -30,6 +30,7 @@ import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import java.util.concurrent.CopyOnWriteArrayList
 import hudson.console.HyperlinkNote
+import com.thoughtworks.xstream.converters.collections.CollectionConverter
 
 public class FlowDSL {
 
@@ -192,6 +193,10 @@ public class FlowDelegate {
             }
             listener.logger.println("} // failed")
         }
+    }
+
+    def parallel(Collection<? extends Closure> closures) {
+        parallel(closures as Closure[])
     }
 
     def parallel(Closure ... closures) {
