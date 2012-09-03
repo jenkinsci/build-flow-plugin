@@ -202,27 +202,28 @@ public class FlowDelegate {
 
     def parallel(Closure ... closures) {
         ExecutorService pool = Executors.newCachedThreadPool()
-        Set<Run> upstream = flowRun.state.lastCompleted
-        Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
-        def results = new CopyOnWriteArrayList();
+        final FlowState state = flowRun.state
+        final Set<Run> upstream = state.lastCompleted
+        final Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
+        final List<FlowState> states = Collections.synchronizedList(new ArrayList<FlowState>());
 
         listener.logger.println("parallel {")
         closures.eachWithIndex { closure, idx ->
             pool.submit( {
-                flowRun.state = new FlowState(SUCCESS, upstream)
+                final FlowState st = new FlowState(SUCCESS, upstream)
+                states[idx] = st
+                flowRun.state = st
                 closure()
-                lastCompleted.addAll(flowRun.state.lastCompleted)
-                results[idx] = flowRun.state
+                lastCompleted.addAll(st.lastCompleted)
             } )
         }
         pool.shutdown()
         pool.awaitTermination(1, TimeUnit.DAYS)
-        flowRun.state.lastCompleted = lastCompleted
-        results.each {
-            flowRun.state.result = flowRun.state.result.combine(it.result)
-        }
         listener.logger.println("}")
-        return results
+
+        state.lastCompleted = lastCompleted
+        states.each { s -> state.result = state.result.combine(s.result) }
+        return states
     }
     
 
