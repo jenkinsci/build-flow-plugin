@@ -195,6 +195,7 @@ public class FlowDelegate {
         }
     }
 
+    // allows syntax like : parallel(["Kohsuke","Nicolas"].collect { name -> return { build("job1", param1:name) } })
     def parallel(Collection<? extends Closure> closures) {
         parallel(closures as Closure[])
     }
