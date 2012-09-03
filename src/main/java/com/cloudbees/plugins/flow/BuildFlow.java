@@ -34,7 +34,7 @@ import org.kohsuke.stapler.StaplerResponse;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask, SCMedItem {
+public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask, SCMedItem {
 
     private final FlowIcon icon = new FlowIcon();
 
@@ -65,9 +65,6 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
         return DESCRIPTOR;
     }
 
-    public void onCompleted(Run run) {
-    }
-
     @Override
     public String getPronoun() {
         return AlternativeUiTextProvider.get(PRONOUN, this, Messages.BuildFlow_Messages());
@@ -87,29 +84,8 @@ public class BuildFlow extends AbstractProject<BuildFlow, FlowRun> implements To
     }
 
     @Override
-    public DescribableList<Publisher, Descriptor<Publisher>> getPublishersList() {
-        return new DescribableList<Publisher,Descriptor<Publisher>>(this);
-    }
-
-    @Override
     protected Class<FlowRun> getBuildClass() {
         return FlowRun.class;
     }
 
-    @Override
-    public boolean isFingerprintConfigured() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    protected void buildDependencyGraph(DependencyGraph graph) {
-        // TODO Auto-generated method stub
-        
-    }
-
-	public AbstractProject<?, ?> asProject() {
-		return (AbstractProject) this;
-	} 
-    
 }

@@ -38,7 +38,7 @@ import static hudson.model.Result.SUCCESS;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends AbstractBuild<BuildFlow, FlowRun>{
+public class FlowRun extends Build<BuildFlow, FlowRun>{
 
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
