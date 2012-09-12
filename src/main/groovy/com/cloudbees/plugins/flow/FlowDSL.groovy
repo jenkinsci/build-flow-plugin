@@ -17,20 +17,18 @@
 
 package com.cloudbees.plugins.flow
 
-import java.util.List;
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Callable
+
 import java.util.concurrent.TimeUnit
 import hudson.slaves.NodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty
-import java.util.concurrent.CopyOnWriteArrayList
+
 import hudson.console.HyperlinkNote
-import com.thoughtworks.xstream.converters.collections.CollectionConverter
 
 public class FlowDSL {
 
@@ -87,11 +85,15 @@ public class FlowDSL {
                 cl()
             }
         })
+
         try {
             dslScript.run()
-        } finally {
-            //
+        } catch (Exception e) {
+            listener("Failed to run DSL Script")
+            e.printStackTrace(listener.getLogger())
+            throw e;
         }
+
     }
 
     // TODO define a parseFlowScript to validate flow DSL and maintain jobs dependencygraph
@@ -196,11 +198,11 @@ public class FlowDelegate {
     }
 
     // allows syntax like : parallel(["Kohsuke","Nicolas"].collect { name -> return { build("job1", param1:name) } })
-    def parallel(Collection<? extends Closure> closures) {
+    def List<FlowState> parallel(Collection<? extends Closure> closures) {
         parallel(closures as Closure[])
     }
 
-    def parallel(Closure ... closures) {
+    def List<FlowState> parallel(Closure ... closures) {
         ExecutorService pool = Executors.newCachedThreadPool()
         final FlowState state = flowRun.state
         final Set<Run> upstream = state.lastCompleted

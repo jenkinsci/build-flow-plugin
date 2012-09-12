@@ -44,7 +44,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
     
 	private String dsl;
 
-    private DirectedGraph<Run, String> builds = new SimpleDirectedGraph<Run, String>(String.class);
+    private DirectedGraph<JobInvocation, String> builds = new SimpleDirectedGraph<JobInvocation, String>(String.class);
 
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
 
@@ -52,23 +52,26 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
 
     public FlowRun(BuildFlow job, File buildDir) throws IOException {
         super(job, buildDir);
-        this.dsl = job.getDsl();
-        builds.addVertex(this); // Initial vertex for the build DAG
-        state.set(new FlowState(SUCCESS, this));
+        setup(job);
     }
 
     public FlowRun(BuildFlow job) throws IOException {
         super(job);
+        setup(job);
+    }
+
+    private void setup(BuildFlow job) {
         this.dsl = job.getDsl();
-        builds.addVertex(this); // Initial vertex for the build DAG
-        state.set(new FlowState(SUCCESS, this));
+        JobInvocation.Start start = new JobInvocation.Start(this);
+        builds.addVertex(start);
+        state.set(new FlowState(SUCCESS, start));
     }
 
     /* package */ Run schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         
         try {
             job.run(new FlowCause(this),actions);
-            addBuild(job.getBuild());
+            addBuild(job);
         } catch (Exception e) {
             
             throw new CouldNotScheduleJobException("Could not schedule job " 
@@ -91,7 +94,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
         lastCompleted = Collections.singleton(job);
     }
 
-    public DirectedGraph<Run, String> getBuilds() {
+    public DirectedGraph<JobInvocation, String> getBuilds() {
         return builds;
     }
 
@@ -104,9 +107,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
     }
 
 
-    public void addBuild(Run build) throws ExecutionException, InterruptedException {
+    public void addBuild(JobInvocation build) throws ExecutionException, InterruptedException {
         builds.addVertex(build);
-        for (Run up : state.get().getLastCompleted()) {
+        for (JobInvocation up : state.get().getLastCompleted()) {
             String edge = up.toString() + " => " + build.toString();
             LOGGER.fine("added build to execution graph " + edge);
             builds.addEdge(up, build, edge);

@@ -1,7 +1,6 @@
 package com.cloudbees.plugins.flow;
 
 import hudson.model.Result;
-import hudson.model.Run;
 
 import java.util.Collections;
 import java.util.Set;
@@ -13,14 +12,14 @@ public class FlowState {
 
     private Result result;
 
-    private Set<Run> lastCompleted;
+    private Set<JobInvocation> lastCompleted;
 
-    public FlowState(Result result, Set<Run> previous) {
+    public FlowState(Result result, Set<JobInvocation> previous) {
         this.result = result;
         setLastCompleted(previous);
     }
 
-    public FlowState(Result result, Run previous) {
+    public FlowState(Result result, JobInvocation previous) {
         this.result = result;
         setLastCompleted(previous);
     }
@@ -33,19 +32,19 @@ public class FlowState {
         this.result = result;
     }
 
-    public Set<Run> getLastCompleted() {
+    public Set<JobInvocation> getLastCompleted() {
         return lastCompleted;
     }
 
-    public void setLastCompleted(Run lastCompleted) {
+    public void setLastCompleted(JobInvocation lastCompleted) {
         this.lastCompleted = Collections.singleton(lastCompleted);
     }
 
-    public void setLastCompleted(Set<Run> lastCompleted) {
+    public void setLastCompleted(Set<JobInvocation> lastCompleted) {
         this.lastCompleted = lastCompleted;
     }
 
-    public Run getLastBuild() {
+    public JobInvocation getLastBuild() {
         return this.lastCompleted.iterator().next();
     }
 
