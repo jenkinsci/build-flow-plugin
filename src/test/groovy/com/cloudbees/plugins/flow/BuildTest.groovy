@@ -52,6 +52,18 @@ class BuildTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    public void testBuildWithParamsAsMap() {
+        Job job1 = createJob("job1")
+        def flow = run("""
+            def params = ["param1": "one", "param2": "two"]
+            build(params, "job1")
+        """)
+        def build = assertSuccess(job1)
+        assertHasParameter(build, "param1", "one")
+        assertHasParameter(build, "param2", "two")
+        assert SUCCESS == flow.result
+    }
+
     public void testJobFailure() {
         Job willFail = createFailJob("willFail");
         def flow = run("""

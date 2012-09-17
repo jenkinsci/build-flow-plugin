@@ -71,7 +71,7 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
     }
 
 
-    public static class BuildFlowDescriptor extends TopLevelItemDescriptor {
+    public static class BuildFlowDescriptor extends AbstractProjectDescriptor {
         @Override
         public String getDisplayName() {
             return Messages.BuildFlow_Messages();
