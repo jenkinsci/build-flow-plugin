@@ -35,6 +35,8 @@ import java.util.concurrent.Callable
 import static hudson.model.Result.FAILURE
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.CopyOnWriteArrayList
+import hudson.security.ACL
+import org.acegisecurity.context.SecurityContextHolder
 
 public class FlowDSL {
 
@@ -267,10 +269,15 @@ public class FlowDelegate {
 
             closures.each {closure ->
                 Closure<FlowState> track_closure = {
-                    flowRun.state = new FlowState(SUCCESS, upstream)
-                    closure()
-                    lastCompleted.addAll(flowRun.state.lastCompleted)
-                    return flowRun.state
+                    def ctx = ACL.impersonate(ACL.SYSTEM)
+                    try {
+                        flowRun.state = new FlowState(SUCCESS, upstream)
+                        closure()
+                        lastCompleted.addAll(flowRun.state.lastCompleted)
+                        return flowRun.state
+                    } finally {
+                        SecurityContextHolder.setContext(ctx)
+                    }
                 }
 
                 tasks.add(pool.submit(track_closure as Callable))
