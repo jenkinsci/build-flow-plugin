@@ -15,11 +15,13 @@ public class FlowState {
     private Set<JobInvocation> lastCompleted;
 
     public FlowState(Result result, Set<JobInvocation> previous) {
+        assert result != null;
         this.result = result;
         setLastCompleted(previous);
     }
 
     public FlowState(Result result, JobInvocation previous) {
+        assert result != null;
         this.result = result;
         setLastCompleted(previous);
     }
@@ -29,6 +31,7 @@ public class FlowState {
     }
 
     public void setResult(Result result) {
+        assert result != null;
         this.result = result;
     }
 

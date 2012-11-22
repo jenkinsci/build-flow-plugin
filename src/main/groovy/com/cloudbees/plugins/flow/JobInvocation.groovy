@@ -43,6 +43,10 @@ public class JobInvocation {
 
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
+        if (future == null) {
+            throw new CouldNotScheduleJobException("Could not schedule job "
+                    + project.getName() +", ensure its not already enqueued with same parameters", e);
+        }
         return this;
     }
 

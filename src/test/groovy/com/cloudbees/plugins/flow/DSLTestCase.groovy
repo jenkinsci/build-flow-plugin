@@ -85,7 +85,7 @@ abstract class DSLTestCase extends HudsonTestCase {
 
     def assertAllSuccess = { jobs ->
         jobs.each {
-            assertNotNull("job ${job.name} didn't ran", job.builds.lastBuild)
+            assertNotNull("job ${it.name} didn't ran", it.builds.lastBuild)
             assert SUCCESS == it.builds.lastBuild.result
         }
     }

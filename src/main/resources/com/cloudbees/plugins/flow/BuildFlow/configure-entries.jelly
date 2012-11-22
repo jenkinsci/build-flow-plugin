@@ -16,28 +16,15 @@
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:p="/lib/hudson/project" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
-  <p:config-disableBuild/>
-  
-  <p:config-concurrentBuild/>
-  
-  <p:config-trigger/>
+  <st:include page="configure-common.jelly" />
 
-  <f:section title="${%Flow Definition}">
-    <f:entry field="dsl" title="${%DSL}">
-      <f:textarea codemirror-mode="groovy" codemirror-config="mode:'text/x-groovy'"/>
-    </f:entry>
-  </f:section>
+  <p:config-trigger>
+      <p:config-upstream-pseudo-trigger />
+  </p:config-trigger>
 
-  <f:section title="${%Advanced Project Options}">
-    <f:advanced>
-      <p:config-quietPeriod />
-      <p:config-retryCount />
-      <p:config-blockWhenUpstreamBuilding />
-      <p:config-blockWhenDownstreamBuilding />
-      <st:include page="configure-advanced.jelly" optional="true" />
-    </f:advanced>
-  </f:section>
-    
+  <f:entry field="dsl" title="${%Define build flow using flow DSL}">
+    <f:textarea/>
+  </f:entry>
+
   <p:config-publishers2 />
-
 </j:jelly>

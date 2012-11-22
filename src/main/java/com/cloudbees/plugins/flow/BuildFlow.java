@@ -21,11 +21,23 @@ import hudson.Extension;
 import hudson.model.*;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Queue.FlyweightTask;
+import hudson.tasks.BuildStep;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Fingerprinter;
 import hudson.tasks.Publisher;
+import hudson.Util;
 import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
+
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import javax.servlet.ServletException;
+
+import net.sf.json.JSONObject;
+
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
@@ -55,7 +67,8 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
-        this.dsl = req.getSubmittedForm().getString("dsl");
+        JSONObject json = req.getSubmittedForm();
+        this.dsl = json.getString("dsl");
     }
 
     @Extension
