@@ -89,7 +89,7 @@ public class FlowDSL {
         try {
             dslScript.run()
         } catch (Exception e) {
-            listener("Failed to run DSL Script")
+            listener.error("Failed to run DSL Script")
             e.printStackTrace(listener.getLogger())
             throw e;
         }
