@@ -20,6 +20,14 @@ package com.cloudbees.plugins.flow
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
 import hudson.model.Job
+import hudson.model.Action
+import hudson.model.ParametersAction
+import hudson.model.ParameterValue
+import hudson.model.StringParameterValue
+import hudson.model.ParametersDefinitionProperty
+import hudson.model.ParameterDefinition
+import hudson.model.StringParameterDefinition
+import hudson.model.FreeStyleProject
 
 class BuildTest extends DSLTestCase {
 
@@ -116,6 +124,24 @@ class BuildTest extends DSLTestCase {
         def build = assertSuccess(job2)
         assertHasParameter(build, "param1", "SUCCESS")
         assertHasParameter(build, "param2", "job1")
+        assert SUCCESS == flow.result
+    }
+
+    public void testParametersFromBuildWithDefaultValues() {
+        FreeStyleProject job1 = createJob("job1")
+        def parametersDefinitions = new ParametersDefinitionProperty(new StringParameterDefinition("param1", "0"), new StringParameterDefinition("param2", "0"))
+        job1.addProperty(parametersDefinitions)
+
+        def flow = run("""
+            b = build("job1",
+                  param1:"1",
+                  param3:"3")
+        """)
+
+        def build = assertSuccess(job1)
+        assertHasParameter(build, "param1", "1")
+        assertHasParameter(build, "param2", "0")
+        assertHasParameter(build, "param3", "3")
         assert SUCCESS == flow.result
     }
 }
