@@ -52,6 +52,10 @@
       <id>mathieuancelin</id>
       <name>Mathieu Ancelin</name>
     </developer>
+    <developer>
+      <id>dbaeli</id>
+      <name>Dimitri Baeli</name>
+    </developer>
   </developers>
 
   <scm>
