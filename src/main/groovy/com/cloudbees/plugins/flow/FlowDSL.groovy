@@ -261,6 +261,23 @@ public class FlowDelegate {
         } ]
     }
 
+    def ignore(Result result, closure) {
+        def deleg = this;
+
+        Result r = flowRun.state.result
+        try {
+            println("ignore("+result+") {")
+            ++indent
+            closure()
+        } finally {
+            --indent
+            if (flowRun.state.result.isBetterOrEqualTo(result)) {
+                // restore result
+                flowRun.state.result = r
+            }
+        }
+    }
+
     def retry(int attempts, retryClosure) {
         Result origin = flowRun.state.result
         int i

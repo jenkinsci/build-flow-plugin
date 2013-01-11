@@ -29,6 +29,8 @@ import hudson.model.ParameterDefinition
 import hudson.model.StringParameterDefinition
 import hudson.model.FreeStyleProject
 
+import static hudson.model.Result.UNSTABLE
+
 class BuildTest extends DSLTestCase {
 
     public void testUnknownJob() {
@@ -79,6 +81,15 @@ class BuildTest extends DSLTestCase {
         """)
         assertFailure(willFail)
         assert FAILURE == flow.result
+    }
+
+    public void testJobUnstable() {
+        Job unstable = createUnstableJob("unstable");
+        def flow = run("""
+            build("unstable")
+        """)
+        assertUnstable(unstable)
+        assert UNSTABLE == flow.result
     }
 
     public void testSequentialBuilds() {

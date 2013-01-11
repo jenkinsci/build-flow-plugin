@@ -17,6 +17,7 @@
 
 package com.cloudbees.plugins.flow
 
+import com.cloudbees.plugin.flow.UnstableBuilder
 import com.cloudbees.plugins.flow.FlowDSL
 import hudson.model.Result
 import org.jvnet.hudson.test.FailureBuilder
@@ -41,6 +42,8 @@ import hudson.tasks.Builder
 import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
 import hudson.model.Job
 
+import static hudson.model.Result.UNSTABLE
+
 abstract class DSLTestCase extends HudsonTestCase {
 
     def createJob = {String name ->
@@ -60,6 +63,13 @@ abstract class DSLTestCase extends HudsonTestCase {
         job.getBuildersList().add(new ConfigurableFailureBuilder(failures));
         return job
     }
+
+    def createUnstableJob = {String name ->
+        def job = createJob(name)
+        job.getBuildersList().add(new UnstableBuilder());
+        return job
+    }
+
 
     def run = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
@@ -92,6 +102,10 @@ abstract class DSLTestCase extends HudsonTestCase {
 
     def assertFailure = { job ->
         assert FAILURE == job.builds.lastBuild.result
+    }
+
+    def assertUnstable = { job ->
+        assert UNSTABLE == job.builds.lastBuild.result
     }
 
     def assertException(Class<? extends Exception> exClass, Closure closure) {
