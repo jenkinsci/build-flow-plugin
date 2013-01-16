@@ -78,6 +78,7 @@ class BuildTest extends DSLTestCase {
         Job willFail = createFailJob("willFail");
         def flow = run("""
             build("willFail")
+            build("willNotRun")
         """)
         assertFailure(willFail)
         assert FAILURE == flow.result
@@ -87,6 +88,7 @@ class BuildTest extends DSLTestCase {
         Job unstable = createUnstableJob("unstable");
         def flow = run("""
             build("unstable")
+            build("willNotRun")
         """)
         assertUnstable(unstable)
         assert UNSTABLE == flow.result

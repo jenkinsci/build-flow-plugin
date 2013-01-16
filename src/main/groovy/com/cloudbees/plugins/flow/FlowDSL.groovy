@@ -100,7 +100,7 @@ public class FlowDSL {
         try {
             dslScript.run()
         } catch(JobExecutionFailureException e) {
-            flowRun.state.result = FAILURE;
+            listener.println("flow failed to complete : " + flowRun.state.result)
         } catch (Exception e) {
             listener.error("Failed to run DSL Script")
             e.printStackTrace(listener.getLogger())
