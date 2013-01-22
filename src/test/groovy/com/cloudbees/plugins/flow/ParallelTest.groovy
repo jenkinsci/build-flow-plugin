@@ -100,4 +100,25 @@ class ParallelTest extends DSLTestCase {
         println flow.builds.edgeSet()
     }
 
+    public void testParallelMap() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def job4 = createJob("job4")
+        def flow = run("""
+            join = parallel ([
+                first:  { build("job1") },
+                second: { build("job2") },
+                third:  { build("job3") }
+            ])
+            build("job4",
+                   r1: join.first.result.name,
+                   r2: join.second.lastBuild.parent.name)
+        """)
+        assertAllSuccess(jobs)
+        assertSuccess(job4)
+        assertHasParameter(job4, "r1", "SUCCESS")
+        assertHasParameter(job4, "r2", "job2")
+        assert SUCCESS == flow.result
+        println flow.builds.edgeSet()
+    }
+
 }
