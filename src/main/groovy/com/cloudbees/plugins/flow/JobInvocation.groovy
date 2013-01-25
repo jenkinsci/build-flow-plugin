@@ -34,7 +34,8 @@ public class JobInvocation {
     }
 
     private static AbstractProject getProjectByName(FlowRun run, String name) {
-        AbstractProject item = Jenkins.getInstance().getItem(name, run.getProject().getParent(), AbstractProject.class);
+        final ItemGroup context = run.getProject().getParent()
+        AbstractProject item = Jenkins.getInstance().getItem(name, (ItemGroup) context, AbstractProject.class);
         if (item == null) {
             throw new JobNotFoundException("Item " + name + "not found (or isn't a job).");
         }
