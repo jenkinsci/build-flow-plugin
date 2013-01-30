@@ -169,7 +169,8 @@ public class FlowDelegate {
             fail();
         }
 
-        println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())+" completed")
+        println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
+                + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}")
         return job;
     }
 
@@ -270,11 +271,13 @@ public class FlowDelegate {
             ++indent
             closure()
         } finally {
-            --indent
             if (flowRun.state.result.isBetterOrEqualTo(result)) {
                 // restore result
+                println("// ${r} ignored")
                 flowRun.state.result = r
             }
+            --indent
+            println("}")
         }
     }
 
