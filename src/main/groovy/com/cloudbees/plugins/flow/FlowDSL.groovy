@@ -151,12 +151,18 @@ public class FlowDelegate {
     def build(String jobName) {
         build([:], jobName)
     }
-    
-    def build(Map args, String jobName) {
+
+    /**
+     * Check flow status and stop if unexpected failure is detected
+     */
+    private void statusCheck() {
         if (flowRun.state.result.isWorseThan(SUCCESS)) {
-            println("Skipping ${jobName}")
             fail()
         }
+    }
+
+    def build(Map args, String jobName) {
+        statusCheck()
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
@@ -234,6 +240,7 @@ public class FlowDelegate {
     }
 
     def guard(guardedClosure) {
+        statusCheck()
         def deleg = this;
         [ rescue : { rescueClosure ->
             rescueClosure.delegate = deleg
@@ -263,25 +270,29 @@ public class FlowDelegate {
     }
 
     def ignore(Result result, closure) {
-        def deleg = this;
-
+        statusCheck()
         Result r = flowRun.state.result
         try {
             println("ignore("+result+") {")
             ++indent
             closure()
         } finally {
-            if (flowRun.state.result.isBetterOrEqualTo(result)) {
+
+            final boolean ignore = flowRun.state.result.isBetterOrEqualTo(result)
+            if (ignore) {
                 // restore result
-                println("// ${r} ignored")
+                println("// ${flowRun.state.result} ignored")
                 flowRun.state.result = r
             }
             --indent
             println("}")
+
+            if (ignore) return   // hides JobExecutionFailureException that may have been thrown running the closure
         }
     }
 
     def retry(int attempts, retryClosure) {
+        statusCheck()
         Result origin = flowRun.state.result
         int i
         while( attempts-- > 0) {
@@ -309,6 +320,7 @@ public class FlowDelegate {
     }
 
     def List<FlowState> parallel(Closure ... closures) {
+        statusCheck()
         ExecutorService pool = Executors.newCachedThreadPool()
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())

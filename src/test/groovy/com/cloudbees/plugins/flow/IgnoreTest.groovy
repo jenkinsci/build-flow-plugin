@@ -28,34 +28,43 @@ class IgnoreTest extends DSLTestCase {
 
     public void testIgnoreJobFailure() {
         Job willFail = createFailJob("willFail");
+        Job wontRun= createJob("wontRun");
         def flow = run("""
             ignore(FAILURE) {
                 build("willFail")
+                build("wontRun")
             }
         """)
         assertFailure(willFail)
+        assertDidNotRun(wontRun)
         assert SUCCESS == flow.result
     }
 
     public void testIgnoreJobUnstable() {
         Job unstable = createUnstableJob("unstable");
+        Job wontRun= createJob("wontRun");
         def flow = run("""
             ignore(UNSTABLE) {
                 build("unstable")
+                build("wontRun")
             }
         """)
         assertUnstable(unstable)
+        assertDidNotRun(wontRun)
         assert SUCCESS == flow.result
     }
 
     public void testIgnoreJobUnstableButFailureFailure() {
         Job willFail = createFailJob("willFail");
+        Job wontRun= createJob("wontRun");
         def flow = run("""
             ignore(UNSTABLE) {
                 build("willFail")
+                build("wontRun")
             }
         """)
         assertFailure(willFail)
+        assertDidNotRun(wontRun)
         assert FAILURE == flow.result
     }
 
