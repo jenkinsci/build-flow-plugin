@@ -44,7 +44,7 @@
     .build.pending > .title {
         background-color: #ffff73;
     }
-    .build.SUCCESS > .title {
+    .build.success > .title {
         background-color: #67e667;
     }
     .build.flow > .title {
@@ -59,11 +59,15 @@
     .build.pending > .details {
         background-color: #ffff00;
     }
-    .build.SUCCESS > .details {
+    .build.success > .details {
         background-color: #0c0;
     }
     .build.flow > .details {
         background-color: #ff9200;
+    }
+    .build > .details > .status font {
+        /* override the default color (can be red on failure) */
+        color: black;
     }
     </style>
 
@@ -83,7 +87,7 @@
                 <li class="step-wrapper">
                     <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
                         <j:set var="v" value="${g.getEdgeTarget(e)}"/>
-                        <j:set var="status" value="${v.completed ? v.build.result : 'pending'}"/>
+                        <j:set var="status" value="${v.completed ? v.resultString : 'pending'}"/>
                         <div class="build ${i > 0 ? 'parallel' : 'first'} ${status}" id="${v.id}">
                             <div class="title">
                                 <a href="${v.buildUrl}">${v}</a>
@@ -97,7 +101,7 @@
                                         <t:buildProgressBar build="${v.build}"/>
                                     </j:when>
                                     <j:otherwise>
-                                        Status: <t:buildStatusSummary build="${v.build}"/><br/>
+                                        Status: <span class="status"><t:buildStatusSummary build="${v.build}"/></span><br/>
                                         Started: ${v.startTime}<br/>
                                         Duration: ${v.build.durationString}<br/>
                                         <a href="${v.buildUrl}console">Console Output</a>

@@ -70,9 +70,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     }
 
     /* package */ Run  run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        job.setBuildIndex(buildIndex.getAndIncrement());
-        job.run(new FlowCause(this), actions);
         addBuild(job);
+        job.run(new FlowCause(this, job), actions);
+        job.waitForCompletion();
         getState().setResult(job.getResult());
         return job.getBuild();
     }
@@ -102,6 +102,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     }
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
+        job.setBuildIndex(buildIndex.getAndIncrement());
         jobsGraph.addVertex(job);
         for (JobInvocation up : state.get().getLastCompleted()) {
             String edge = up.getId() + " => " + job.getId();

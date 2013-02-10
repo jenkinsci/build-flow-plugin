@@ -27,10 +27,13 @@ public class JobInvocation {
     private transient AbstractProject<?, ? extends AbstractBuild<?, ?>> project;
 
     private transient AbstractBuild build;
+    
+    // The list of actions the build was started with
+    private transient List<Action> actions;
 
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
-    // A unique number that indentifies when in the FlowRun this job was started
+    // A unique number that identifies when in the FlowRun this job was started
     private int buildIndex;
 
     // Whether the build has started. If true, this.build should be set.
@@ -58,6 +61,7 @@ public class JobInvocation {
     }
 
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
+        this.actions = actions;
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
@@ -79,9 +83,18 @@ public class JobInvocation {
         // Retrieve property $name from actual Run object
         return getBuild()."$name"
     }
+    
+    public List<Action> getActions() {
+        return actions;
+    }
 
     public Result getResult() throws ExecutionException, InterruptedException {
-        return getBuild().getResult();
+        waitForCompletion();
+        return build.getResult();
+    }
+    
+    public String getResultString() throws ExecutionException, InterruptedException {
+        return getResult().toString().toLowerCase();
     }
     
     /* package */ void setBuildIndex(int buildIndex) {
@@ -100,6 +113,10 @@ public class JobInvocation {
     
     /* package */ void buildCompleted() {
         this.completed = true;
+    }
+    
+    public String getName() {
+        return name;
     }
     
     public String getId() {
@@ -154,8 +171,13 @@ public class JobInvocation {
     }
 
     public void waitForCompletion() throws ExecutionException, InterruptedException {
-        Run run = getBuild();
-        while(run.isBuilding()) Thread.sleep(1000);
+        if (!completed) {
+            if (future != null) {
+                future.get();
+            } else {
+                throw new RuntimeException("Can't wait for completion.");
+            }
+        }
     }
 
     /**
