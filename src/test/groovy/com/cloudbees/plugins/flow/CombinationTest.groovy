@@ -89,6 +89,6 @@ public class CombinationTest extends DSLTestCase {
         assertRan(willFail, 3, FAILURE)
         assertDidNotRun(job5)
         assert FAILURE == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 }

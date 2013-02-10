@@ -8,8 +8,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import java.text.DateFormat;
+import java.util.UUID;
+
 /**
- * @author: <a hef="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * @author: <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 public class JobInvocation {
 
@@ -18,13 +21,25 @@ public class JobInvocation {
     private final String name;
     private int buildNumber;
 
+    // The FlowRun build that initiated this job
+    private transient final FlowRun run;
+
     private transient AbstractProject<?, ? extends AbstractBuild<?, ?>> project;
 
     private transient AbstractBuild build;
 
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
+    // A unique number that indentifies when in the FlowRun this job was started
+    private int buildIndex;
+
+    // Whether the build has started. If true, this.build should be set.
+    private boolean started;
+    // Whether the build has completed
+    private boolean completed;
+
     public JobInvocation(FlowRun run, AbstractProject project) {
+        this.run = run;
         this.name = project.getFullName();
         this.project = project;
     }
@@ -65,9 +80,53 @@ public class JobInvocation {
         return getBuild()."$name"
     }
 
-
     public Result getResult() throws ExecutionException, InterruptedException {
         return getBuild().getResult();
+    }
+    
+    /* package */ void setBuildIndex(int buildIndex) {
+        this.buildIndex = buildIndex;
+    }
+    
+    /* package */ AbstractBuild getFlowRun() {
+        return run;
+    }
+    
+    /* package */ void buildStarted(AbstractBuild build) {
+        this.started = true;
+        this.build = build;
+        this.buildNumber = build.getNumber();
+    }
+    
+    /* package */ void buildCompleted() {
+        this.completed = true;
+    }
+    
+    public String getId() {
+        return "build-" + buildIndex;
+    }
+    
+    public boolean isStarted() {
+        return started;
+    }
+    
+    public boolean isCompleted() {
+        return completed;
+    }
+    
+    public String getBuildUrl() {
+        return this.build != null ? this.build.getAbsoluteUrl() : null;
+    }
+
+    public String getStartTime() {
+        String formattedStartTime = "";
+        if (build.getTime() != null) {
+            formattedStartTime = DateFormat.getDateTimeInstance(
+                DateFormat.SHORT,
+                DateFormat.SHORT)
+                .format(build.getTime());
+        }
+        return formattedStartTime;
     }
 
     public Run getBuild() throws ExecutionException, InterruptedException {
@@ -91,7 +150,7 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return "running job :" + name;
+        return name + (build != null ? " #" + build.number : "");
     }
 
     public void waitForCompletion() throws ExecutionException, InterruptedException {
