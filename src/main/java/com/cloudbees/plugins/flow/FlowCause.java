@@ -9,12 +9,15 @@ import jenkins.model.Jenkins;
 public class FlowCause extends Cause {
 
     private transient FlowRun flowRun;
+    
+    private transient JobInvocation associatedJob;
 
     private final String cause;
 
-    public FlowCause(FlowRun flowRun) {
+    public FlowCause(FlowRun flowRun, JobInvocation associatedJob) {
         this.flowRun = flowRun;
         this.cause = flowRun.getParent().getFullName() + "#" + flowRun.getNumber();
+        this.associatedJob = associatedJob;
     }
 
     public FlowRun getFlowRun() {
@@ -24,6 +27,10 @@ public class FlowCause extends Cause {
             flowRun = flow.getBuildByNumber(Integer.parseInt(cause.substring(i+1)));
         }
         return flowRun;
+    }
+    
+    public JobInvocation getAssociatedJob() {
+    	return associatedJob;
     }
 
     @Override

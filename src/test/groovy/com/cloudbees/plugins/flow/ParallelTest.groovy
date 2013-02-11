@@ -35,7 +35,7 @@ class ParallelTest extends DSLTestCase {
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
     public void testFailOnParallelFailed() {
@@ -52,7 +52,7 @@ class ParallelTest extends DSLTestCase {
         """)
         assertDidNotRun(job4)
         assert FAILURE == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
 
@@ -76,7 +76,7 @@ class ParallelTest extends DSLTestCase {
         assertDidNotRun(job4)
         assertAllSuccess(jobs)
         assert FAILURE == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
     public void testGetParallelResults() {
@@ -97,7 +97,7 @@ class ParallelTest extends DSLTestCase {
         assertHasParameter(job4, "r1", "SUCCESS")
         assertHasParameter(job4, "r2", "job2")
         assert SUCCESS == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
 }

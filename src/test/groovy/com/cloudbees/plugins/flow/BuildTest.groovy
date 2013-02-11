@@ -103,7 +103,7 @@ class BuildTest extends DSLTestCase {
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
     public void testSequentialBuildsWithFailure() {
@@ -121,7 +121,7 @@ class BuildTest extends DSLTestCase {
         assertFailure(willFail)
         assertDidNotRun(notRan)
         assert FAILURE == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
     public void testParametersFromBuild() {

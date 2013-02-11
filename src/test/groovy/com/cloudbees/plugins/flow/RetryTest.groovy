@@ -81,7 +81,7 @@ class RetryTest extends DSLTestCase {
         assert job1.builds[0].result == SUCCESS
 
         assert SUCCESS == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
     
     public void testRetryGuard() {
@@ -100,7 +100,7 @@ class RetryTest extends DSLTestCase {
         assertRan(fail, 3, FAILURE)
         assertRan(rescue, 3, SUCCESS)
         assert FAILURE == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
 
