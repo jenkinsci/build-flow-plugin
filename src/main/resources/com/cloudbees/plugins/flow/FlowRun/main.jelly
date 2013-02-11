@@ -57,47 +57,17 @@
     <j:if test="${not empty g.outgoingEdgesOf(n)}">
         <ul id="flow">
             <li class="step-wrapper">
-                <div class="build level-0 flow" id="${n.id}">
-                    <div class="title">
-                        <a href="${n.buildUrl}">${n}</a>
-                    </div>
-                    <div class="details"></div>
-                </div>
+                <j:set var="job" value="${it.startJob}"/>
+                <st:include page="build-step.jelly"/>
             </li>
             <j:while test="${not empty g.outgoingEdgesOf(n)}">
                 <li class="step-wrapper">
                     <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
-                        <j:set var="v" value="${g.getEdgeTarget(e)}"/>
-                        <j:set var="status" value="${v.completed ? v.resultString : 'pending'}"/>
-                        <div class="build ${i > 0 ? 'parallel' : 'first'}" id="${v.id}" style="background-color: ${v.colorForHtml}">
-                            <div class="title">
-                                <a href="${v.buildUrl}">${v}</a>
-                            </div>
-                            <div class="details">
-                                <j:choose>
-                                <j:when test="${v.started}">
-                                    <j:choose>
-                                    <j:when test="${v.build.building}">
-                                        Started: ${v.build.timestampString} ago<br/>
-                                        <t:buildProgressBar build="${v.build}"/>
-                                    </j:when>
-                                    <j:otherwise>
-                                        Status: <span class="status"><t:buildStatusSummary build="${v.build}"/></span><br/>
-                                        Started: ${v.startTime}<br/>
-                                        Duration: ${v.build.durationString}<br/>
-                                        <a href="${v.buildUrl}console">Console Output</a>
-                                    </j:otherwise>
-                                    </j:choose>
-                                </j:when>
-                                <j:otherwise>
-                                    Scheduled
-                                </j:otherwise>
-                                </j:choose>
-                            </div>
-                        </div>
+                        <j:set var="job" value="${g.getEdgeTarget(e)}"/>
+                        <st:include page="build-step.jelly"/>
                     </j:forEach>
                 </li>
-                <j:set var="n" value="${v}"/>
+                <j:set var="n" value="${job}"/>
             </j:while>
         </ul>
 

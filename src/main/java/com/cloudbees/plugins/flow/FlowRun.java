@@ -65,6 +65,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     private void setup(BuildFlow job) {
         this.dsl = job.getDsl();
+        startJob.buildStarted(this);
         jobsGraph.addVertex(startJob);
         state.set(new FlowState(SUCCESS, startJob));
     }
@@ -157,6 +158,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         @Override
         public void cleanUp(BuildListener listener) throws Exception {
             performAllBuildSteps(listener, project.getPublishersList(), false);
+            FlowRun.this.getStartJob().buildCompleted();
             super.cleanUp(listener);
         }
     }
