@@ -319,6 +319,21 @@ public class FlowDelegate {
         parallel(closures as Closure[])
     }
 
+    // allows collecting job status by name rather than by index
+    // inspired by https://github.com/caolan/async#parallel
+    def Map<?, FlowState> parallel(Map<?, ? extends Closure> args) {
+        def keys     = new ArrayList<?>()
+        def closures = new ArrayList<? extends Closure>()
+        args.entrySet().each { e ->
+          keys.add(e.key)
+          closures.add(e.value)
+        }
+        def results = new LinkedHashMap<?, FlowState>()
+        def flowStates = parallel(closures) // as List<FlowState>
+        flowStates.eachWithIndex { v, i -> results[keys[i]] = v }
+        results
+    }
+
     def List<FlowState> parallel(Closure ... closures) {
         statusCheck()
         ExecutorService pool = Executors.newCachedThreadPool()
