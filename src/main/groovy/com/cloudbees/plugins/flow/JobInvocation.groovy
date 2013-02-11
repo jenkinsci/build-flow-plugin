@@ -8,8 +8,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import java.text.DateFormat;
+import java.util.UUID;
+import java.awt.Color;
+
 /**
- * @author: <a hef="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * @author: <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 public class JobInvocation {
 
@@ -18,13 +22,28 @@ public class JobInvocation {
     private final String name;
     private int buildNumber;
 
+    // The FlowRun build that initiated this job
+    private transient final FlowRun run;
+
     private transient AbstractProject<?, ? extends AbstractBuild<?, ?>> project;
 
     private transient AbstractBuild build;
 
+    // The list of actions the build was started with
+    private transient List<Action> actions;
+
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
+    // A unique number that identifies when in the FlowRun this job was started
+    private int buildIndex;
+
+    // Whether the build has started. If true, this.build should be set.
+    private boolean started;
+    // Whether the build has completed
+    private boolean completed;
+
     public JobInvocation(FlowRun run, AbstractProject project) {
+        this.run = run;
         this.name = project.getFullName();
         this.project = project;
     }
@@ -43,6 +62,7 @@ public class JobInvocation {
     }
 
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
+        this.actions = actions;
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
@@ -65,9 +85,74 @@ public class JobInvocation {
         return getBuild()."$name"
     }
 
+    public List<Action> getActions() {
+        return actions;
+    }
 
     public Result getResult() throws ExecutionException, InterruptedException {
-        return getBuild().getResult();
+        waitForCompletion();
+        return build.getResult();
+    }
+
+    public String getResultString() throws ExecutionException, InterruptedException {
+        return getResult().toString().toLowerCase();
+    }
+
+    public String getColorForHtml() {
+        BallColor color = BallColor.NOTBUILT;
+        if (build != null) {
+            color = build.getIconColor();
+        }
+        return color.getHtmlBaseColor();
+    }
+
+    /* package */ void setBuildIndex(int buildIndex) {
+        this.buildIndex = buildIndex;
+    }
+
+    /* package */ AbstractBuild getFlowRun() {
+        return run;
+    }
+
+    /* package */ void buildStarted(AbstractBuild build) {
+        this.started = true;
+        this.build = build;
+        this.buildNumber = build.getNumber();
+    }
+
+    /* package */ void buildCompleted() {
+        this.completed = true;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getId() {
+        return "build-" + buildIndex;
+    }
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public String getBuildUrl() {
+        return this.build != null ? this.build.getAbsoluteUrl() : null;
+    }
+
+    public String getStartTime() {
+        String formattedStartTime = "";
+        if (build.getTime() != null) {
+            formattedStartTime = DateFormat.getDateTimeInstance(
+                DateFormat.SHORT,
+                DateFormat.SHORT)
+                .format(build.getTime());
+        }
+        return formattedStartTime;
     }
 
     public Run getBuild() throws ExecutionException, InterruptedException {
@@ -91,12 +176,17 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return "running job :" + name;
+        return name + (build != null ? " #" + build.number : "");
     }
 
     public void waitForCompletion() throws ExecutionException, InterruptedException {
-        Run run = getBuild();
-        while(run.isBuilding()) Thread.sleep(1000);
+        if (!completed) {
+            if (future != null) {
+                future.get();
+            } else {
+                throw new RuntimeException("Can't wait for completion.");
+            }
+        }
     }
 
     /**

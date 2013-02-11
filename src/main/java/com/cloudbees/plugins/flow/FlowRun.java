@@ -20,9 +20,9 @@ package com.cloudbees.plugins.flow;
 import hudson.model.*;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.jgrapht.DirectedGraph;
@@ -39,17 +39,19 @@ import static hudson.model.Result.SUCCESS;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class FlowRun extends Build<BuildFlow, FlowRun>{
+public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
-	private String dsl;
+    private String dsl;
 
-    private DirectedGraph<JobInvocation, String> builds = new SimpleDirectedGraph<JobInvocation, String>(String.class);
+    private JobInvocation.Start startJob = new JobInvocation.Start(this);
+
+    private DirectedGraph<JobInvocation, String> jobsGraph = new SimpleDirectedGraph<JobInvocation, String>(String.class);
 
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
-
-    private transient Set<JobInvocation> lastCompleted;
+    
+    private transient AtomicInteger buildIndex = new AtomicInteger(1);
 
     public FlowRun(BuildFlow job, File buildDir) throws IOException {
         super(job, buildDir);
@@ -63,14 +65,15 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
 
     private void setup(BuildFlow job) {
         this.dsl = job.getDsl();
-        JobInvocation.Start start = new JobInvocation.Start(this);
-        builds.addVertex(start);
-        state.set(new FlowState(SUCCESS, start));
+        startJob.buildStarted(this);
+        jobsGraph.addVertex(startJob);
+        state.set(new FlowState(SUCCESS, startJob));
     }
 
-    /* package */ Run run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        job.run(new FlowCause(this),actions);
+    /* package */ Run  run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         addBuild(job);
+        job.run(new FlowCause(this, job), actions);
+        job.waitForCompletion();
         getState().setResult(job.getResult());
         return job.getBuild();
     }
@@ -83,12 +86,12 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
         state.set(s);
     }
 
-    private void setLastCompleted(JobInvocation job) {
-        lastCompleted = Collections.singleton(job);
+    public DirectedGraph<JobInvocation, String> getJobsGraph() {
+        return jobsGraph;
     }
 
-    public DirectedGraph<JobInvocation, String> getBuilds() {
-        return builds;
+    public JobInvocation getStartJob() {
+        return startJob;
     }
 
     public BuildFlow getBuildFlow() {
@@ -96,23 +99,23 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
     }
 
     public void doGetDot(StaplerRequest req, StaplerResponse rsp) throws IOException {
-        new DOTExporter().export(rsp.getWriter(), builds);
+        new DOTExporter().export(rsp.getWriter(), jobsGraph);
     }
 
-
-    public synchronized void addBuild(JobInvocation build) throws ExecutionException, InterruptedException {
-        builds.addVertex(build);
+    public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
+        job.setBuildIndex(buildIndex.getAndIncrement());
+        jobsGraph.addVertex(job);
         for (JobInvocation up : state.get().getLastCompleted()) {
-            String edge = up.toString() + " => " + build.toString();
+            String edge = up.getId() + " => " + job.getId();
             LOGGER.fine("added build to execution graph " + edge);
-            builds.addEdge(up, build, edge);
+            jobsGraph.addEdge(up, job, edge);
         }
-        state.get().setLastCompleted(build);
+        state.get().setLastCompleted(job);
     }
 
     @Override
     public void run() {
-        run(createRunner());        
+        run(createRunner());
     }
     
     protected Runner createRunner() {
@@ -155,12 +158,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun>{
         @Override
         public void cleanUp(BuildListener listener) throws Exception {
             performAllBuildSteps(listener, project.getPublishersList(), false);
+            FlowRun.this.getStartJob().buildCompleted();
             super.cleanUp(listener);
         }
-    }
-    
-    public String id(Run run) throws UnsupportedEncodingException {
-        return URLEncoder.encode(run.getParent().getFullDisplayName() + run.getNumber(), "UTF-8");
     }
 
 }
