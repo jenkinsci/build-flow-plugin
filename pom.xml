@@ -25,7 +25,7 @@
 
   <groupId>com.cloudbees.plugins</groupId>
   <artifactId>build-flow-plugin</artifactId>
-  <version>0.8</version>
+  <version>0.9-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>CloudBees Build Flow plugin</name>
   <description>Manages job orchestration as a build flow</description>
