@@ -118,7 +118,7 @@ class ParallelTest extends DSLTestCase {
         assertHasParameter(job4, "r1", "SUCCESS")
         assertHasParameter(job4, "r2", "job2")
         assert SUCCESS == flow.result
-        println flow.builds.edgeSet()
+        println flow.jobsGraph.edgeSet()
     }
 
 }
