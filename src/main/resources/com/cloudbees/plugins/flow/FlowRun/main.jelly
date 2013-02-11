@@ -29,6 +29,7 @@
         border-radius: 4px;
         box-shadow: 2px 2px 5px black;
         min-width: 100px;
+        font-size: 14px;
     }
     .build.parallel {
         margin-top: 20px;
@@ -37,33 +38,13 @@
     .build > .title {
         padding: 4px;
         border-bottom: 1px solid black;
-        background-color: #ff7373;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
-    }
-    .build.pending > .title {
-        background-color: #ffff73;
-    }
-    .build.success > .title {
-        background-color: #67e667;
-    }
-    .build.flow > .title {
-        background-color: #ffc373;
     }
 
     .build > .details {
         min-height: 40px;
         padding: 4px;
-        background-color: #ff0000;
-    }
-    .build.pending > .details {
-        background-color: #ffff00;
-    }
-    .build.success > .details {
-        background-color: #0c0;
-    }
-    .build.flow > .details {
-        background-color: #ff9200;
     }
     .build > .details > .status font {
         /* override the default color (can be red on failure) */
@@ -88,7 +69,7 @@
                     <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
                         <j:set var="v" value="${g.getEdgeTarget(e)}"/>
                         <j:set var="status" value="${v.completed ? v.resultString : 'pending'}"/>
-                        <div class="build ${i > 0 ? 'parallel' : 'first'} ${status}" id="${v.id}">
+                        <div class="build ${i > 0 ? 'parallel' : 'first'}" id="${v.id}" style="background-color: ${v.colorForHtml}">
                             <div class="title">
                                 <a href="${v.buildUrl}">${v}</a>
                             </div>
@@ -123,7 +104,7 @@
         <script type="text/javascript">
             jsPlumb.ready(function() {
                 jsPlumb.importDefaults({
-                    PaintStyle: { lineWidth: 2, strokeStyle: "green" },
+                    PaintStyle: { lineWidth: 2, strokeStyle: "#666" },
                     Connector: [ "StateMachine" ],
                     Endpoint: [ "Dot", { radius: 1 } ],
                 ConnectionOverlays: [[ "Arrow", {

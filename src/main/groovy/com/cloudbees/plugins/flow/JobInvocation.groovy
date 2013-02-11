@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import java.text.DateFormat;
 import java.util.UUID;
+import java.awt.Color;
 
 /**
  * @author: <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -27,7 +28,7 @@ public class JobInvocation {
     private transient AbstractProject<?, ? extends AbstractBuild<?, ?>> project;
 
     private transient AbstractBuild build;
-    
+
     // The list of actions the build was started with
     private transient List<Action> actions;
 
@@ -83,7 +84,7 @@ public class JobInvocation {
         // Retrieve property $name from actual Run object
         return getBuild()."$name"
     }
-    
+
     public List<Action> getActions() {
         return actions;
     }
@@ -92,45 +93,53 @@ public class JobInvocation {
         waitForCompletion();
         return build.getResult();
     }
-    
+
     public String getResultString() throws ExecutionException, InterruptedException {
         return getResult().toString().toLowerCase();
     }
-    
+
+    public String getColorForHtml() {
+        BallColor color = BallColor.NOTBUILT;
+        if (build != null) {
+            color = build.getIconColor();
+        }
+        return color.getHtmlBaseColor();
+    }
+
     /* package */ void setBuildIndex(int buildIndex) {
         this.buildIndex = buildIndex;
     }
-    
+
     /* package */ AbstractBuild getFlowRun() {
         return run;
     }
-    
+
     /* package */ void buildStarted(AbstractBuild build) {
         this.started = true;
         this.build = build;
         this.buildNumber = build.getNumber();
     }
-    
+
     /* package */ void buildCompleted() {
         this.completed = true;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public String getId() {
         return "build-" + buildIndex;
     }
-    
+
     public boolean isStarted() {
         return started;
     }
-    
+
     public boolean isCompleted() {
         return completed;
     }
-    
+
     public String getBuildUrl() {
         return this.build != null ? this.build.getAbsoluteUrl() : null;
     }
