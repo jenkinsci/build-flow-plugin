@@ -29,9 +29,6 @@ public class JobInvocation {
 
     private transient AbstractBuild build;
 
-    // The list of actions the build was started with
-    private transient List<Action> actions;
-
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
     // A unique number that identifies when in the FlowRun this job was started
@@ -62,7 +59,6 @@ public class JobInvocation {
     }
 
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
-        this.actions = actions;
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
@@ -83,10 +79,6 @@ public class JobInvocation {
     def propertyMissing(String name) {
         // Retrieve property $name from actual Run object
         return getBuild()."$name"
-    }
-
-    public List<Action> getActions() {
-        return actions;
     }
 
     public Result getResult() throws ExecutionException, InterruptedException {
