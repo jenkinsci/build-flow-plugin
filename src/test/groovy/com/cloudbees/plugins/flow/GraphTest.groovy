@@ -35,4 +35,50 @@ class GraphTest extends DSLTestCase {
         println run.jobsGraph.vertexSet()
     }
 
+    public void testSetRowsAndColumnsForBuild() {
+        def job1 = createJob("job1")
+        def job2 = createJob("job2")
+        def job3 = createJob("job3")
+        def job4 = createJob("job4")
+
+        def flow = run("""
+            parallel (
+                {
+                    build("job1")
+                    build("job2")
+                },
+                {
+                    build("job3")
+                }
+            )
+            build("job4")
+        """)
+
+        Set<JobInvocation> jobs = flow.getJobsGraph().vertexSet();
+        for (JobInvocation job : jobs) {
+            switch (job.getProject()) {
+                case job1:
+                    println("assert for job1");
+                    assert 1 == job.displayColumn
+                    assert 0 == job.displayRow
+                    break;
+                case job2:
+                    println("assert for job2");
+                    assert 2 == job.displayColumn
+                    assert 0 == job.displayRow
+                    break;
+                case job3:
+                    println("assert for job3");
+                    assert 1 == job.displayColumn
+                    assert 1 == job.displayRow
+                    break;
+                case job4:
+                    println("assert for job4");
+                    assert 3 == job.displayColumn
+                    assert 0 == job.displayRow
+                    break;
+            }
+        }
+    }
+
 }

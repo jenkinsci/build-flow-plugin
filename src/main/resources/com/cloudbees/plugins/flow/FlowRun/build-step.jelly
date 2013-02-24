@@ -1,7 +1,12 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
 
-    <div class="build ${i > 0 ? 'parallel' : 'first'}" id="${job.id}" style="background-color: ${job.colorForHtml}">
+    <div class="build"
+        id="${job.id}"
+        data-column="${job.displayColumn}"
+        data-row="${job.displayRow}"
+        style="background-color: ${job.colorForHtml};">
+
         <div class="title">
             <a href="${job.buildUrl}">${job}</a>
         </div>
