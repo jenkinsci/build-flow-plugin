@@ -28,7 +28,7 @@ public class FlowCause extends Cause {
         }
         return flowRun;
     }
-    
+
     public JobInvocation getAssociatedJob() {
     	return associatedJob;
     }

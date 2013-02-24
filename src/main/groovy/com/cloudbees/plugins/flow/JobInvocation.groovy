@@ -34,6 +34,10 @@ public class JobInvocation {
     // A unique number that identifies when in the FlowRun this job was started
     private int buildIndex;
 
+    private int displayColumn;
+
+    private int displayRow;
+
     // Whether the build has started. If true, this.build should be set.
     private boolean started;
     // Whether the build has completed
@@ -100,6 +104,22 @@ public class JobInvocation {
 
     /* package */ void setBuildIndex(int buildIndex) {
         this.buildIndex = buildIndex;
+    }
+
+    public int getDisplayColumn() {
+        return displayColumn;
+    }
+
+    /* package */ void setDisplayColumn(int displayColumn) {
+        this.displayColumn = displayColumn;
+    }
+
+    public int getDisplayRow() {
+        return displayRow;
+    }
+
+    /* package */ void setDisplayRow(int displayRow) {
+        this.displayRow = displayRow;
     }
 
     /* package */ AbstractBuild getFlowRun() {
