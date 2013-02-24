@@ -29,13 +29,14 @@ public class JobInvocation {
 
     private transient AbstractBuild build;
 
-    // The list of actions the build was started with
-    private transient List<Action> actions;
-
     private transient Future<? extends AbstractBuild<?, ?>> future;
 
     // A unique number that identifies when in the FlowRun this job was started
     private int buildIndex;
+
+    private int displayColumn;
+
+    private int displayRow;
 
     // Whether the build has started. If true, this.build should be set.
     private boolean started;
@@ -62,7 +63,6 @@ public class JobInvocation {
     }
 
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
-        this.actions = actions;
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
@@ -85,10 +85,6 @@ public class JobInvocation {
         return getBuild()."$name"
     }
 
-    public List<Action> getActions() {
-        return actions;
-    }
-
     public Result getResult() throws ExecutionException, InterruptedException {
         waitForCompletion();
         return build.getResult();
@@ -108,6 +104,22 @@ public class JobInvocation {
 
     /* package */ void setBuildIndex(int buildIndex) {
         this.buildIndex = buildIndex;
+    }
+
+    public int getDisplayColumn() {
+        return displayColumn;
+    }
+
+    /* package */ void setDisplayColumn(int displayColumn) {
+        this.displayColumn = displayColumn;
+    }
+
+    public int getDisplayRow() {
+        return displayRow;
+    }
+
+    /* package */ void setDisplayRow(int displayRow) {
+        this.displayRow = displayRow;
     }
 
     /* package */ AbstractBuild getFlowRun() {

@@ -4,35 +4,23 @@
     <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js'></script>
     <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js'></script>
     <script type="text/javascript" src="${resURL}/plugin/build-flow-plugin/scripts/jsPlumb.js "></script>
-    
+
     <style type="text/css">
     #flow {
+        margin: 0;
         list-style-type: none;
     }
-    .step-wrapper {
+    .column-wrapper {
         margin: 20px;
         display: inline-block;
-        width: auto;
         vertical-align: top;
     }
-    .start {
-        float: left;
-    }
-    .start > div {
-        border:solid 2px black;
-        border-radius: 10px;
-        box-shadow: 1px 1px 5px black;
-        margin: 20px 0;
-    }
     .build {
+        margin: 10px;
         border:solid 1px black;
         border-radius: 4px;
         box-shadow: 2px 2px 5px black;
-        min-width: 100px;
         font-size: 14px;
-    }
-    .build.parallel {
-        margin-top: 20px;
     }
 
     .build > .title {
@@ -50,59 +38,189 @@
         /* override the default color (can be red on failure) */
         color: black;
     }
+    
+    .connector {
+        margin: 10px;
+        height: 20px;
+    }
+    .connector .left {
+        margin-top: 10px;
+        float: left;
+    }
+    .connector .right {
+        margin-top: 10px;
+        float: right;
+    }
     </style>
 
-    <j:set var="g" value="${it.jobsGraph}"/>
-    <j:set var="n" value="${it.startJob}"/>
-    <j:if test="${not empty g.outgoingEdgesOf(n)}">
-        <ul id="flow">
-            <li class="step-wrapper">
-                <j:set var="job" value="${it.startJob}"/>
-                <st:include page="build-step.jelly"/>
-            </li>
-            <j:while test="${not empty g.outgoingEdgesOf(n)}">
-                <li class="step-wrapper">
-                    <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
-                        <j:set var="job" value="${g.getEdgeTarget(e)}"/>
-                        <st:include page="build-step.jelly"/>
-                    </j:forEach>
-                </li>
-                <j:set var="n" value="${job}"/>
-            </j:while>
-        </ul>
+    <j:if test="${not empty it.jobsGraph.outgoingEdgesOf(it.startJob)}">
 
-        <script type="text/javascript">
-            jsPlumb.ready(function() {
-                jsPlumb.importDefaults({
-                    PaintStyle: { lineWidth: 2, strokeStyle: "#666" },
-                    Connector: [ "StateMachine" ],
-                    Endpoint: [ "Dot", { radius: 1 } ],
-                ConnectionOverlays: [[ "Arrow", {
+        <j:forEach var="job" items="${it.jobsGraph.vertexSet()}">
+            <st:include page="build-step.jelly"/>
+        </j:forEach>
+
+        <ul id="flow"></ul>
+
+        <div id="connector-template" class="connector">
+            <div class="left"></div>
+            <div class="right"></div>
+            <div class="cfix"></div>
+        </div>
+
+<script type="text/javascript">
+<![CDATA[ // put in CDATA so jelly doesn't complain about certain characters (i.e. $, <, >)
+
+var $flow = $('ul#flow');
+
+function groupBuildsByColumn() { 
+    $('.build').each(function(index, build) {
+        var $build = $(build)
+        // place it in it's respective columns
+        var column = $build.data('column');
+        // create the column wrapper if it doesn't already exist
+        if ($flow.find('li').length <= column) {
+            $flow.append('<li></li>');
+        }
+        $build.remove();
+        var $listItems = $flow.find('li');
+        $($listItems.get(column)).append(build);
+        $listItems.addClass('column-wrapper');
+    });
+
+    // sort each column's builds by row
+    $('.column-wrapper').each(function(index, column) {
+        var buildsInColumn = $('.build', column).sort(function(a, b) {
+            return $(a).data('row') > $(b).data('row');
+        });
+        $(buildsInColumn).remove();
+        $(column).append(buildsInColumn);
+    });
+}
+
+function resetFlowWidth() {
+    // calculate and set the total width of all columns
+    var width = 0;
+    $('.column-wrapper').each(function(index, column) {
+        width += $(column).outerWidth(true);
+    });
+    $('#flow').width(width + ($('.column-wrapper').length * 5));
+}
+
+// gets a color from the list
+var nextColor = (function() { // create private scope
+    var colors = ['red', 'blue', 'green', 'aqua', 'brown', 'purple', 'gold'];
+    var currentColorIndex = -1;
+    
+    return function() {
+        currentColorIndex = (currentColorIndex + 1) % colors.length;
+        return colors[currentColorIndex];
+    };
+})();
+
+// creates a connection between 2 jobs that aren't in consecutive columns
+// by placing placeholder connectors in the columns between the 2 jobs
+function connectJobs(source, target) {
+    var lastConnector = source.id;
+    var paintStyle = { strokeStyle: nextColor(), lineWidth: '2' };
+    for (var i = source.column; i < target.column - 1; i++) {
+        var connectorId = 'connector-' + source.id + '-' + target.id + '-' + i;
+        
+        // create a connector element from the template
+        var $connector = $('#connector-template').clone();
+        $connector.attr('id', connectorId);
+        $connector.data({ source: source });
+        
+        // put in connector in the right column
+        $($('.column-wrapper').get(i+1)).append($connector);
+        
+        // draw the lines between the connectors, including between the left
+        // and right sides of the connectors
+        var leftConnector = $connector.find('.left');
+        jsPlumb.connect({source: lastConnector, target: leftConnector, paintStyle: paintStyle });
+        var rightConnector = $connector.find('.right');
+        jsPlumb.connect({source: leftConnector, target: rightConnector, paintStyle: paintStyle });
+        lastConnector = rightConnector;
+    }
+    jsPlumb.connect({source: lastConnector, target: target.id, paintStyle: paintStyle });
+}
+
+// sort the connectors so that the lines don't overlap
+function sortConnectors() {
+    $('.column-wrapper').each(function(index, column) {
+        var connectorsInColumn = $('.connector', column).sort(function(a, b) {
+            var aSource = $(a).data('source');
+            var bSource = $(b).data('source');
+            if (aSource.row === bSource.row) {
+                // use column as a secondary sort key
+                return aSource.column < bSource.column;
+            }
+            // connectors that are connecting higher rows need to be placed 
+            return aSource.row > bSource.row;
+        });
+        $(connectorsInColumn).remove();
+        $(column).append(connectorsInColumn);
+    });
+}
+
+]]>
+</script>
+
+<script type="text/javascript">
+
+jsPlumb.ready(function() {
+    jsPlumb.importDefaults({
+        PaintStyle: { lineWidth: 2, strokeStyle: "#666" },
+        Connector: [ "Straight" ],
+        Endpoint: [ "Dot", { radius: 1 } ],
+        Anchor: ["RightMiddle", "LeftMiddle"]
+    });
+    
+    groupBuildsByColumn();
+    
+    resetFlowWidth();
+
+    jsPlumb.addEndpoint(
+        <j:forEach var="vertex" items="${it.jobsGraph.vertexSet()}" varStatus="loop">
+            '${vertex.id}'
+            <j:if test="${!loop.last}">,</j:if>
+        </j:forEach>
+    );
+
+    <j:forEach var="edge" items="${it.jobsGraph.edgeSet()}" varStatus="status">
+        <j:choose>
+        <j:when test="${edge.source.displayColumn + 1 eq edge.target.displayColumn}">
+            jsPlumb.connect({
+                source:"${edge.source.id}", 
+                target:"${edge.target.id}",
+                overlays: [[ "Arrow", {
                     location: 1,
                     id: "arrow",
                     length: 7,
                     width: 7
-                    }]],
-                    Anchor: ["RightMiddle", "LeftMiddle"]
-                });
-
-                jsPlumb.addEndpoint(
-                    <j:forEach var="v" items="${g.vertexSet()}" varStatus="loop">
-                        '${v.id}'
-                        <j:if test="${!loop.last}">,</j:if>
-                    </j:forEach>
-                );
-
-                <j:set var="n" value="${it.startJob}"/>
-                <j:while test="${not empty g.outgoingEdgesOf(n)}">
-                    <j:forEach var="e" indexVar="i" items="${g.outgoingEdgesOf(n)}">
-                        <j:set var="v" value="${g.getEdgeTarget(e)}"/>
-                        jsPlumb.connect({ source:"${n.id}", target:"${v.id}"});
-                    </j:forEach>
-                    <j:set var="n" value="${v}"/>
-                </j:while>
+                }]]
             });
-        </script>
+        </j:when>
+        <j:otherwise>
+            connectJobs({
+                id: "${edge.source.id}",
+                row: ${edge.source.displayRow},
+                column: ${edge.source.displayColumn}
+            }, {
+                id: "${edge.target.id}", 
+                row: ${edge.target.displayRow},
+                column: ${edge.target.displayColumn}
+            });
+        </j:otherwise>
+        </j:choose>
+    </j:forEach>
+
+    sortConnectors();
+
+    jsPlumb.repaintEverything();
+});
+
+</script>
+
     </j:if>
 
 </j:jelly>
