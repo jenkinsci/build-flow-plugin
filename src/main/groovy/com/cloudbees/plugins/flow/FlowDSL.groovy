@@ -387,7 +387,22 @@ public class FlowDelegate {
         }
         return results
     }
-    
+
+    /**
+     * Access the build flow DSL extensions that come from other plugins.
+     *
+     * <p>
+     * For example,
+     *
+     * <pre>
+     * build("job1")
+     * x = extension.foobar // foobar is the name of the plugin
+     * x.someMethod()
+     * </pre>
+     */
+    def getExtension() {
+        return new DynamicExtensionLoader(this);
+    }
 
     def propertyMissing(String name) {
         throw new MissingPropertyException("Property ${name} doesn't exist.");
@@ -395,5 +410,22 @@ public class FlowDelegate {
 
     def methodMissing(String name, Object args) {
         throw new MissingMethodException(name, this.class, args);
+    }
+}
+
+class DynamicExtensionLoader {
+    FlowDelegate outer;
+
+    DynamicExtensionLoader(FlowDelegate outer) {
+        this.outer = outer
+    }
+
+    def propertyMissing(name) {
+        def v = BuildFlowDSLExtension.all().findResult {
+            BuildFlowDSLExtension ext -> ext.createExtension(name, outer)
+        }
+        if (v==null)
+            throw new UnsupportedOperationException("No such extension available: "+name)
+        return v;
     }
 }
