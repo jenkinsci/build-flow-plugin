@@ -17,6 +17,9 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.model.Result
+import org.jvnet.hudson.test.Bug
+
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
 import hudson.model.Job
@@ -156,5 +159,15 @@ class BuildTest extends DSLTestCase {
         assertHasParameter(build, "param2", "0")
         assertHasParameter(build, "param3", "3")
         assert SUCCESS == flow.result
+    }
+
+    @Bug(17199)
+    public void testImportStatement() {
+        def flow = run("""
+            import java.util.Date;
+            println "Hello from date: "+new Date();
+        """)
+        assert SUCCESS == flow.result
+        assert flow.log.contains("Hello from date: ")
     }
 }
