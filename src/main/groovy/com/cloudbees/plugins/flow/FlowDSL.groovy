@@ -17,6 +17,10 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.util.spring.ClosureScript
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
@@ -40,17 +44,7 @@ import org.acegisecurity.context.SecurityContextHolder
 
 public class FlowDSL {
 
-    private ExpandoMetaClass createEMC(Class scriptClass, Closure cl) {
-        ExpandoMetaClass emc = new ExpandoMetaClass(scriptClass, false)
-        cl(emc)
-        emc.initialize()
-        return emc
-    }
-
     def void executeFlowScript(FlowRun flowRun, String dsl, BuildListener listener) {
-        // TODO : add restrictions for System.exit, etc ...
-        FlowDelegate flow = new FlowDelegate(flowRun, listener)
-
         // Retrieve the upstream build if the flow was triggered by another job
         AbstractBuild upstream = null;
         flowRun.causes.each{ cause -> 
@@ -70,32 +64,19 @@ public class FlowDSL {
         Jenkins.instance.globalNodeProperties.each(getEnvVars)
         flowRun.builtOn.nodeProperties.each(getEnvVars)
 
-        def binding = new Binding([
-                build: flowRun,
-                out: listener.logger,
-                env: envMap,
-                upstream: upstream,
-                params: flowRun.getBuildVariables(),
-                SUCCESS: SUCCESS,
-                UNSTABLE: Result.UNSTABLE,
-                FAILURE: Result.FAILURE,
-                ABORTED: Result.ABORTED,
-                NOT_BUILT: Result.NOT_BUILT
-        ])
+        // TODO : add restrictions for System.exit, etc ...
+        FlowDelegate flow = new FlowDelegate(flowRun, listener, upstream, envMap)
 
-        Script dslScript = new GroovyShell(binding).parse("flow { " + dsl + "}")
-        dslScript.metaClass = createEMC(dslScript.class, {
-            ExpandoMetaClass emc ->
-            emc.flow = {
-                Closure cl ->
-                cl.delegate = flow
-                cl.resolveStrategy = Closure.DELEGATE_FIRST
-                cl()
-            }
-            emc.println = {
-                String s -> flow.println s
-            }
-        })
+
+        // parse the script in such a way that it delegates to the flow object as default
+        def cc = new CompilerConfiguration();
+        cc.scriptBaseClass = ClosureScript.class.name;
+        def ic = new ImportCustomizer()
+        ic.addStaticStars(Result.class.name)
+        cc.addCompilationCustomizers(ic)
+
+        ClosureScript dslScript = (ClosureScript)new GroovyShell(Jenkins.instance.pluginManager.uberClassLoader,new Binding(),cc).parse(dsl)
+        dslScript.setDelegate(flow);
 
         try {
             dslScript.run()
@@ -112,6 +93,7 @@ public class FlowDSL {
     // TODO define a parseFlowScript to validate flow DSL and maintain jobs dependencygraph
 }
 
+@SuppressWarnings("GroovyUnusedDeclaration")
 public class FlowDelegate {
 
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
@@ -119,11 +101,15 @@ public class FlowDelegate {
     def FlowRun flowRun
     BuildListener listener
     int indent = 0
+    private AbstractBuild upstream;
+    private Map env;
 
-    public FlowDelegate(FlowRun flowRun, BuildListener listener) {
+    public FlowDelegate(FlowRun flowRun, BuildListener listener, upstream, env) {
         this.flowRun = flowRun
         this.listener = listener
         causes = flowRun.causes
+        this.upstream = upstream
+        this.env = env
     }
 
     def getOut() {
@@ -150,6 +136,28 @@ public class FlowDelegate {
 
     def build(String jobName) {
         build([:], jobName)
+    }
+
+    def getBuild() {
+        return flowRun;
+    }
+
+    def getParams() {
+        return flowRun.buildVariables;
+    }
+
+    /**
+     * Upstream build that triggered this flow execution, if any.
+     */
+    AbstractBuild getUpstream() {
+        return upstream;
+    }
+
+    /**
+     * Environment variables that the build gets from its context.
+     */
+    Map<String,String> getEnv() {
+        return env
     }
 
     /**

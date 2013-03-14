@@ -17,6 +17,8 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.model.Result
+
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
 import hudson.model.Job
@@ -53,4 +55,11 @@ class BindingTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    public void testBuiltinImports() {
+        def flow = run("""
+            println "test="+SUCCESS.class.name;
+        """)
+        assert SUCCESS == flow.result
+        assert flow.log.contains("test="+ Result.SUCCESS.class.name)
+    }
 }
