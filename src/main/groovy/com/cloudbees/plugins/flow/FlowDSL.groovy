@@ -182,6 +182,16 @@ public class FlowDelegate {
 
     def getActions(Job job, Map args) {
 
+        List<Action> originalActions = job.getActions();
+
+        List<ParameterDefinition> jobParams = null;
+        for(Action action:originalActions) {
+            if (action instanceof ParametersDefinitionProperty) {
+                ParametersDefinitionProperty parametersAction = (ParametersDefinitionProperty) action;
+                jobParams = parametersAction.getParameterDefinitions();
+            }
+        }
+        
         List<Action> actions = new ArrayList<Action>();
         List<ParameterValue> params = [];
         Set<String> addedParams = new HashSet<String>();
@@ -190,6 +200,26 @@ public class FlowDelegate {
             Object paramValue = param.value
             if (paramValue instanceof Closure) {
                 paramValue = getClosureValue(paramValue)
+            }
+            //Use pre-defined parameter type if it exists and it's simple
+            if (jobParams != null) {
+                for (ParameterDefinition originalParam: jobParams) {
+                    if (originalParam instanceof SimpleParameterDefinition) {
+                        if (paramName.equals(originalParam.name)) {
+                            try {
+                                params.add(originalParam.createValue(paramValue));
+                                addedParams.add(paramName);
+                            } catch (Exception e) {
+                                //This usually means that createValue(String) is
+                                //unimplemented and we can't use the definition.
+                            }
+                        }
+                    }
+                }
+            }
+            if (addedParams.contains(paramName)) {
+                //Added the parameter already, so go on to the next one
+                continue;
             }
             if (paramValue instanceof Boolean) {
                 params.add(new BooleanParameterValue(paramName, (Boolean) paramValue))
@@ -201,19 +231,8 @@ public class FlowDelegate {
             //TODO For now we only support String and boolean parameters
         }
 
-
         /* Add default values from defined params in the target job */
-        List<Action> originalActions = job.getActions();
         
-
-        List<ParameterDefinition> jobParams = null;
-        for(Action action:originalActions) {
-            if (action instanceof ParametersDefinitionProperty) {
-                ParametersDefinitionProperty parametersAction = (ParametersDefinitionProperty) action;
-                jobParams = parametersAction.getParameterDefinitions();
-            }
-        }
-
         if (jobParams != null) {
 
             for (ParameterDefinition originalParam: jobParams) {
