@@ -42,7 +42,7 @@ public class BuildFlowAction implements BuildBadgeAction {
     }
 
     public String getIconFileName() {
-        return "/plugin/build-flow-plugin/images/16x16/flow.png";
+        return "flow.png";
     }
 
     public String getDisplayName() {
