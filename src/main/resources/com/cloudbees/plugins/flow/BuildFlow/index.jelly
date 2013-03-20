@@ -19,7 +19,7 @@
     <l:layout title="${it.displayName}">
         <st:include page="sidepanel.jelly" />
         <l:main-panel>
-            <h1><img src="${h.resUrl}/plugin/build-flow-plugin/images/24x24/flow.png"/>
+            <h1><img src="${rootURL}/plugin/build-flow-plugin/images/24x24/flow.png"/>
                 ${it.pronoun} ${it.displayName}</h1>
 
             <st:include page="main.jelly" />
