@@ -70,11 +70,11 @@
 <script type="text/javascript">
 <![CDATA[ // put in CDATA so jelly doesn't complain about certain characters (i.e. $, <, >)
 
-var $flow = $('ul#flow');
+var $flow = jQuery('ul#flow');
 
 function groupBuildsByColumn() { 
-    $('.build').each(function(index, build) {
-        var $build = $(build)
+    jQuery('.build').each(function(index, build) {
+        var $build = jQuery(build)
         // place it in it's respective columns
         var column = $build.data('column');
         // create the column wrapper if it doesn't already exist
@@ -83,27 +83,27 @@ function groupBuildsByColumn() {
         }
         $build.remove();
         var $listItems = $flow.find('li');
-        $($listItems.get(column)).append(build);
+        jQuery($listItems.get(column)).append(build);
         $listItems.addClass('column-wrapper');
     });
 
     // sort each column's builds by row
-    $('.column-wrapper').each(function(index, column) {
-        var buildsInColumn = $('.build', column).sort(function(a, b) {
-            return $(a).data('row') > $(b).data('row');
+    jQuery('.column-wrapper').each(function(index, column) {
+        var buildsInColumn = jQuery('.build', column).sort(function(a, b) {
+            return jQuery(a).data('row') > jQuery(b).data('row');
         });
-        $(buildsInColumn).remove();
-        $(column).append(buildsInColumn);
+        jQuery(buildsInColumn).remove();
+        jQuery(column).append(buildsInColumn);
     });
 }
 
 function resetFlowWidth() {
     // calculate and set the total width of all columns
     var width = 0;
-    $('.column-wrapper').each(function(index, column) {
-        width += $(column).outerWidth(true);
+    jQuery('.column-wrapper').each(function(index, column) {
+        width += jQuery(column).outerWidth(true);
     });
-    $('#flow').width(width + ($('.column-wrapper').length * 5));
+    jQuery('#flow').width(width + (jQuery('.column-wrapper').length * 5));
 }
 
 // gets a color from the list
@@ -126,12 +126,12 @@ function connectJobs(source, target) {
         var connectorId = 'connector-' + source.id + '-' + target.id + '-' + i;
         
         // create a connector element from the template
-        var $connector = $('#connector-template').clone();
+        var $connector = jQuery('#connector-template').clone();
         $connector.attr('id', connectorId);
         $connector.data({ source: source });
         
         // put in connector in the right column
-        $($('.column-wrapper').get(i+1)).append($connector);
+        jQuery(jQuery('.column-wrapper').get(i+1)).append($connector);
         
         // draw the lines between the connectors, including between the left
         // and right sides of the connectors
@@ -146,10 +146,10 @@ function connectJobs(source, target) {
 
 // sort the connectors so that the lines don't overlap
 function sortConnectors() {
-    $('.column-wrapper').each(function(index, column) {
-        var connectorsInColumn = $('.connector', column).sort(function(a, b) {
-            var aSource = $(a).data('source');
-            var bSource = $(b).data('source');
+    jQuery('.column-wrapper').each(function(index, column) {
+        var connectorsInColumn = jQuery('.connector', column).sort(function(a, b) {
+            var aSource = jQuery(a).data('source');
+            var bSource = jQuery(b).data('source');
             if (aSource.row === bSource.row) {
                 // use column as a secondary sort key
                 return aSource.column < bSource.column;
@@ -157,8 +157,8 @@ function sortConnectors() {
             // connectors that are connecting higher rows need to be placed 
             return aSource.row > bSource.row;
         });
-        $(connectorsInColumn).remove();
-        $(column).append(connectorsInColumn);
+        jQuery(connectorsInColumn).remove();
+        jQuery(column).append(connectorsInColumn);
     });
 }
 
@@ -222,5 +222,8 @@ jsPlumb.ready(function() {
 </script>
 
     </j:if>
+<script type="text/javascript">
+	$.noConflict();
+</script>
 
 </j:jelly>
