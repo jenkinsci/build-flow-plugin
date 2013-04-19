@@ -6,11 +6,13 @@
         data-column="${job.displayColumn}"
         data-row="${job.displayRow}"
         style="background-color: ${job.colorForHtml};">
-
         <div class="title">
-            <a href="${job.buildUrl}">${job}</a>
+        	<a href="${job.buildUrl}">${job.build.fullDisplayName}</a>
         </div>
         <div class="details">
+            <j:if test="${!empty(job.build.description)}">
+                ${job.build.description}<br/>
+            </j:if>    
             <j:choose>
             <j:when test="${job.started}">
                 <j:choose>
