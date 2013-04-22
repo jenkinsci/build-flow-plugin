@@ -7,7 +7,7 @@
         data-row="${job.displayRow}"
         style="background-color: ${job.colorForHtml};">
         <div class="title">
-        	<a href="${job.buildUrl}">${job.build.fullDisplayName}</a>
+            <a href="${job.buildUrl}">${job.build.fullDisplayName}</a>
         </div>
         <div class="details">
             <j:if test="${!empty(job.build.description)}">
