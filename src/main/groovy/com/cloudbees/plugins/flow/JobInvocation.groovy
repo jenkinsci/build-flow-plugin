@@ -87,7 +87,7 @@ public class JobInvocation {
 
     public Result getResult() throws ExecutionException, InterruptedException {
         waitForCompletion();
-        return build.getResult();
+        return getBuild().getResult();
     }
 
     public String getResultString() throws ExecutionException, InterruptedException {
@@ -96,8 +96,8 @@ public class JobInvocation {
 
     public String getColorForHtml() {
         BallColor color = BallColor.NOTBUILT;
-        if (build != null) {
-            color = build.getIconColor();
+        if (getBuild() != null) {
+            color = getBuild().getIconColor();
         }
         return color.getHtmlBaseColor();
     }
@@ -153,16 +153,16 @@ public class JobInvocation {
     }
 
     public String getBuildUrl() {
-        return this.build != null ? this.build.getAbsoluteUrl() : null;
+        return this.getBuild() != null ? this.getBuild().getAbsoluteUrl() : null;
     }
 
     public String getStartTime() {
         String formattedStartTime = "";
-        if (build.getTime() != null) {
+        if (getBuild().getTime() != null) {
             formattedStartTime = DateFormat.getDateTimeInstance(
                 DateFormat.SHORT,
                 DateFormat.SHORT)
-                .format(build.getTime());
+                .format(getBuild().getTime());
         }
         return formattedStartTime;
     }

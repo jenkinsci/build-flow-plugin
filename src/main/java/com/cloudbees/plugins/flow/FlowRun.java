@@ -52,9 +52,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     
     private String dsl;
 
-    private JobInvocation.Start startJob = new JobInvocation.Start(this);
+    private JobInvocation.Start startJob;
 
-    private DirectedGraph<JobInvocation, JobEdge> jobsGraph = new SimpleDirectedGraph<JobInvocation, JobEdge>(JobEdge.class);
+    private DirectedGraph<JobInvocation, JobEdge> jobsGraph;
 
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
     
@@ -71,6 +71,12 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     }
 
     private void setup(BuildFlow job) {
+        if (jobsGraph == null) {
+            jobsGraph = new SimpleDirectedGraph<JobInvocation, JobEdge>(JobEdge.class);
+        }
+        if (startJob == null) {
+            startJob = new JobInvocation.Start(this);
+        }
         this.dsl = job.getDsl();
         startJob.buildStarted(this);
         jobsGraph.addVertex(startJob);
