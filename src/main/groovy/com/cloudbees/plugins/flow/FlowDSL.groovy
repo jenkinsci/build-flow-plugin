@@ -325,7 +325,7 @@ public class FlowDelegate {
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
             flowRun.state.result = origin
-            println("retry (attempt $i++} {")
+            println("retry (attempt $i++) {")
             ++indent
 
             retryClosure()
