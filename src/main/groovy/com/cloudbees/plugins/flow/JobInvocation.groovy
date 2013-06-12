@@ -188,7 +188,7 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return name + (build != null ? " #" + build.number : "");
+        return name + (build != null ? build.displayName : "");
     }
 
     public void waitForCompletion() throws ExecutionException, InterruptedException {
