@@ -321,11 +321,12 @@ public class FlowDelegate {
     def retry(int attempts, retryClosure) {
         statusCheck()
         Result origin = flowRun.state.result
-        int i
+        int i = 0;
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
             flowRun.state.result = origin
-            println("retry (attempt $i++} {")
+            i++;
+            println("retry (attempt $i) {")
             ++indent
 
             retryClosure()
