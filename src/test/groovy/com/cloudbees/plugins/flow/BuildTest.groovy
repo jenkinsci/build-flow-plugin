@@ -22,6 +22,7 @@ import org.jvnet.hudson.test.Bug
 
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
+import hudson.model.InvisibleAction;
 import hudson.model.Job
 import hudson.model.Action
 import hudson.model.ParametersAction
@@ -160,6 +161,28 @@ class BuildTest extends DSLTestCase {
         assertHasParameter(build, "param3", "3")
         assert SUCCESS == flow.result
     }
+    
+    public void testBuildWithAction() {
+        Job job1 = createJob("job1")
+        def flow = run("""
+            build("job1", new com.cloudbees.plugins.flow.BuildTest.DummyAction())
+        """)
+        def build = assertSuccess(job1)
+        assertHasAction(build, DummyAction.class)
+        assert SUCCESS == flow.result
+    }
+
+    public void testBuildWithParam() {
+        Job job1 = createJob("job1")
+        def flow = run("""
+                build("job1", new hudson.plugins.parameterizedtrigger.PredefinedBuildParameters("a=b"))
+        """)
+        def build = assertSuccess(job1)
+        assertHasParameter(build, "a", "b")
+        assert SUCCESS == flow.result
+    }
+    
+    public static class DummyAction extends InvisibleAction {}
 
     @Bug(17199)
     public void testImportStatement() {

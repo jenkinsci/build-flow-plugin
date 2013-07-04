@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.CopyOnWriteArrayList
 import hudson.security.ACL
 import org.acegisecurity.context.SecurityContextHolder
+import org.apache.commons.lang.StringUtils;
 
 public class FlowDSL {
 
@@ -134,8 +135,8 @@ public class FlowDelegate {
         throw new JobExecutionFailureException()
     }
 
-    def build(String jobName) {
-        build([:], jobName)
+    def build(String jobName, Object... actionsOrParams) {
+        build([:], jobName, actionsOrParams)
     }
 
     def getBuild() {
@@ -169,15 +170,27 @@ public class FlowDelegate {
         }
     }
 
-    def build(Map args, String jobName) {
+    def build(Map args, String jobName, Object... actionsOrParams) {
         statusCheck()
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
         println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
 
-
-        Run r = flowRun.run(job, getActions(p, args));
+        def actions = getActions(p, args)
+        for (Object it: actionsOrParams) {
+            if (it instanceof Closure) it = getClosureValue(it)
+            if (it instanceof Action) {
+                actions.add(it)
+            } else if (Jenkins.getInstance().getPlugin("parameterized-trigger") != null && it instanceof hudson.plugins.parameterizedtrigger.AbstractBuildParameters) {
+                actions.add(it.getAction(flowRun, listener))
+            } else { 
+                println("Invalid Parameter, only action or buildParameter allowed (found: ${it.class.name})")
+                fail();
+            }
+        }
+        
+        Run r = flowRun.run(job, actions);
         if (null == r) {
             println("Failed to start ${jobName}.")
             fail();
@@ -231,8 +244,7 @@ public class FlowDelegate {
             }
             if (paramValue instanceof Boolean) {
                 params.add(new BooleanParameterValue(paramName, (Boolean) paramValue))
-            }
-            else {
+            } else {
                 params.add(new StringParameterValue(paramName, paramValue.toString()))
             }
             addedParams.add(paramName);
@@ -257,7 +269,7 @@ public class FlowDelegate {
             }
         }
 
-        //Additionnal parameters not available in the target job
+        //Additional parameters not available in the target job
         actions.add(new ParametersAction(params));
         return actions
     }
@@ -431,7 +443,22 @@ public class FlowDelegate {
     def getExtension() {
         return new DynamicExtensionLoader(this);
     }
-
+    
+    /**
+     * Create BuildParameters (parametrized triggers plugin).
+     * 
+     * <p>
+     * For example,
+     *
+     * <pre>
+     * build("job1", withParam.gitRevision )
+     * build("job2", withParam.gitRevision(true), withParam.svnRevision)
+     * </pre>
+     */
+    def getWithParam() {
+        return new DynamicBuildParamExtensionLoader(this);
+    }
+    
     def propertyMissing(String name) {
         throw new MissingPropertyException("Property ${name} doesn't exist.");
     }
@@ -455,5 +482,26 @@ class DynamicExtensionLoader {
         if (v==null)
             throw new UnsupportedOperationException("No such extension available: "+name)
         return v;
+    }
+}
+
+class DynamicBuildParamExtensionLoader {
+    FlowDelegate outer;
+
+    DynamicBuildParamExtensionLoader(FlowDelegate outer) {
+        this.outer = outer
+    }
+
+    def propertyMissing(name) {
+        methodMissing(name, new Object[0])
+    }
+    
+    def methodMissing(String name, Object args) {
+        name = StringUtils.capitalize(name)
+        
+        def v = Jenkins.getInstance().getDescriptorList(hudson.plugins.parameterizedtrigger.AbstractBuildParameters.class).find { it.klass.toJavaClass().simpleName.startsWith(name) }.klass.toJavaClass() 
+        if (v==null)
+            throw new UnsupportedOperationException("No such Build-Parameter available: "+name)
+        return v.newInstance(args)
     }
 }

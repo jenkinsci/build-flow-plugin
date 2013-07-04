@@ -136,10 +136,20 @@ abstract class DSLTestCase extends HudsonTestCase {
         assertTrue("build don't have expected parameter set " + name + "=" + value, found)
     }
 
-    void assertRan(Job job, int times, Result result) {
+    void assertHasAction(Job job, Class actionClass) {
+        assertHasParameter(job.builds.lastBuild, actionClass)
+    }
+
+    void assertHasAction(AbstractBuild build, Class actionClass) {
+        assertNotNull("Build has no action of type ${actionClass}", build.getAction(actionClass))
+    }
+
+     void assertRan(Job job, int times, Result result) {
         assert job.builds.size() == times
         job.builds.each { build ->
             assert build.result == result
         }
     }
+    
+    
 }
