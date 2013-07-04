@@ -24,9 +24,6 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
-import hudson.plugins.git.GitRevisionBuildParameters;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.SubversionRevisionBuildParameters;
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
@@ -185,7 +182,7 @@ public class FlowDelegate {
             if (it instanceof Closure) it = getClosureValue(it)
             if (it instanceof Action) {
                 actions.add(it)
-            } else if (Jenkins.getInstance().getPlugin("parameterized-trigger") != null && it instanceof AbstractBuildParameters) {
+            } else if (Jenkins.getInstance().getPlugin("parameterized-trigger") != null && it instanceof hudson.plugins.parameterizedtrigger.AbstractBuildParameters) {
                 actions.add(it.getAction(flowRun, listener))
             } else { 
                 println("Invalid Parameter, only action or buildParameter allowed (found: ${it.class.name})")
@@ -502,7 +499,7 @@ class DynamicBuildParamExtensionLoader {
     def methodMissing(String name, Object args) {
         name = StringUtils.capitalize(name)
         
-        def v = Jenkins.getInstance().getDescriptorList(AbstractBuildParameters.class).find { it.klass.toJavaClass().simpleName.startsWith(name) }.klass.toJavaClass() 
+        def v = Jenkins.getInstance().getDescriptorList(hudson.plugins.parameterizedtrigger.AbstractBuildParameters.class).find { it.klass.toJavaClass().simpleName.startsWith(name) }.klass.toJavaClass() 
         if (v==null)
             throw new UnsupportedOperationException("No such Build-Parameter available: "+name)
         return v.newInstance(args)
