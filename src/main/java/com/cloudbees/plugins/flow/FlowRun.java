@@ -83,9 +83,12 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         state.set(new FlowState(SUCCESS, startJob));
     }
 
-    /* package */ Run  run(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+    /* package */ void schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         addBuild(job);
         job.run(new FlowCause(this, job), actions);
+    }
+
+    /* package */ Run waitForCompletion(JobInvocation job) throws ExecutionException, InterruptedException {
         job.waitForCompletion();
         getState().setResult(job.getResult());
         return job.getBuild();
@@ -220,7 +223,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         @Override
         public void cleanUp(BuildListener listener) throws Exception {
             performAllBuildSteps(listener, project.getPublishersList(), false);
-            FlowRun.this.getStartJob().buildCompleted();
+            FlowRun.this.startJob.buildCompleted();
             super.cleanUp(listener);
         }
     }

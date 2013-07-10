@@ -1,6 +1,7 @@
 package com.cloudbees.plugins.flow;
 
-import hudson.model.*;
+import hudson.model.*
+import hudson.model.queue.QueueTaskFuture;
 import jenkins.model.Jenkins;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public class JobInvocation {
 
     private transient AbstractBuild build;
 
-    private transient Future<? extends AbstractBuild<?, ?>> future;
+    private transient QueueTaskFuture<? extends AbstractBuild<?, ?>> future;
 
     // A unique number that identifies when in the FlowRun this job was started
     private int buildIndex;
@@ -66,7 +67,7 @@ public class JobInvocation {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
-                    + project.getName() +", ensure its not already enqueued with same parameters", e);
+                    + project.getName() +", ensure its not already enqueued with same parameters");
         }
         return this;
     }
@@ -189,6 +190,10 @@ public class JobInvocation {
 
     public String toString() {
         return name + (build != null ? " #" + build.number : "");
+    }
+
+    public Run waitForStart() throws ExecutionException, InterruptedException {
+        return future.waitForStart();
     }
 
     public void waitForCompletion() throws ExecutionException, InterruptedException {

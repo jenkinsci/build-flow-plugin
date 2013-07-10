@@ -126,7 +126,7 @@ public class FlowDelegate {
     }
 
     def println(String s) {
-        println_with_indent { out.println(s) }
+        println_with_indent { out.print(s) }
     }
 
     def fail() {
@@ -174,15 +174,18 @@ public class FlowDelegate {
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
-        println("Trigger job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
+        println("Schedule job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
 
+        flowRun.schedule(job, getActions(p,args));
+        Run r = job.waitForStart()
+        println("Build " + HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
 
-        Run r = flowRun.run(job, getActions(p, args));
         if (null == r) {
             println("Failed to start ${jobName}.")
             fail();
         }
 
+        flowRun.waitForCompletion(job);
         println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
                 + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}")
         return job;
