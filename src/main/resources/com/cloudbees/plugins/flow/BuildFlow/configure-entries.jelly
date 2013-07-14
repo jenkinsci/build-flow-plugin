@@ -24,7 +24,7 @@
 
   <f:entry field="dsl" title="${%Define build flow using flow DSL}">
     <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
-	<f:textarea readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
+    <f:textarea readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
   </f:entry>
 
   <p:config-publishers2 />
