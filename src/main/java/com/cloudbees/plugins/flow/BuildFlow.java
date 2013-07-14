@@ -29,6 +29,8 @@ import hudson.Util;
 import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
 
+import jenkins.model.Jenkins;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +70,9 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         JSONObject json = req.getSubmittedForm();
-        this.dsl = json.getString("dsl");
+        if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) { 
+            this.dsl = json.getString("dsl");
+        }
     }
 
     @Extension
