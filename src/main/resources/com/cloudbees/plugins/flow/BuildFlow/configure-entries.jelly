@@ -23,7 +23,8 @@
   </p:config-trigger>
 
   <f:entry field="dsl" title="${%Define build flow using flow DSL}">
-    <f:textarea/>
+    <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+    <f:textarea readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
   </f:entry>
 
   <p:config-publishers2 />
