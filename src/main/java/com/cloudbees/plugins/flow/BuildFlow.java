@@ -28,6 +28,7 @@ import hudson.tasks.Publisher;
 import hudson.Util;
 import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
+import hudson.util.FormValidation;
 
 import jenkins.model.Jenkins;
 
@@ -98,6 +99,18 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
         public TopLevelItem newInstance(ItemGroup parent, String name) {
             return new BuildFlow(parent, name);
         }
+
+        public FormValidation doCheckDsl() {
+            // Require RUN_SCRIPTS permission, otherwise print a warning that no edits are possible
+            // This does NOT perform any syntactical or semantic validation!
+            
+            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) { 
+                return FormValidation.warning(Messages.BuildFlow_InsufficientPermissions());
+            }
+            return FormValidation.ok();
+        }
+
+
     }
 
     @Override
