@@ -106,54 +106,6 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         return jobsGraph;
     }
 
-    /**
-     * Assigns a unique row and column to each build in the graph
-     */
-    private void setupDisplayGrid() {
-        List<List<JobInvocation>> allPaths = findAllPaths(startJob);
-        // make the longer paths bubble up to the top
-        Collections.sort(allPaths, new Comparator<List<JobInvocation>>() {
-            public int compare(List<JobInvocation> job1, List<JobInvocation> job2) {
-                return job2.size() - job1.size();
-            }
-        });
-        // set the build row and column of each build
-        // loop backwards through the rows so that the lowest path a job is on
-        // will be assigned
-        for (int row = allPaths.size() - 1; row >= 0; row--) {
-            List<JobInvocation> path = allPaths.get(row);
-            for (int column = 0; column < path.size(); column++) {
-                JobInvocation job = path.get(column);
-                job.setDisplayColumn(Math.max(job.getDisplayColumn(), column));
-                job.setDisplayRow(row);
-            }
-        }
-    }
-
-    /**
-     * Finds all paths that start at the given vertex
-     * @param start the origin
-     * @return a list of paths
-     */
-    private List<List<JobInvocation>> findAllPaths(JobInvocation start) {
-        List<List<JobInvocation>> allPaths = new LinkedList<List<JobInvocation>>();
-        if (jobsGraph.outDegreeOf(start) == 0) {
-            // base case
-            List<JobInvocation> singlePath = new LinkedList<JobInvocation>();
-            singlePath.add(start);
-            allPaths.add(singlePath);
-        } else {
-            for (JobEdge edge : jobsGraph.outgoingEdgesOf(start)) {
-                List<List<JobInvocation>> allPathsFromTarget = findAllPaths(edge.getTarget());
-                for (List<JobInvocation> path : allPathsFromTarget) {
-                    path.add(0, start);
-                }
-                allPaths.addAll(allPathsFromTarget);
-            }
-        }
-        return allPaths;
-    }
-
     public JobInvocation getStartJob() {
         return startJob;
     }
@@ -175,7 +127,6 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             jobsGraph.addEdge(up, job, new JobEdge(up, job));
         }
         state.get().setLastCompleted(job);
-        setupDisplayGrid();
     }
 
     @Override
