@@ -153,7 +153,7 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return name + (build != null ? " #" + build.number : "");
+        return "${name}#${buildNumber}"
     }
 
     public Run waitForStart() throws ExecutionException, InterruptedException {
@@ -182,5 +182,17 @@ public class JobInvocation {
         public Start(FlowRun run) {
             super(run, run.getProject());
         }
+    }
+
+    @Override
+    boolean equals(Object obj) {
+        if (!(obj instanceof JobInvocation)) return false
+        JobInvocation other = (JobInvocation) obj
+        return name.equals(other.name) && buildNumber == other.buildNumber
+    }
+
+    @Override
+    int hashCode() {
+        return (name + buildNumber).hashCode()
     }
 }
