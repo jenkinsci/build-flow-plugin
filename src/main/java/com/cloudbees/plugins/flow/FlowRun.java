@@ -119,7 +119,6 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     }
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
-        job.setBuildIndex(buildIndex.getAndIncrement());
         jobsGraph.addVertex(job);
         for (JobInvocation up : state.get().getLastCompleted()) {
             String edge = up.getId() + " => " + job.getId();

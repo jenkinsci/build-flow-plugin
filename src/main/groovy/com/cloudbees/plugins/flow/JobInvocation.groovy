@@ -32,19 +32,15 @@ public class JobInvocation {
 
     private transient QueueTaskFuture<? extends AbstractBuild<?, ?>> future;
 
-    // A unique number that identifies when in the FlowRun this job was started
-    private int buildIndex;
-
-    private int displayColumn;
-
-    private int displayRow;
-
     // Whether the build has started. If true, this.build should be set.
     private boolean started;
     // Whether the build has completed
     private boolean completed;
 
+    private final int uid
+
     public JobInvocation(FlowRun run, AbstractProject project) {
+        this.uid = run.buildIndex.getAndIncrement()
         this.run = run;
         this.name = project.getFullName();
         this.project = project;
@@ -95,34 +91,6 @@ public class JobInvocation {
         return getResult().toString().toLowerCase();
     }
 
-    public String getColorForHtml() {
-        BallColor color = BallColor.NOTBUILT;
-        if (getBuild() != null) {
-            color = getBuild().getIconColor();
-        }
-        return color.getHtmlBaseColor();
-    }
-
-    /* package */ void setBuildIndex(int buildIndex) {
-        this.buildIndex = buildIndex;
-    }
-
-    public int getDisplayColumn() {
-        return displayColumn;
-    }
-
-    /* package */ void setDisplayColumn(int displayColumn) {
-        this.displayColumn = displayColumn;
-    }
-
-    public int getDisplayRow() {
-        return displayRow;
-    }
-
-    /* package */ void setDisplayRow(int displayRow) {
-        this.displayRow = displayRow;
-    }
-
     /* package */ AbstractBuild getFlowRun() {
         return run;
     }
@@ -139,10 +107,6 @@ public class JobInvocation {
 
     public String getName() {
         return name;
-    }
-
-    public String getId() {
-        return "build-" + buildIndex;
     }
 
     public boolean isStarted() {
@@ -204,6 +168,10 @@ public class JobInvocation {
                 throw new RuntimeException("Can't wait for completion.");
             }
         }
+    }
+
+    String getId() {
+        return "build-" + uid;
     }
 
     /**

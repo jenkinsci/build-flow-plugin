@@ -10,7 +10,7 @@ public class FlowCause extends Cause {
 
     private transient FlowRun flowRun;
     
-    private transient JobInvocation associatedJob;
+    private JobInvocation associatedJob;
 
     private final String cause;
 
