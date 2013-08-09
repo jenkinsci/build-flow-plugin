@@ -24,6 +24,8 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import java.util.logging.Logger
 import jenkins.model.Jenkins
 import hudson.model.*
+
+import static hudson.model.Result.ABORTED
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
@@ -80,6 +82,9 @@ public class FlowDSL {
 
         try {
             dslScript.run()
+            flowRun.completed = true
+        } catch(Pending p) {
+            // flow switching to PENDING waiting for job to execute
         } catch(JobExecutionFailureException e) {
             listener.println("flow failed to complete : " + flowRun.state.result)
         } catch (Exception e) {
@@ -169,21 +174,22 @@ public class FlowDelegate {
         }
     }
 
-    def build(Map args, String jobName) {
+    def build(Map args, String jobName) throws Pending {
         statusCheck()
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
         println("Schedule job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
 
-        flowRun.schedule(job, getActions(p,args));
-        Run r = job.waitForStart()
-        println("Build " + HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
-
+        Run r = flowRun.trigger(job, getActions(p,args));
         if (null == r) {
             println("Failed to start ${jobName}.")
             fail();
         }
+        println("Build " + HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
+
+        // switch flow in "pending" state, waiting for build to complete and then resume the flow
+        throw new Pending()
 
         flowRun.waitForCompletion(job);
         println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())

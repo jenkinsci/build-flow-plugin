@@ -19,6 +19,8 @@ package com.cloudbees.plugins.flow;
 
 import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
+
+import hudson.console.ConsoleLogFilter;
 import hudson.model.Action;
 import hudson.model.Build;
 import hudson.model.BuildListener;
@@ -26,12 +28,16 @@ import hudson.model.Result;
 import hudson.model.Run;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import hudson.model.StreamBuildListener;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.graph.SimpleDirectedGraph;
@@ -56,6 +62,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
     
     private transient AtomicInteger buildIndex = new AtomicInteger(1);
+    private boolean completed;
 
     public FlowRun(BuildFlow job, File buildDir) throws IOException {
         super(job, buildDir);
@@ -80,9 +87,10 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         state.set(new FlowState(SUCCESS, startJob));
     }
 
-    /* package */ void schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
+    /* package */ Run trigger(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
         addBuild(job);
         job.run(new FlowCause(this, job), actions);
+        return job.waitForStart();
     }
 
     /* package */ Run waitForCompletion(JobInvocation job) throws ExecutionException, InterruptedException {
@@ -125,11 +133,42 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         state.get().setLastCompleted(job);
     }
 
+    public void resume() {
+        // put back this build in BUILDING state
+        onStartBuilding();
+
+        try {
+            // Copy/paste from hudson.model.Run#execute
+            OutputStream logger = new FileOutputStream(getLogFile(), true);
+            for (ConsoleLogFilter filter : ConsoleLogFilter.all()) {
+                logger = filter.decorateLogger(this, logger);
+            }
+            BuildListener listener = new StreamBuildListener(logger, charset == null ? null : Charset.forName(charset));
+
+            this.state.set(new FlowState(SUCCESS, startJob));
+            new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+        } catch (Exception e) {
+            // Where to report error ?
+            setResult(FAILURE);
+        }
+        onEndBuilding();
+    }
+
+
+
     @Override
     public void run() {
         execute(new RunnerImpl(dsl));
     }
-    
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    /* package */ void setCompleted(boolean completed) {
+        this.completed = completed;
+    }
+
     protected class RunnerImpl extends RunExecution {
 
         private final String dsl;
