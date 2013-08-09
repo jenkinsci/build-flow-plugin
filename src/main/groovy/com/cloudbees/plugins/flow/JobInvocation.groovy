@@ -188,11 +188,11 @@ public class JobInvocation {
     boolean equals(Object obj) {
         if (!(obj instanceof JobInvocation)) return false
         JobInvocation other = (JobInvocation) obj
-        return name.equals(other.name) && buildNumber == other.buildNumber
+        return uid == other.uid;
     }
 
     @Override
     int hashCode() {
-        return (name + buildNumber).hashCode()
+        return uid;
     }
 }
