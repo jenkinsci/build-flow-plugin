@@ -45,7 +45,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 /**
- * Defines the orchestration logic for a build flow as a succession o jobs to be executed and chained together
+ * Defines the orchestration logic for a build flow as a succession of jobs to be executed and chained together
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
