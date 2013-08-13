@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +29,10 @@ import hudson.model.*
 import hudson.model.queue.QueueTaskFuture;
 import jenkins.model.Jenkins;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import java.text.DateFormat;
-import java.util.UUID;
-import java.awt.Color;
 
 /**
  * @author: <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -86,8 +83,9 @@ public class JobInvocation {
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
+            // XXX this will mark the build as failed - perhaps aborting would be a better option?
             throw new CouldNotScheduleJobException("Could not schedule job "
-                    + project.getName() +", ensure it is not already queued with the same parameters");
+                    + project.getName() +", ensure it is not already queued with the same parameters or is not disabled");
         }
         return this;
     }
