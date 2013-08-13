@@ -75,7 +75,7 @@ public class JobInvocation {
         final ItemGroup context = run.getProject().getParent()
         AbstractProject item = Jenkins.getInstance().getItem(name, (ItemGroup) context, AbstractProject.class);
         if (item == null) {
-            throw new JobNotFoundException("Item " + name + "not found (or isn't a job).");
+            throw new JobNotFoundException("Item " + name + " not found (or isn't a job).");
         }
         return item;
     }
