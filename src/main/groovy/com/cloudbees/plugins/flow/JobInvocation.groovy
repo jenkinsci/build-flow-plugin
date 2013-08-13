@@ -87,7 +87,7 @@ public class JobInvocation {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
             throw new CouldNotScheduleJobException("Could not schedule job "
-                    + project.getName() +", ensure its not already enqueued with same parameters");
+                    + project.getName() +", ensure it is not already queued with the same parameters");
         }
         return this;
     }
