@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +25,24 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.AbortException
+import hudson.console.HyperlinkNote
+import hudson.model.*
+import hudson.security.ACL
+import hudson.slaves.EnvironmentVariablesNodeProperty
+import hudson.slaves.NodeProperty
 import hudson.util.spring.ClosureScript
+import jenkins.model.Jenkins
+
+import org.acegisecurity.context.SecurityContextHolder
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
+import java.util.concurrent.*
 import java.util.logging.Logger
-import jenkins.model.Jenkins
-import hudson.model.*
-import static hudson.model.Result.SUCCESS
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-
-import java.util.concurrent.TimeUnit
-import hudson.slaves.NodeProperty
-import hudson.slaves.EnvironmentVariablesNodeProperty
-
-import hudson.console.HyperlinkNote
-import java.util.concurrent.Future
-import java.util.concurrent.Callable
 
 import static hudson.model.Result.FAILURE
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.CopyOnWriteArrayList
-import hudson.security.ACL
-import org.acegisecurity.context.SecurityContextHolder
+import static hudson.model.Result.SUCCESS
 
 public class FlowDSL {
 
@@ -89,14 +84,49 @@ public class FlowDSL {
             dslScript.run()
         } catch(JobExecutionFailureException e) {
             listener.println("flow failed to complete : " + flowRun.state.result)
+        }
+        catch (AbortException e) {
+            // aborted should not cause any logging.
+            killRunningJobs(flowRun, listener)
+        }
+        catch (InterruptedException e) {
+            // aborted should not cause any logging.
+            killRunningJobs(flowRun, listener)
         } catch (Exception e) {
             listener.error("Failed to run DSL Script")
             e.printStackTrace(listener.getLogger())
             throw e;
         }
-
     }
 
+    private void killRunningJobs(FlowRun flowRun, BuildListener listener) {
+        flowRun.state.result = Executor.currentExecutor().abortResult();
+        Executor.currentExecutor().recordCauseOfInterruption(flowRun, listener);
+
+        def graph = flowRun.jobsGraph
+        graph.vertexSet().each() { ji ->
+            if (flowRun.project != ji.project) {
+                // Our project is the fist JobInvocation and we would just be aborting ourselves again.
+                println("aborting ${ji.name}")
+                ji.abort()
+            }
+        }
+        // wait until all the downstream builds have aborted.
+        // we do this in a separate block as aborting a job may take some time to complete.
+        graph.vertexSet().each() { ji ->
+            if (ji.started && ! ji.completed) {
+                if (flowRun.project != ji.project) {
+                    // Our project is the fist JobInvocation and we can't schedule ourself to run
+                    // so we would have started but have no build.
+                    // so don't wait for our self which will cause an exception.
+                    println("Waiting for ${ji.name} to finish...")
+
+                    ji.waitForCompletion()
+                }
+            }
+        }
+        listener.getLogger().println(hudson.model.Messages.Run_BuildAborted());
+    }
     // TODO define a parseFlowScript to validate flow DSL and maintain jobs dependencygraph
 }
 
@@ -434,7 +464,7 @@ public class FlowDelegate {
      *
      * <pre>
      * build("job1")
-     * x = extension.foobar // foobar is the name of the plugin
+     * x = extension.'foobar' // foobar is the name of the plugin
      * x.someMethod()
      * </pre>
      */

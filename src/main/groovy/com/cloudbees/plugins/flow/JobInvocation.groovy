@@ -91,6 +91,29 @@ public class JobInvocation {
     }
 
     /**
+     * Makes an attempt to abort the run.
+     * If the run has already started then an attempt is made to abort it, if the job has not yet started then
+     * it is removed from the queue.
+     * @return <code>true</code> if the run was aborted
+     */
+    /* package */ boolean abort() {
+        def aborted = false
+        if (!started) {
+            aborted = future.cancel(false)
+        }
+        else if (!completed) {
+            // as the task has already started we want to be kinder in recording the cause.
+            def cause = new FlowAbortedCause(flowRun);
+            def executor = build.executor ?: build.oneOffExecutor;
+            if (executor != null) {
+                executor.interrupt(Result.ABORTED, cause)
+                aborted = true;
+             }
+        }
+        return aborted;
+    }
+
+    /**
      * Delegate method calls we don't implement to the actual {@link Run} so that DSL feels like a Run object has been
      * returned, but we can lazy-resolve the actual Run object and add some helper methods
      */

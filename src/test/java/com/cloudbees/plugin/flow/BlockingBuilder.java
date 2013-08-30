@@ -34,6 +34,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
 
+import static hudson.model.Result.ABORTED;
 import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
 
@@ -62,7 +63,7 @@ public class BlockingBuilder extends Builder {
             }
             build.setResult(SUCCESS);
         } catch (InterruptedException ex) {
-            build.setResult(FAILURE);
+            build.setResult(ABORTED);
         }
         System.out.println("Blocking Builder in build " + build.getFullDisplayName() + " completing " + build.getResult());
         return true;
