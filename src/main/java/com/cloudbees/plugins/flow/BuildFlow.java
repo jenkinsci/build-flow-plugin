@@ -36,7 +36,6 @@ import hudson.Util;
 import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
-
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
@@ -44,12 +43,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+
 import javax.servlet.ServletException;
 
 import net.sf.json.JSONObject;
 
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.codehaus.groovy.tools.Compiler;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 
 /**
  * Defines the orchestration logic for a build flow as a succession of jobs to be executed and chained together
@@ -107,17 +111,22 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
             return new BuildFlow(parent, name);
         }
 
-        public FormValidation doCheckDsl() {
+        public FormValidation doCheckDsl(@QueryParameter String value) {
             // Require RUN_SCRIPTS permission, otherwise print a warning that no edits are possible
-            // This does NOT perform any syntactical or semantic validation!
-            
             if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) { 
                 return FormValidation.warning(Messages.BuildFlow_InsufficientPermissions());
             }
+            
+            try {
+				Compiler c = new Compiler(new CompilerConfiguration());
+				c.compile("DSL", value);
+			} 
+			catch (MultipleCompilationErrorsException e) {
+				return FormValidation.error( e.getMessage());
+			} 
             return FormValidation.ok();
         }
-
-
+      
     }
 
     @Override
