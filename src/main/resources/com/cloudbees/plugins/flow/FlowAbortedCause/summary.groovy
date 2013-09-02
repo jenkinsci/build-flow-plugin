@@ -1,8 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
- *                     Cisco Systems, Inc., a California corporation
+ * Copyright (c) 2013, Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+package com.cloudbees.plugins.flow.FlowAbortedCause
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package com.cloudbees.plugins.flow;
+def proj = app.getItemByFullName(my.abortedBuildFlow);
+def build = proj == null ? null : proj.getBuildByNumber(my.abortedBuildNumber);
 
-/**
- *
- * @author Julia S.Simon <julia@tuenti.com>
- */
-class CouldNotScheduleJobException extends RuntimeException {
-
-    public CouldNotScheduleJobException(String message) {
-        super(message);
-    }
-
-    public CouldNotScheduleJobException(Exception e) {
-            super(e);
-    }
-    
-    public CouldNotScheduleJobException(String message, Exception e) {
-            super(message, e);
-    }
+if (build != null) {
+  return raw(_("message", rootURL, proj.url, my.abortedBuildFlow, my.abortedBuildNumber ))
 }
+if (proj != null) {
+	return raw(_("message_no_build", rootURL, proj.url, my.abortedBuildFlow, my.abortedBuildNumber ))
+}
+return raw(_("message_no_job", rootURL, null, my.abortedBuildFlow, my.abortedBuildNumber ))

@@ -2,6 +2,7 @@
   ~ The MIT License
   ~
   ~ Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+  ~                     Cisco Systems, Inc., a California corporation
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -23,16 +24,18 @@
   -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:p="/lib/hudson/project" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
-  <st:include page="configure-common.jelly" />
+  <st:include page="configure-common.jelly" xmlns:f="/lib/form"/>
 
   <p:config-trigger>
       <p:config-upstream-pseudo-trigger />
   </p:config-trigger>
 
-  <f:entry field="dsl" title="${%Define build flow using flow DSL}">
-    <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
-    <f:textarea readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
-  </f:entry>
+  <f:section title="Flow">
+    <f:entry field="dsl" title="${%Define build flow using flow DSL}">
+      <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+      <f:textarea readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
+    </f:entry>
+  </f:section>
 
   <p:config-publishers2 />
 </j:jelly>

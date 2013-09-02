@@ -22,28 +22,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.cloudbees.plugins.flow;
 
-/**
- *
- * @author Julia S.Simon <julia@tuenti.com>
- */
-class CouldNotScheduleJobException extends RuntimeException {
 
-    public CouldNotScheduleJobException(String message) {
-        super(message);
-    }
+import jenkins.model.CauseOfInterruption;
+import jenkins.model.Jenkins;
 
-    public CouldNotScheduleJobException(Exception e) {
-            super(e);
-    }
-    
-    public CouldNotScheduleJobException(String message, Exception e) {
-            super(message, e);
-    }
+public class FlowAbortedCause extends CauseOfInterruption {
+
+	/** The BuildFlow project that caused the abort */
+	private final String project;
+	/** The build number of the project that caused the abort. */
+	private final int build;
+
+	public FlowAbortedCause(FlowRun flowRun) {
+		this.project = flowRun.getParent().getFullName();
+		this.build = flowRun.getNumber();
+	}
+
+	public String getAbortedBuildFlow() {
+		return project;
+	}
+
+	public int getAbortedBuildNumber() {
+		return build;
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Job aborted as " + project + "#" + build +" was aborted.";
+	}
 }
