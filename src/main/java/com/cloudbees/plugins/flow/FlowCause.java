@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +55,17 @@ public class FlowCause extends Cause {
     }
 
     public JobInvocation getAssociatedJob() {
-    	return associatedJob;
+        return associatedJob;
+    }
+
+    public String getBuildFlow() {
+        int i = cause.lastIndexOf('#');
+        return cause.substring(0,i);
+    }
+
+    public int getBuildNumber() {
+        int i = cause.lastIndexOf('#');
+        return Integer.parseInt(cause.substring(i+1));
     }
 
     @Override

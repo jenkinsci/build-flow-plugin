@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +29,10 @@ import hudson.model.*
 import hudson.model.queue.QueueTaskFuture;
 import jenkins.model.Jenkins;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import java.text.DateFormat;
-import java.util.UUID;
-import java.awt.Color;
 
 /**
  * @author: <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -78,7 +75,7 @@ public class JobInvocation {
         final ItemGroup context = run.getProject().getParent()
         AbstractProject item = Jenkins.getInstance().getItem(name, (ItemGroup) context, AbstractProject.class);
         if (item == null) {
-            throw new JobNotFoundException("Item " + name + "not found (or isn't a job).");
+            throw new JobNotFoundException("Item " + name + " not found (or isn't a job).");
         }
         return item;
     }
@@ -86,10 +83,34 @@ public class JobInvocation {
     /* package */ JobInvocation run(Cause cause, List<Action> actions) {
         future = project.scheduleBuild2(project.getQuietPeriod(), cause, actions);
         if (future == null) {
+            // XXX this will mark the build as failed - perhaps aborting would be a better option?
             throw new CouldNotScheduleJobException("Could not schedule job "
-                    + project.getName() +", ensure its not already enqueued with same parameters");
+                    + project.getName() +", ensure it is not already queued with the same parameters or is not disabled");
         }
         return this;
+    }
+
+    /**
+     * Makes an attempt to abort the run.
+     * If the run has already started then an attempt is made to abort it, if the job has not yet started then
+     * it is removed from the queue.
+     * @return <code>true</code> if the run was aborted
+     */
+    /* package */ boolean abort() {
+        def aborted = false
+        if (!started) {
+            aborted = future.cancel(false)
+        }
+        else if (!completed) {
+            // as the task has already started we want to be kinder in recording the cause.
+            def cause = new FlowAbortedCause(flowRun);
+            def executor = build.executor ?: build.oneOffExecutor;
+            if (executor != null) {
+                executor.interrupt(Result.ABORTED, cause)
+                aborted = true;
+             }
+        }
+        return aborted;
     }
 
     /**

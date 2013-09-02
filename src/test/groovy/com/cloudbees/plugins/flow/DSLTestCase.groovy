@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +48,7 @@ import hudson.Launcher
 import hudson.model.BuildListener
 import hudson.tasks.Builder
 import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
+import com.cloudbees.plugin.flow.BlockingBuilder
 import hudson.model.Job
 
 import static hudson.model.Result.UNSTABLE
@@ -77,11 +79,22 @@ abstract class DSLTestCase extends HudsonTestCase {
         return job
     }
 
+    def createBlockingJob = {String name, File file = BlockingBuilder.DEFAULT_FILE ->
+        def job = createJob(name)
+        job.getBuildersList().add(new BlockingBuilder(file));
+        return job
+    }
 
     def run = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
         flow.dsl = script
         return flow.scheduleBuild2(0).get()
+    }
+
+    def schedule = { script ->
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        return flow.scheduleBuild2(0)
     }
 
     def runWithCause = { script, cause ->

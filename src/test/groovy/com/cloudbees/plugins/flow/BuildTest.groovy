@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ *                     Cisco Systems, Inc., a California corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +49,19 @@ class BuildTest extends DSLTestCase {
             build("unknown")
         """)
         assert FAILURE == flow.result
+        assertLogContains("Item unknown not found (or isn't a job).", flow)
+    }
+
+    public void testDisabledJob() {
+        def disabledJob = createJob("disabledJob")
+        disabledJob.disable()
+
+        def flow = run("""
+            build("disabledJob")
+        """)
+
+        assertBuildStatus(FAILURE, flow);
+        assertLogContains("Could not schedule job disabledJob, ensure it is not already queued with the same parameters or is not disabled", flow)
     }
 
     public void testSingleBuild() {
