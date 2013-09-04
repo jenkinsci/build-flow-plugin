@@ -233,7 +233,7 @@ public class JobInvocation {
     boolean equals(Object obj) {
         if (!(obj instanceof JobInvocation)) return false
         JobInvocation other = (JobInvocation) obj
-        return uid == other.uid;
+        return hashCode() == other.hashCode();
     }
 
     @Override
