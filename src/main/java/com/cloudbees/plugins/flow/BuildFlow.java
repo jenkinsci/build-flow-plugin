@@ -51,9 +51,8 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
-import org.codehaus.groovy.tools.Compiler;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import groovy.lang.GroovyShell;
 
 /**
  * Defines the orchestration logic for a build flow as a succession of jobs to be executed and chained together
@@ -118,8 +117,7 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
             }
             
             try {
-				Compiler c = new Compiler(new CompilerConfiguration());
-				c.compile("DSL", value);
+            	new GroovyShell().parse(value);
 			} 
 			catch (MultipleCompilationErrorsException e) {
 				return FormValidation.error( e.getMessage());
