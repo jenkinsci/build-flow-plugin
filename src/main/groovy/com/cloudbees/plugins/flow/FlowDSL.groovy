@@ -358,10 +358,11 @@ public class FlowDelegate {
         }
     }
 
-    def retry(int attempts, retryClosure) {
+    def retry(int attempts, worstAllowed='SUCCESS', retryClosure) {
         statusCheck()
         Result origin = flowRun.state.result
         int i = 0;
+        Result worstAllowedResult = Result.fromString(worstAllowed)
         while( attempts-- > 0) {
             // Restore the pre-retry result state to ignore failures
             flowRun.state.result = origin
@@ -373,7 +374,7 @@ public class FlowDelegate {
 
             --indent
 
-            if (flowRun.state.result.isBetterOrEqualTo(SUCCESS)) {
+            if (flowRun.state.result.isBetterOrEqualTo(worstAllowedResult)) {
                 println("}")
                 return;
             }
