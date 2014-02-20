@@ -29,11 +29,14 @@
   <p:config-trigger>
       <p:config-upstream-pseudo-trigger />
   </p:config-trigger>
-
   <f:section title="Flow">
-    <f:entry field="buildNeedsWorkspace" title="${%Flow run needs a workspace}">
-      <f:checkbox/>
-    </f:entry>
+    <f:optionalBlock field="buildNeedsWorkspace" title="${%Flow run needs a workspace}"
+                     checked="${instance.buildNeedsWorkspace}">
+      <f:entry field="dslFile" title="${%Read DSL from file}">
+        <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+        <f:textbox readonly="${h.hasPermission(it,permission) ? null : 'readonly'}"/>
+      </f:entry>
+    </f:optionalBlock>
     <f:entry field="dsl" title="${%Define build flow using flow DSL}">
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
       <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" checkMethod="POST" />
