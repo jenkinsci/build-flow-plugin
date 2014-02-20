@@ -38,6 +38,10 @@
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
       <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" checkMethod="POST" />
     </f:entry>
+    <f:entry field="dslFile" title="${%Read DSL from file}">
+      <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+      <f:textbox readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" />
+    </f:entry>
   </f:section>
 
   <p:config-publishers2 />
