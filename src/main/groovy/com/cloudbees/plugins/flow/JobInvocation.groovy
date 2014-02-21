@@ -153,6 +153,10 @@ public class JobInvocation {
     public String getName() {
         return name;
     }
+    
+    public String getBuildNumber() {
+        return buildNumber;
+    }
 
     public boolean isStarted() {
         return started;
@@ -232,12 +236,11 @@ public class JobInvocation {
     @Override
     boolean equals(Object obj) {
         if (!(obj instanceof JobInvocation)) return false
-        JobInvocation other = (JobInvocation) obj
-        return hashCode() == other.hashCode();
+        return this.name == obj.name && this.buildNumber == obj.buildNumber 
     }
 
     @Override
     int hashCode() {
-        return uid;
+        return name.hashCode();
     }
 }
