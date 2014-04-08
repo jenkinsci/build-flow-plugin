@@ -67,7 +67,7 @@
 
   <scm>
     <connection>scm:git:git://git@github.com/jenkinsci/build-flow-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/build-flow-plugin.git</developerConnection>
+    <developerConnection>scm:git:https://github.com/jenkinsci/build-flow-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/build-flow-plugin</url>
   </scm>
   
