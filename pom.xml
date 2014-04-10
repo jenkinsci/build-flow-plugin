@@ -118,6 +118,7 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>buildgraph-view</artifactId>
             <version>1.0</version>
+            <optional>true</optional>
         </dependency>
         
         <dependency>
