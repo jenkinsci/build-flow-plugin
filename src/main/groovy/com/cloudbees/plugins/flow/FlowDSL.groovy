@@ -445,6 +445,8 @@ public class FlowDelegate {
                 {
                     // TODO perhaps rethrow?
                     current_state.result = FAILURE
+                    listener.error("Failed to run DSL Script")
+                    e.printStackTrace(listener.getLogger())
                 }
             }
 
