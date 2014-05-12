@@ -98,6 +98,12 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         return job.getBuild();
     }
 
+    /* package */ Run waitForFinalization(JobInvocation job) throws ExecutionException, InterruptedException {
+        job.waitForFinalization();
+        getState().setResult(job.getResult());
+        return job.getBuild();
+    }
+
     /* package */ FlowState getState() {
         return state.get();
     }

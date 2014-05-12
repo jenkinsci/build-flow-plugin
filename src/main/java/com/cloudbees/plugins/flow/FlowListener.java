@@ -58,4 +58,13 @@ public class FlowListener extends RunListener<AbstractBuild<?, ?>> {
         }
     }
 
+    @Override
+    public synchronized void onFinalized(AbstractBuild<?, ?> finalizedBuild) {
+        List<Cause> causes = finalizedBuild.getCauses();
+        for (Cause cause : causes) {
+            if (cause instanceof FlowCause) {
+                ((FlowCause) cause).getAssociatedJob().buildFinalized();
+            }
+        }
+    }
 }

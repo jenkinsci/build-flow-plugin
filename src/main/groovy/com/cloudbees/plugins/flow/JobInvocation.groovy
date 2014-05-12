@@ -30,6 +30,10 @@ import hudson.model.queue.QueueTaskFuture;
 import jenkins.model.Jenkins;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
 import java.util.logging.Logger;
 
 import java.text.DateFormat;
@@ -53,10 +57,15 @@ public class JobInvocation {
 
     private transient QueueTaskFuture<? extends AbstractBuild<?, ?>> future;
 
+    private final Lock lock;
+    private final Condition finalizedCond;
+
     // Whether the build has started. If true, this.build should be set.
     private boolean started;
     // Whether the build has completed
     private boolean completed;
+    // Whether the build has completed
+    private boolean finalized;
 
     private final int uid
 
@@ -65,6 +74,8 @@ public class JobInvocation {
         this.run = run;
         this.name = project.getFullName();
         this.project = project;
+        this.lock = new ReentrantLock();
+        this.finalizedCond = lock.newCondition();
     }
 
     public JobInvocation(FlowRun run, String name) {
@@ -150,6 +161,16 @@ public class JobInvocation {
         this.completed = true;
     }
 
+    /* package */ void buildFinalized() {
+        this.lock.lock();
+        try {
+            this.finalized = true;
+            this.finalizedCond.signal();
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
     public String getName() {
         return name;
     }
@@ -160,6 +181,10 @@ public class JobInvocation {
 
     public boolean isCompleted() {
         return completed;
+    }
+
+    public boolean isFinalized() {
+        return finalized;
     }
 
     public String getBuildUrl() {
@@ -211,6 +236,17 @@ public class JobInvocation {
                 future.get();
             } else {
                 throw new RuntimeException("Can't wait for completion.");
+            }
+        }
+    }
+
+    public void waitForFinalization() throws ExecutionException, InterruptedException {
+        if (!finalized) {
+            this.lock.lock();
+            try {
+                this.finalizedCond.await();
+            } finally {
+                this.lock.unlock();
             }
         }
     }
