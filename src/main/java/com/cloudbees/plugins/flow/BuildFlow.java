@@ -65,6 +65,9 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
 
     private String dsl;
 
+    private boolean buildNeedsWorkspace;
+
+
     public BuildFlow(ItemGroup parent, String name) {
         super(parent, name);
     }
@@ -77,11 +80,20 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
         this.dsl = dsl;
     }
 
+    public boolean getBuildNeedsWorkspace() {
+        return buildNeedsWorkspace;
+    }
+
+    public void setBuildNeedsWorkspace(boolean buildNeedsWorkspace) {
+        this.buildNeedsWorkspace = buildNeedsWorkspace;
+    }
+
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         JSONObject json = req.getSubmittedForm();
-        if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) { 
+        this.buildNeedsWorkspace = json.getBoolean("buildNeedsWorkspace");
+        if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
             this.dsl = json.getString("dsl");
         }
     }

@@ -1,8 +1,7 @@
 <!--
   ~ The MIT License
   ~
-  ~ Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
-  ~                     Cisco Systems, Inc., a California corporation
+  ~ Copyright (c) 2014, Damien Nozay
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -21,24 +20,13 @@
   ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   ~ THE SOFTWARE.
-  -->
+-->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:p="/lib/hudson/project" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
-  <st:include page="configure-common.jelly" xmlns:f="/lib/form"/>
-
-  <p:config-trigger>
-      <p:config-upstream-pseudo-trigger />
-  </p:config-trigger>
-
-  <f:section title="Flow">
-    <f:entry field="buildNeedsWorkspace" title="${%Flow run needs a workspace}">
-      <f:checkbox/>
-    </f:entry>
-    <f:entry field="dsl" title="${%Define build flow using flow DSL}">
-      <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
-      <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" checkMethod="POST" />
-    </f:entry>
-  </f:section>
-
-  <p:config-publishers2 />
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
+    <div>
+       <div>
+           Checking this box will let the build use a workspace and will be
+           an AbstractBuild rather and a RunExecution (flyweight task).
+       </div>
+    </div>
 </j:jelly>
