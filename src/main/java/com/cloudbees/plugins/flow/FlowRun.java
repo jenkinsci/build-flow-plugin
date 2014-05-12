@@ -34,6 +34,9 @@ import hudson.model.Run;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,6 +58,8 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
     private String dsl;
+
+    private boolean buildNeedsWorkspace;
 
     private JobInvocation.Start startJob;
 
@@ -82,6 +87,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             startJob = new JobInvocation.Start(this);
         }
         this.dsl = job.getDsl();
+        this.buildNeedsWorkspace = job.getBuildNeedsWorkspace();
         startJob.buildStarted(this);
         jobsGraph.addVertex(startJob);
         state.set(new FlowState(SUCCESS, startJob));
@@ -140,14 +146,59 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     @Override
     public void run() {
-        execute(new RunnerImpl(dsl));
+        if (buildNeedsWorkspace) {
+            run(new BuildWithWorkspaceRunnerImpl(dsl));
+        } else {
+            execute(new FlyweightTaskRunnerImpl(dsl));
+        }
     }
-    
-    protected class RunnerImpl extends RunExecution {
+
+    protected class BuildWithWorkspaceRunnerImpl extends AbstractRunner {
 
         private final String dsl;
 
-        public RunnerImpl(String dsl) {
+        public BuildWithWorkspaceRunnerImpl(String dsl) {
+            this.dsl = dsl;
+        }
+
+        protected Result doRun(BuildListener listener) throws Exception {
+            if(!preBuild(listener, project.getPublishersList()))
+                return FAILURE;
+
+            try {
+                setResult(SUCCESS);
+                new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+            } finally {
+                boolean failed=false;
+                for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
+                    if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
+                        failed=true;
+                    }
+                }
+                if (failed) return Result.FAILURE;
+            }
+            return getState().getResult();
+        }
+
+        @Override
+        public void post2(BuildListener listener) throws IOException, InterruptedException {
+            if(!performAllBuildSteps(listener, project.getPublishersList(), true))
+                setResult(FAILURE);
+        }
+
+        @Override
+        public void cleanUp(BuildListener listener) throws Exception {
+            performAllBuildSteps(listener, project.getPublishersList(), false);
+            FlowRun.this.startJob.buildCompleted();
+            super.cleanUp(listener);
+        }
+    }
+
+    protected class FlyweightTaskRunnerImpl extends RunExecution {
+
+        private final String dsl;
+
+        public FlyweightTaskRunnerImpl(String dsl) {
             this.dsl = dsl;
         }
 
