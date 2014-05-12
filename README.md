@@ -3,7 +3,7 @@ Jenkins Build Flow Plugin
 
 This Jenkins plugin allows managing jobs orchestration using a dedicated DSL, extracting the flow logic from jobs.
 
-[![Build Status](https://buildhive.cloudbees.com/job/jenkinsci/job/build-flow-plugin/badge/icon)](https://buildhive.cloudbees.com/job/jenkinsci/job/build-flow-plugin/)
+[![Build Status](https://jenkins.ci.cloudbees.com/job/plugins/job/build-flow-plugin/badge/icon)](https://jenkins.ci.cloudbees.com/job/plugins/job/build-flow-plugin/)
 
 ## Sample Build Flow Content ##
 
