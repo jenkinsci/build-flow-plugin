@@ -26,6 +26,7 @@ package com.cloudbees.plugins.flow;
 
 import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
+import hudson.Util;
 import hudson.model.Action;
 import hudson.model.Build;
 import hudson.model.BuildListener;
@@ -58,6 +59,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
     
     private String dsl;
+    private String dslFile;
 
     private boolean buildNeedsWorkspace;
 
@@ -87,6 +89,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             startJob = new JobInvocation.Start(this);
         }
         this.dsl = job.getDsl();
+        this.dslFile = job.getDslFile();
         this.buildNeedsWorkspace = job.getBuildNeedsWorkspace();
         startJob.buildStarted(this);
         jobsGraph.addVertex(startJob);
@@ -147,7 +150,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     @Override
     public void run() {
         if (buildNeedsWorkspace) {
-            run(new BuildWithWorkspaceRunnerImpl(dsl));
+            run(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
         } else {
             execute(new FlyweightTaskRunnerImpl(dsl));
         }
@@ -156,9 +159,11 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     protected class BuildWithWorkspaceRunnerImpl extends AbstractRunner {
 
         private final String dsl;
+        private final String dslFile;
 
-        public BuildWithWorkspaceRunnerImpl(String dsl) {
+        public BuildWithWorkspaceRunnerImpl(String dsl, String dslFile) {
             this.dsl = dsl;
+            this.dslFile = dslFile;
         }
 
         protected Result doRun(BuildListener listener) throws Exception {
@@ -167,7 +172,13 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
             try {
                 setResult(SUCCESS);
-                new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+                if (dslFile != null) {
+                    listener.getLogger().printf("[build-flow] reading DSL from file '%s'\n", dslFile);
+                    String fileContent = getWorkspace().child(dslFile).readToString();
+                    new FlowDSL().executeFlowScript(FlowRun.this, fileContent, listener);
+                } else {
+                    new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+                }
             } finally {
                 boolean failed=false;
                 for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
