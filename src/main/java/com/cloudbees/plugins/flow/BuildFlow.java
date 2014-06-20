@@ -101,10 +101,15 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         JSONObject json = req.getSubmittedForm();
-        this.buildNeedsWorkspace = json.getBoolean("buildNeedsWorkspace");
+        this.buildNeedsWorkspace = json.containsKey("buildNeedsWorkspace");
         if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
             this.dsl = json.getString("dsl");
-            this.dslFile = Util.fixEmptyAndTrim(json.getString("dslFile"));
+            if (this.buildNeedsWorkspace) {
+                JSONObject o = json.getJSONObject("buildNeedsWorkspace");
+                this.dslFile = Util.fixEmptyAndTrim(o.getString("dslFile"));
+            } else {
+                this.dslFile = null;
+            }
         }
     }
 
