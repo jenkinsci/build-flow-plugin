@@ -27,9 +27,9 @@ def proj = app.getItemByFullName(my.buildFlow);
 def build = proj == null ? null : proj.getBuildByNumber(my.buildNumber);
 
 if (build != null) {
-	return raw(_("message", rootURL, proj.url, my.buildFlow, my.buildNumber ))
+	return raw(_("message", rootURL, proj.url, my.buildFlow, String.valueOf(my.buildNumber)))
 }
 if (proj != null) {
-	return raw(_("message_no_build", rootURL, proj.url, my.buildFlow, my.buildNumber ))
+	return raw(_("message_no_build", rootURL, proj.url, my.buildFlow, String.valueOf(my.buildNumber)))
 }
-return raw(_("message_no_job", rootURL, null, my.buildFlow, my.buildNumber ))
+return raw(_("message_no_job", rootURL, null, my.buildFlow, String.valueOf(my.buildNumber)))
