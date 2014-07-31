@@ -26,7 +26,6 @@ package com.cloudbees.plugins.flow;
 
 import hudson.Extension;
 import hudson.model.Run;
-import org.jenkinsci.plugins.buildgraphview.DownStreamRunDeclarer;
 
 import java.util.ArrayList;
 import java.util.Collections;
