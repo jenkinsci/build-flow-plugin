@@ -26,7 +26,6 @@ package com.cloudbees.plugins.flow;
 
 import hudson.Extension;
 import hudson.model.Run;
-import org.jenkinsci.plugins.buildgraphview.DownStreamRunDeclarer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,13 +47,16 @@ public class FlowDownStreamRunDeclarer extends DownStreamRunDeclarer {
             return getOutgoingEdgeRuns(f, f.getStartJob());
         }
 
+        List<Run> runs = Collections.emptyList();
         FlowCause flow = (FlowCause) r.getCause(FlowCause.class);
-        if (flow != null) {
-            FlowRun f = flow.getFlowRun();
-            return getOutgoingEdgeRuns(f, flow.getAssociatedJob());
+        FlowRun f;
+        while(runs.isEmpty() && flow != null) {
+        	f = flow.getFlowRun();
+            runs = getOutgoingEdgeRuns(f, flow.getAssociatedJob());
+            flow = (FlowCause) flow.getFlowRun().getCause(FlowCause.class);
         }
 
-        return Collections.emptyList();
+        return runs;
     }
 
     private List<Run> getOutgoingEdgeRuns(FlowRun f, JobInvocation start) throws ExecutionException, InterruptedException {
