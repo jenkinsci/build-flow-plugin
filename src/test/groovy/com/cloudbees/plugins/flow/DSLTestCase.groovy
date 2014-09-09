@@ -91,6 +91,13 @@ abstract class DSLTestCase extends HudsonTestCase {
         return flow.scheduleBuild2(0).get()
     }
 
+    def runWithWorkspace = { script ->
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        flow.buildNeedsWorkspace = true
+        return flow.scheduleBuild2(0).get()
+    }
+
     def schedule = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
         flow.dsl = script
