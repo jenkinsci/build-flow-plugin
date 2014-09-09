@@ -48,12 +48,12 @@ public class FlowDownStreamRunDeclarer extends DownStreamRunDeclarer {
         }
 
         List<Run> runs = Collections.emptyList();
-        FlowCause flow = (FlowCause) r.getCause(FlowCause.class);
+        FlowCause cause = (FlowCause) r.getCause(FlowCause.class);
         FlowRun f;
-        while (runs.isEmpty() && flow != null) {
-            f = flow.getFlowRun();
-            runs = getOutgoingEdgeRuns(f, flow.getAssociatedJob());
-            flow = (FlowCause) flow.getFlowRun().getCause(FlowCause.class);
+        while (runs.isEmpty() && cause != null) {
+            f = cause.getFlowRun();
+            runs = getOutgoingEdgeRuns(f, cause.getAssociatedJob());
+            cause = (FlowCause) cause.getFlowRun().getCause(FlowCause.class);
         }
 
         return runs;
