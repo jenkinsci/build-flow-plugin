@@ -223,7 +223,7 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return "${name}${displayName}"
+        return "${name}"
     }
 
     public Run waitForStart() throws ExecutionException, InterruptedException {
