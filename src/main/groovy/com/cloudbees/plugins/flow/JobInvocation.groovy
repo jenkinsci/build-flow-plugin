@@ -175,6 +175,10 @@ public class JobInvocation {
         return name;
     }
 
+    public String getDisplayName() {
+        return (build != null ? build.displayName : "");
+    }
+
     public boolean isStarted() {
         return started;
     }
@@ -223,7 +227,7 @@ public class JobInvocation {
     }
 
     public String toString() {
-        return "${name}${displayName}"
+        return "${name} ${displayName}"
     }
 
     public Run waitForStart() throws ExecutionException, InterruptedException {
