@@ -40,7 +40,7 @@
     </f:optionalBlock>
     <f:entry field="dsl" title="${%Define build flow using flow DSL}">
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
-      <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" checkMethod="POST" />
+      <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}" checkMethod="POST" />
     </f:entry>
   </f:section>
 
