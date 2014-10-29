@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * @author: <a hef="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
-public class FlowCause extends Cause {
+public class FlowCause extends Cause.UpstreamCause {
 
     private transient FlowRun flowRun;
     
@@ -40,12 +40,15 @@ public class FlowCause extends Cause {
     private final String cause;
 
     public FlowCause(FlowRun flowRun, JobInvocation associatedJob) {
+        super(flowRun);
         this.flowRun = flowRun;
         this.cause = flowRun.getParent().getFullName() + "#" + flowRun.getNumber();
         this.associatedJob = associatedJob;
     }
 
     public FlowRun getFlowRun() {
+        // TODO(mattmoor): If we upgrade to 1.505+ we can replace usage
+        // of this with UpstreamCause#getUpstreamRun().
         if (this.flowRun == null) {
             int i = cause.lastIndexOf('#');
             BuildFlow flow = Jenkins.getInstance().getItemByFullName(cause.substring(0,i), BuildFlow.class);
