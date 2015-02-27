@@ -47,6 +47,11 @@ You can pass parameters to jobs, and get the resulting `AbstractBuild` when requ
 
     b = build( "job1", param1: "foo", param2: "bar" )
     build( "job2", param1: b.build.number )
+    build(param1: "xxx", param2: "yyy", param3: "zzz", "job3")
+    build(param1: "xxx", "job4", param2: "yyy", param3: "zzz")
+    def myBuildParams = [param1:"xxx", param2:"yyy", param3:"zzz"]
+    build(myBuildParams, "job5")
+
 
 Environment variables from a job can be obtained using the following, which is especially useful for getting things like the checkout revision used by the SCM plugin (`P4_CHANGELIST`, `GIT_REVISION`, etc) :
 
@@ -71,6 +76,7 @@ For example:
     // use it in the flow
     build("job1", parent_param1: params["param1"])
     build("job2", parent_workspace:build.workspace)
+    build(params, "job3")
 
 
 ## Guard / Rescue ##
