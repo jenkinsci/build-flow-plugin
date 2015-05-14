@@ -66,8 +66,10 @@ For example:
     out.println params
     out.println 'Build Object Properties:'
     build.properties.each { out.println "$it.key -> $it.value" }
-
-
+    
+    // output git commit info (git plugin)
+    out.println build.environment.get('GIT_COMMIT')
+    
     // use it in the flow
     build("job1", parent_param1: params["param1"])
     build("job2", parent_workspace:build.workspace)
