@@ -1,0 +1,54 @@
+<!--
+The MIT License
+
+Copyright (c) 2004-2009, Sun Microsystems, Inc., Alan Harder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <j:set var="proj" value="${app.getItemByFullName(it.buildFlow)}"/>
+    <j:choose>
+        <j:when test="${proj != null}">
+            <j:set var="build" value="${proj.getBuildByNumber(it.buildNumber)}"/>
+            <j:choose>
+                <j:when test="${build != null}">
+                    ${%message(rootURL, proj.url, it.buildFlow, it.buildNumber)}
+                </j:when>
+                <j:otherwise>
+                    ${%message_no_build(rootURL, proj.url, it.buildFlow, it.buildNumber)}
+                </j:otherwise>
+            </j:choose>
+        </j:when>
+        <j:otherwise>
+            ${%message_no_job(rootURL, null, it.buildFlow, it.buildNumber)}
+        </j:otherwise>
+    </j:choose>
+    <j:if test="${!it.upstreamCauses.isEmpty()}">
+        <br/>
+        <j:out value="${%caused_by}"/>
+        <ul>
+            <j:forEach var="c" items="${it.upstreamCauses}">
+                <li>
+                    <st:include page="description.jelly" it="${c}"/>
+                </li>
+            </j:forEach>
+        </ul>
+    </j:if>
+</j:jelly>
