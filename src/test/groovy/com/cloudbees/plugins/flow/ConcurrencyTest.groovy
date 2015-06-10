@@ -52,6 +52,7 @@ class ConcurrencyTest extends DSLTestCase {
         BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
         flow.concurrentBuild = true;
         flow.dsl = """  build("concjob1", param1: build.number)  """
+        flow.onCreatedFromScratch()
 
         def sfr1 = flow.scheduleBuild2(0)
         def fr1 = sfr1.waitForStart()
