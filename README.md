@@ -136,6 +136,19 @@ compared to join plugin, parallel can be used for more complex workflows where t
         }
     )
 
+it is possible to limit the concurrency of parallel blocks, preventing overwhelming concurrency and/or a very large queue :
+
+    parallel ( 2,
+        // jobs 1-6 will be scheduled in parallel,
+        // but only two will be executing and/or queued at any given time
+        { build("job1") },
+        { build("job2") },
+        { build("job3") }
+        { build("job4") }
+        { build("job5") }
+        { build("job6") }
+    )
+
 you also can "name" parallel executions, so you can later use reference to extract parameters / status :
 
     join = parallel ([

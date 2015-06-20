@@ -1,8 +1,9 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
- *                     Cisco Systems, Inc., a California corporation
+ * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ *                          Cisco Systems, Inc., a California corporation
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -386,13 +387,13 @@ public class FlowDelegate {
     }
 
     // allows syntax like : parallel(["Kohsuke","Nicolas"].collect { name -> return { build("job1", param1:name) } })
-    def List<FlowState> parallel(Collection<? extends Closure> closures) {
-        parallel(closures as Closure[])
+    def List<FlowState> parallel(int maxThreads = 0, Collection<? extends Closure> closures) {
+        parallel(maxThreads, closures as Closure[])
     }
 
     // allows collecting job status by name rather than by index
     // inspired by https://github.com/caolan/async#parallel
-    def Map<?, FlowState> parallel(Map<?, ? extends Closure> args) {
+    def Map<?, FlowState> parallel(int maxThreads = 0, Map<?, ? extends Closure> args) {
         def keys     = new ArrayList<?>()
         def closures = new ArrayList<? extends Closure>()
         args.entrySet().each { e ->
@@ -400,20 +401,23 @@ public class FlowDelegate {
           closures.add(e.value)
         }
         def results = new LinkedHashMap<?, FlowState>()
-        def flowStates = parallel(closures) // as List<FlowState>
+        def flowStates = parallel(maxThreads, closures) // as List<FlowState>
         flowStates.eachWithIndex { v, i -> results[keys[i]] = v }
         results
     }
 
-    def List<FlowState> parallel(Closure ... closures) {
+    def List<FlowState> parallel(int maxThreads = 0, Closure ... closures) {
         statusCheck()
-        ExecutorService pool = Executors.newCachedThreadPool()
+        ExecutorService pool = (maxThreads <= 0) ?
+                Executors.newCachedThreadPool() : Executors.newFixedThreadPool(maxThreads)
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
         def results = new CopyOnWriteArrayList<FlowState>()
         def tasks = new ArrayList<Future<FlowState>>()
 
-        println("parallel {")
+        def startMsg = "parallel"
+        if ( maxThreads > 0 ) startMsg += "( "+maxThreads+" )"
+        println(startMsg + " {")
         ++indent
 
         def current_state = flowRun.state

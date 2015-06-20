@@ -1,7 +1,8 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,21 @@ class ParallelTest extends DSLTestCase {
                 { build("job3") }
             )
             build("job4")
+        """)
+        assertAllSuccess(jobs)
+        assert SUCCESS == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testParallelLimitConcurrency() {
+        def jobs = createJobs(["job1", "job2", "job3", "job4"])
+        def flow = run("""
+            parallel( 2,
+                { build("job1") },
+                { build("job2") },
+                { build("job3") },
+                { build("job4") },
+            )
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == flow.result
@@ -112,6 +128,27 @@ class ParallelTest extends DSLTestCase {
         def job4 = createJob("job4")
         def flow = run("""
             join = parallel ([
+                first:  { build("job1") },
+                second: { build("job2") },
+                third:  { build("job3") }
+            ])
+            build("job4",
+                   r1: join.first.result.name,
+                   r2: join.second.lastBuild.parent.name)
+        """)
+        assertAllSuccess(jobs)
+        assertSuccess(job4)
+        assertHasParameter(job4, "r1", "SUCCESS")
+        assertHasParameter(job4, "r2", "job2")
+        assert SUCCESS == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testParallelMapLimitConcurrency() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def job4 = createJob("job4")
+        def flow = run("""
+            join = parallel ( 2, [
                 first:  { build("job1") },
                 second: { build("job2") },
                 third:  { build("job3") }
