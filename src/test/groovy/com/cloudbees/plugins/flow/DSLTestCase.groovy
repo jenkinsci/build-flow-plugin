@@ -1,8 +1,9 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
- *                     Cisco Systems, Inc., a California corporation
+ * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ *                          Cisco Systems, Inc., a California corporation
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +50,7 @@ import hudson.model.BuildListener
 import hudson.tasks.Builder
 import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
 import com.cloudbees.plugin.flow.BlockingBuilder
+import com.cloudbees.plugin.flow.SleepingBuilder
 import hudson.model.Job
 
 import static hudson.model.Result.UNSTABLE
@@ -63,6 +65,14 @@ abstract class DSLTestCase extends HudsonTestCase {
          def jobs = []
          names.each {
              jobs.add(createJob(it))
+         }
+         return jobs
+    }
+
+     def createSleepingJobs = { names ->
+         def jobs = []
+         names.each {
+             jobs.add(createSleepingJob(it))
          }
          return jobs
     }
@@ -82,6 +92,12 @@ abstract class DSLTestCase extends HudsonTestCase {
     def createBlockingJob = {String name, File file = BlockingBuilder.DEFAULT_FILE ->
         def job = createJob(name)
         job.getBuildersList().add(new BlockingBuilder(file));
+        return job
+    }
+
+    def createSleepingJob = {String name, int seconds = 10 ->
+        def job = createJob(name)
+        job.getBuildersList().add(new SleepingBuilder(seconds));
         return job
     }
 

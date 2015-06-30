@@ -47,7 +47,7 @@ class ParallelTest extends DSLTestCase {
     }
 
     public void testParallelLimitConcurrency() {
-        def jobs = createJobs(["job1", "job2", "job3", "job4"])
+        def jobs = createSleepingJobs(["job1", "job2", "job3", "job4"])
         def flow = run("""
             parallel( 2,
                 { build("job1") },
@@ -57,6 +57,8 @@ class ParallelTest extends DSLTestCase {
             )
         """)
         assertAllSuccess(jobs)
+		assert flow.duration/1000 >= (5+10)*2
+		assert flow.duration/1000 <  (5+10)*3
         assert SUCCESS == flow.result
         println flow.jobsGraph.edgeSet()
     }
