@@ -42,6 +42,7 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import java.util.concurrent.*
 import java.util.logging.Logger
 
+import static hudson.model.Result.ABORTED
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
 
@@ -103,6 +104,9 @@ public class FlowDSL {
     private void killRunningJobs(FlowRun flowRun, BuildListener listener) {
         flowRun.state.result = Executor.currentExecutor().abortResult();
         Executor.currentExecutor().recordCauseOfInterruption(flowRun, listener);
+
+        flowRun.isAborting = true
+        flowRun.abortUnstartedFutures()
 
         def graph = flowRun.jobsGraph
         graph.vertexSet().each() { ji ->
@@ -438,6 +442,9 @@ public class FlowDelegate {
 
                 tasks.add(pool.submit(track_closure as Callable))
             }
+            // add the full list of futures to a build wide list
+            // to account for possible nested parallel blocks
+            flowRun.addNewFutures(tasks)
 
             tasks.each {task ->
                 try {
@@ -445,12 +452,15 @@ public class FlowDelegate {
                     Result result = final_state.result
                     results.add(final_state)
                     current_state.result = current_state.result.combine(result)
-                } catch(ExecutionException e)
-                {
+                }
+                catch(ExecutionException e) {
                     // TODO perhaps rethrow?
                     current_state.result = FAILURE
                     listener.error("Failed to run DSL Script")
                     e.printStackTrace(listener.getLogger())
+                }
+                catch(CancellationException e) {
+                    current_state.result = ABORTED
                 }
             }
 
@@ -458,6 +468,8 @@ public class FlowDelegate {
             pool.awaitTermination(1, TimeUnit.DAYS)
             current_state.lastCompleted =lastCompleted
         } finally {
+            pool.shutdown()
+            tasks.each {task -> task.cancel(false)}
             flowRun.state = current_state
             --indent
             println("}")
