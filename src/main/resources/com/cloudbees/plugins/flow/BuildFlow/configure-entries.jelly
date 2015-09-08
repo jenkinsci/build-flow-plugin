@@ -30,6 +30,8 @@
       <p:config-upstream-pseudo-trigger />
   </p:config-trigger>
 
+  <p:config-buildWrappers />
+
   <f:section title="Flow">
     <f:optionalBlock field="buildNeedsWorkspace" title="${%Flow run needs a workspace}"
                      checked="${instance.buildNeedsWorkspace}">
