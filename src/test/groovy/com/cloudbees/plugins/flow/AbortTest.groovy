@@ -66,4 +66,88 @@ class AbortTest extends DSLTestCase {
 		assertBuildStatus(Result.ABORTED, job1.lastBuild)
 		assertDidNotRun(job2)
 	}
+
+	/**
+	 * Tests that when a Flow is aborted it correctly aborts jobs that it started
+	 * in a parallel block.
+	 */
+	public void testThatAbortAbortsStartedJobs_ParallelBlock() {
+		File f1 = new File("target/${getName()}_job1.lock")
+		File f2 = new File("target/${getName()}_job2.lock")
+		f1.createNewFile()
+		f2.createNewFile()
+
+		Job job1 = createBlockingJob("job1", f1)
+		Job job2 = createBlockingJob("job2", f2)
+
+		def future = schedule("""
+			parallel(
+				{ build("job1") },
+				{ build("job2") },
+			)
+			build.state.result = FAILURE
+			fail()
+		""")
+
+		def flow = future.waitForStart()
+		// wait for job1 to start
+		while (!job1.building) {
+			Thread.sleep(10L)
+		}
+		println("job has started")
+
+		// abort the flow
+		println("aborting...")
+		flow.oneOffExecutor.interrupt(Result.ABORTED)
+		println("aborting request sent...")
+		// wait for the flow to finish executing.
+		future.get();
+
+		assertBuildStatus(Result.ABORTED, job1.lastBuild)
+		assertBuildStatus(Result.ABORTED, job2.lastBuild)
+		assertBuildStatus(Result.ABORTED, flow)
+	}
+
+	/**
+	 * Ensures an ignored parallel block does not supress the aborted job status.
+	 */
+	public void testThatAbortAbortsStartedJobs_IgnoredParallel() {
+		File f1 = new File("target/${getName()}_job1.lock")
+		File f2 = new File("target/${getName()}_job2.lock")
+		f1.createNewFile()
+		f2.createNewFile()
+
+		Job job1 = createBlockingJob("job1", f1)
+		Job job2 = createBlockingJob("job2", f2)
+
+		def future = schedule("""
+			ignore(ABORTED) {
+				parallel(
+					{ build("job1") },
+					{ build("job2") },
+				)
+			}
+			build.state.result = FAILURE
+			fail()
+		""")
+
+		def flow = future.waitForStart()
+		// wait for job1 to start
+		while (!job1.building) {
+			Thread.sleep(10L)
+		}
+		println("job has started")
+
+		// abort the flow
+		println("aborting...")
+		flow.oneOffExecutor.interrupt(Result.ABORTED)
+		println("aborting request sent...")
+		// wait for the flow to finish executing.
+		future.get();
+
+		assertBuildStatus(Result.ABORTED, job1.lastBuild)
+		assertBuildStatus(Result.ABORTED, job2.lastBuild)
+		assertBuildStatus(Result.ABORTED, flow)
+	}
+
 }
