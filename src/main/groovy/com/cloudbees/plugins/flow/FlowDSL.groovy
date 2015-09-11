@@ -26,7 +26,7 @@
 package com.cloudbees.plugins.flow
 
 import hudson.AbortException
-import hudson.console.HyperlinkNote
+import hudson.console.ModelHyperlinkNote
 import hudson.model.*
 import hudson.security.ACL
 import hudson.slaves.EnvironmentVariablesNodeProperty
@@ -211,11 +211,11 @@ public class FlowDelegate {
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
-        println("Schedule job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
+        println("Schedule job " + ModelHyperlinkNote.encodeTo(p))
 
         flowRun.schedule(job, getActions(p,args));
         Run r = job.waitForStart()
-        println("Build " + HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
+        println("Build " + ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
 
         if (null == r) {
             println("Failed to start ${jobName}.")
@@ -225,7 +225,7 @@ public class FlowDelegate {
         flowRun.waitForCompletion(job);
         // [JENKINS-22960] wait for build to be finalized.
         flowRun.waitForFinalization(job);
-        println(HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
+        println(ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
                 + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}")
         return job;
     }
