@@ -30,6 +30,7 @@ import org.jvnet.hudson.test.Bug
 
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
+import jenkins.model.Jenkins
 import hudson.model.Job
 import hudson.model.Action
 import hudson.model.ParametersAction
@@ -190,5 +191,18 @@ class BuildTest extends DSLTestCase {
         """)
         assert SUCCESS == flow.result
         assert flow.log.contains("Hello from date: ")
+    }
+
+    public void testParallelThreadName() {
+        BuildFlow flow = new BuildFlow(Jenkins.instance, "project_name")
+        flow.dsl = """
+            parallel(
+                    { println Thread.currentThread().name }
+            );
+        """
+        def build = flow.scheduleBuild2(0).get()
+
+        assert SUCCESS == build.result
+        assert build.log.contains("BuildFlow parallel statement thread for project_name")
     }
 }

@@ -416,7 +416,14 @@ public class FlowDelegate {
 
     def List<FlowState> parallel(Closure ... closures) {
         statusCheck()
-        ExecutorService pool = Executors.newCachedThreadPool()
+        // TODO use NamingThreadFactory since Jenkins 1.541
+        ExecutorService pool = Executors.newCachedThreadPool(new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                def thread = Executors.defaultThreadFactory().newThread(r);
+                thread.name = "BuildFlow parallel statement thread for " + flowRun.parent.fullName;
+                return thread;
+            }
+        });
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
         def results = new CopyOnWriteArrayList<FlowState>()
