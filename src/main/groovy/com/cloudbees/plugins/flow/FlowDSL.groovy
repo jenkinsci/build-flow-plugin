@@ -341,11 +341,20 @@ public class FlowDelegate {
     def ignore(Result result, closure) {
         statusCheck()
         Result r = flowRun.state.result
+        def closureException = null
         try {
             println("ignore("+result+") {")
             ++indent
             closure()
-        } finally {
+        }
+        catch ( Exception ex ) {
+            closureException = ex
+        }
+        finally {
+            // rethrow if there was a non-JobExecutionFailureException Exception
+            if ( closureException != null && !(closureException instanceof JobExecutionFailureException) ) {
+                throw closureException
+            }
 
             final boolean ignore = flowRun.state.result.isBetterOrEqualTo(result)
             if (ignore) {
