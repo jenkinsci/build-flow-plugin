@@ -207,14 +207,22 @@ public class FlowDelegate {
     }
 
     def build(Map args, String jobName) {
-        statusCheck()
+   	   JobInvocation job = buildAsync(args, jobName);
+       return waitForAsyncBuild(job);
+    }
+    def buildAsync(Map args, String jobName){
+    	 statusCheck()
         // ask for job with name ${name}
         JobInvocation job = new JobInvocation(flowRun, jobName)
         Job p = job.getProject()
         println("Schedule job " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()))
 
         flowRun.schedule(job, getActions(p,args));
-        Run r = job.waitForStart()
+        
+		return job;
+    }
+    def waitForAsyncBuild(JobInvocation job){
+    	Run r = job.waitForStart()
         println("Build " + HyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) + " started")
 
         if (null == r) {
@@ -357,7 +365,7 @@ public class FlowDelegate {
             }
 
             final boolean ignore = flowRun.state.result.isBetterOrEqualTo(result)
-            if (ignore) {
+            if (ignore) { 
                 // restore result
                 println("// ${flowRun.state.result} ignored")
                 flowRun.state.result = r
