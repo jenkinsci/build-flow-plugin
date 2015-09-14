@@ -2,7 +2,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
+- threads in parallel blocks now have names (pull request #54)
+- remove comma in the "caused by" section (pull request #62)
+- fix abort in parallel ignore blocks (pull request #64)
+- links to builds now have a context menu (pull request #60)
+
+## [0.18] - (released Jun. 10, 2015)
 - display the tree of upstream causes (pull request #56)
+- now depends on jenkins core **1.509.1** (LTS)
 
 ## [0.17] - (released Nov. 26, 2014)
 - swap dependency with buildgraph-view (revert from 0.13, see #50).
@@ -86,7 +93,9 @@ add support for hierarchical project structure (typically : cloudbees folders pl
 - initial release with DSL-based job orchestration
 
 
-[unreleased]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.17...HEAD
+[unreleased]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.18...HEAD
+[0.19]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.18...build-flow-plugin-0.19
+[0.18]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.17...build-flow-plugin-0.18
 [0.17]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.16...build-flow-plugin-0.17
 [0.16]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.15...build-flow-plugin-0.16
 [0.15]: https://github.com/jenkinsci/build-flow-plugin/compare/build-flow-plugin-0.14...build-flow-plugin-0.15
