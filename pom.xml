@@ -34,7 +34,7 @@
   <artifactId>build-flow-plugin</artifactId>
   <version>0.19-SNAPSHOT</version>
   <packaging>hpi</packaging>
-  <name>CloudBees Build Flow plugin</name>
+  <name>Build Flow plugin</name>
   <description>Manages job orchestration as a build flow</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Build+Flow+Plugin</url>
 
