@@ -2,6 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
+- cancel the correct queued build (pull request #61)
 - threads in parallel blocks now have names (pull request #54)
 - remove comma in the "caused by" section (pull request #62)
 - fix abort in parallel ignore blocks (pull request #64)
