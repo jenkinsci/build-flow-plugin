@@ -110,7 +110,15 @@ public class JobInvocation {
     /* package */ boolean abort() {
         def aborted = false
         if (!started) {
-            aborted = future.cancel(false)
+            // Need to search the queue for the correct job and cancel it in
+            // the queue.
+            def queue = Jenkins.instance.queue
+            for (queueItem in queue.items) {
+                if (future == queueItem.getFuture()) {
+                    aborted = queue.cancel(queueItem)
+                    break;
+                }
+            }
         }
         else if (!completed) {
             // as the task has already started we want to be kinder in recording the cause.
