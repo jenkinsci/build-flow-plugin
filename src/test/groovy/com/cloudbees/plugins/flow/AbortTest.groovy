@@ -137,7 +137,7 @@ class AbortTest extends DSLTestCase {
 
 		def flow = future.waitForStart()
 		// wait for job1 to start
-		while (!job1.building) {
+		while (!job1.building || !job2.building) {
 			Thread.sleep(10L)
 		}
 		println("job has started")
