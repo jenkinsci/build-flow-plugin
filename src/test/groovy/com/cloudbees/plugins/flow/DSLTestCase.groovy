@@ -52,6 +52,7 @@ import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
 import com.cloudbees.plugin.flow.BlockingBuilder
 import com.cloudbees.plugin.flow.SleepingBuilder
 import hudson.model.Job
+import com.cloudbees.plugin.flow.LimitedBuilder
 
 import static hudson.model.Result.UNSTABLE
 
@@ -98,6 +99,16 @@ abstract class DSLTestCase extends HudsonTestCase {
     def createSleepingJob = {String name, int seconds = 10 ->
         def job = createJob(name)
         job.getBuildersList().add(new SleepingBuilder(seconds));
+        return job
+    }
+
+    def initLimitedJobKey( String key, int permits ) {
+        LimitedBuilder.initialize(key, permits)
+    }
+
+    def createLimitedJob = {String name, String key ->
+        def job = createJob(name)
+        job.getBuildersList().add(new LimitedBuilder(key));
         return job
     }
 

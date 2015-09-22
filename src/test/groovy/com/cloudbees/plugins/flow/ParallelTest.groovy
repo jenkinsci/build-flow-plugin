@@ -47,18 +47,20 @@ class ParallelTest extends DSLTestCase {
     }
 
     public void testParallelLimitConcurrency() {
-        def jobs = createSleepingJobs(["job1", "job2", "job3", "job4"])
+        initLimitedJobKey(getName(), 1)
+        def jobs = [
+            createLimitedJob("job1", getName()),
+            createLimitedJob("job2", getName()),
+            createLimitedJob("job3", getName()),
+        ]
         def flow = run("""
-            parallel( 2,
+            parallel( 1,
                 { build("job1") },
                 { build("job2") },
                 { build("job3") },
-                { build("job4") },
             )
         """)
         assertAllSuccess(jobs)
-		assert flow.duration/1000 >= (5+10)*2
-		assert flow.duration/1000 <  (5+10)*3
         assert SUCCESS == flow.result
         println flow.jobsGraph.edgeSet()
     }
@@ -147,22 +149,20 @@ class ParallelTest extends DSLTestCase {
     }
 
     public void testParallelMapLimitConcurrency() {
-        def jobs = createJobs(["job1", "job2", "job3"])
-        def job4 = createJob("job4")
+        initLimitedJobKey(getName(), 1)
+        def jobs = [
+            createLimitedJob("job1", getName()),
+            createLimitedJob("job2", getName()),
+            createLimitedJob("job3", getName()),
+        ]
         def flow = run("""
-            join = parallel ( 2, [
+            join = parallel ( 1, [
                 first:  { build("job1") },
                 second: { build("job2") },
                 third:  { build("job3") }
             ])
-            build("job4",
-                   r1: join.first.result.name,
-                   r2: join.second.lastBuild.parent.name)
         """)
         assertAllSuccess(jobs)
-        assertSuccess(job4)
-        assertHasParameter(job4, "r1", "SUCCESS")
-        assertHasParameter(job4, "r2", "job2")
         assert SUCCESS == flow.result
         println flow.jobsGraph.edgeSet()
     }
