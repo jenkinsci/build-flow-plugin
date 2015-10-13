@@ -65,7 +65,8 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
 
     private String dsl;
     private String dslFile;
-
+    private String abortWhenWorseThan;
+    private boolean useAbortWhenWorseThan;
     private boolean buildNeedsWorkspace;
 
 
@@ -97,11 +98,29 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
         this.dslFile = dslFile;
     }
 
+    public String getAbortWhenWorseThan() {
+        return abortWhenWorseThan;
+    }
+
+    public void setAbortWhenWorseThan(String abortWhenWorseThan) {
+        this.abortWhenWorseThan = abortWhenWorseThan;
+    }
+
+    public boolean isUseAbortWhenWorseThan() {
+        return useAbortWhenWorseThan;
+    }
+
+    public void setUseAbortWhenWorseThan(boolean useAbortWhenWorseThan) {
+        this.useAbortWhenWorseThan = useAbortWhenWorseThan;
+    }
+
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
         JSONObject json = req.getSubmittedForm();
         this.buildNeedsWorkspace = json.containsKey("buildNeedsWorkspace");
+        this.useAbortWhenWorseThan = json.containsKey("useAbortWhenWorseThan");
+        this.abortWhenWorseThan = (useAbortWhenWorseThan && json.containsKey("abortWhenWorseThan")) ? json.getString("abortWhenWorseThan") : "SUCCESS";
         if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
             this.dsl = json.getString("dsl");
             if (this.buildNeedsWorkspace) {

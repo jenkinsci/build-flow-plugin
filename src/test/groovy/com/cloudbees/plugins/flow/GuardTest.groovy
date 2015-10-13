@@ -27,6 +27,7 @@ package com.cloudbees.plugins.flow
 import static hudson.model.Result.SUCCESS
 import hudson.model.Job
 import static hudson.model.Result.FAILURE
+import static hudson.model.Result.UNSTABLE
 
 class GuardTest extends DSLTestCase {
 
@@ -43,6 +44,81 @@ class GuardTest extends DSLTestCase {
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == ret.result
+    }
+
+    public void testGuardWithUnstableJobAndUnstableSetAsAbortResult() {
+        def jobs = createJobs(["job1", "job2", "job3", "clean"])
+        def unstableJob = createUnstableJob("unstableJob")
+        def ret = runWithAbortWhenWorseThan("""
+            guard {
+                build("job1")
+                build("job2")
+                build("unstableJob")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """, UNSTABLE)
+        assertAllSuccess(jobs)
+        assertRan(unstableJob)
+        assert UNSTABLE == ret.result
+    }
+
+    public void testGuardWithFailureJobAndUnstableSetAsAbortResult() {
+        def jobs = createJobs(["job1", "job2", "job3", "clean"])
+        def failureJob = createFailJob("failureJob")
+        def ret = runWithAbortWhenWorseThan("""
+            guard {
+                build("job1")
+                build("job2")
+                build("failureJob")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """, UNSTABLE)
+        assertSuccess(jobs.get(0))
+        assertSuccess(jobs.get(1))
+        assertSuccess(jobs.get(3))
+        assertDidNotRun(jobs.get(2))
+        assertRan(failureJob)
+        assert FAILURE == ret.result
+    }
+
+    public void testGuardWithUnstableJobAndFailureSetAsAbortResult() {
+        def jobs = createJobs(["job1", "job2", "job3", "clean"])
+        def unstableJob = createUnstableJob("unstableJob")
+        def ret = runWithAbortWhenWorseThan("""
+            guard {
+                build("job1")
+                build("job2")
+                build("unstableJob")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """, FAILURE)
+        assertAllSuccess(jobs)
+        assertRan(unstableJob)
+        assert UNSTABLE == ret.result
+    }
+
+    public void testGuardWithFailureJobAndFailureSetAsAbortResult() {
+        def jobs = createJobs(["job1", "job2", "job3", "clean"])
+        def failureJob = createFailJob("failureJob")
+        def ret = runWithAbortWhenWorseThan("""
+            guard {
+                build("job1")
+                build("job2")
+                build("failureJob")
+                build("job3")
+            } rescue {
+                build("clean")
+            }
+        """, FAILURE)
+        assertAllSuccess(jobs)
+        assertRan(failureJob)
+        assert FAILURE == ret.result
     }
 
     /*public void testGuardWithFail() {

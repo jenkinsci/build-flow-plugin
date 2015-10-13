@@ -42,6 +42,25 @@
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
       <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}" checkMethod="POST" />
     </f:entry>
+    <f:optionalBlock field="useAbortWhenWorseThan" title="${%Change sub build abort state}" checked="${instance.useAbortWhenWorseThan}">
+        <f:entry field="abortWhenWorseThan" title="${%Stop process, when sub build is worse than:}">
+          <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+          <select name="abortWhenWorseThan" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}">
+            <j:choose>
+               <j:when test="${it.abortWhenWorseThan.equals('SUCCESS')}"><option value="SUCCESS" selected="selected">SUCCESS</option></j:when>
+               <j:otherwise><option value="SUCCESS">SUCCESS</option></j:otherwise>
+            </j:choose>
+            <j:choose>
+               <j:when test="${it.abortWhenWorseThan.equals('UNSTABLE')}"><option value="UNSTABLE" selected="selected">UNSTABLE</option></j:when>
+               <j:otherwise><option value="UNSTABLE">UNSTABLE</option></j:otherwise>
+            </j:choose>
+            <j:choose>
+               <j:when test="${it.abortWhenWorseThan.equals('FAILURE')}"><option value="FAILURE" selected="selected">FAILURE</option></j:when>
+               <j:otherwise><option value="FAILURE">FAILURE</option></j:otherwise>
+            </j:choose>
+          </select>
+        </f:entry>
+    </f:optionalBlock>
   </f:section>
 
   <p:config-publishers2 />
