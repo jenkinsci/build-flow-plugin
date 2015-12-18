@@ -457,8 +457,12 @@ public class FlowDelegate {
                     Result result = final_state.result
                     results.add(final_state)
                     current_state.result = current_state.result.combine(result)
-                } catch(ExecutionException e)
-                {
+                } catch(CancellationException e) {
+                    // TODO perhaps rethrow?
+                    current_state.result = FAILURE
+                    listener.error("Failed to run DSL Script: At least one of the tasks of the buildflow was cancelled")
+                    e.printStackTrace(listener.getLogger())
+                } catch(ExecutionException e) {
                     // TODO perhaps rethrow?
                     current_state.result = FAILURE
                     listener.error("Failed to run DSL Script")
