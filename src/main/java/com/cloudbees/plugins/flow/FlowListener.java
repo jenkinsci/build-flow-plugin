@@ -28,15 +28,15 @@ import java.util.List;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
-import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.model.Cause;
 import hudson.model.listeners.RunListener;
 
 @Extension
-public class FlowListener extends RunListener<AbstractBuild<?, ?>> {
+public class FlowListener extends RunListener<Run<?, ?>> {
 
     @Override
-    public synchronized void onStarted(AbstractBuild<?, ?> startedBuild,
+    public synchronized void onStarted(Run<?, ?> startedBuild,
             TaskListener listener) {
         List<Cause> causes = startedBuild.getCauses();
         for (Cause cause : causes) {
@@ -48,7 +48,7 @@ public class FlowListener extends RunListener<AbstractBuild<?, ?>> {
     }
 
     @Override
-    public synchronized void onCompleted(AbstractBuild<?, ?> finishedBuild,
+    public synchronized void onCompleted(Run<?, ?> finishedBuild,
             TaskListener listener) {
         List<Cause> causes = finishedBuild.getCauses();
         for (Cause cause : causes) {
@@ -59,7 +59,7 @@ public class FlowListener extends RunListener<AbstractBuild<?, ?>> {
     }
 
     @Override
-    public synchronized void onFinalized(AbstractBuild<?, ?> finalizedBuild) {
+    public synchronized void onFinalized(Run<?, ?> finalizedBuild) {
         List<Cause> causes = finalizedBuild.getCauses();
         for (Cause cause : causes) {
             if (cause instanceof FlowCause) {

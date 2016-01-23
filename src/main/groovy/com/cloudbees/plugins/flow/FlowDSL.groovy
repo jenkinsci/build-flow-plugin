@@ -48,7 +48,7 @@ public class FlowDSL {
 
     def void executeFlowScript(FlowRun flowRun, String dsl, BuildListener listener) {
         // Retrieve the upstream build if the flow was triggered by another job
-        AbstractBuild upstream = null;
+        Run upstream = null;
         flowRun.causes.each{ cause -> 
             if (cause instanceof Cause.UpstreamCause) {
                 Job job = Jenkins.instance.getItemByFullName(cause.upstreamProject)
@@ -138,7 +138,7 @@ public class FlowDelegate {
     def FlowRun flowRun
     BuildListener listener
     int indent = 0
-    private AbstractBuild upstream;
+    private Run upstream;
     private Map env;
 
     public FlowDelegate(FlowRun flowRun, BuildListener listener, upstream, env) {
@@ -186,7 +186,7 @@ public class FlowDelegate {
     /**
      * Upstream build that triggered this flow execution, if any.
      */
-    AbstractBuild getUpstream() {
+    Run getUpstream() {
         return upstream;
     }
 

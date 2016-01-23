@@ -53,7 +53,7 @@ public class JobInvocation {
 
     private transient AbstractProject<?, ? extends AbstractBuild<?, ?>> project;
 
-    private transient AbstractBuild build;
+    private transient Run build;
 
     private transient QueueTaskFuture<? extends AbstractBuild<?, ?>> future;
 
@@ -155,11 +155,11 @@ public class JobInvocation {
         return getResult().toString().toLowerCase();
     }
 
-    /* package */ AbstractBuild getFlowRun() {
+    /* package */ Run getFlowRun() {
         return run;
     }
 
-    /* package */ void buildStarted(AbstractBuild build) {
+    /* package */ void buildStarted(Run build) {
         this.started = true;
         this.build = build;
         this.buildNumber = build.getNumber();
