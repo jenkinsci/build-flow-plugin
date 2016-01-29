@@ -23,6 +23,7 @@
  */
 package com.cloudbees.plugins.flow
 
+import hudson.model.Cause
 import hudson.model.ParametersDefinitionProperty
 import hudson.model.RunParameterDefinition
 import jenkins.model.Jenkins
@@ -57,16 +58,16 @@ class ConcurrencyTest extends DSLTestCase {
         flow.dsl = """  build("concjob1", param1: build.number)  """
         flow.onCreatedFromScratch()
 
-        def sfr1 = flow.scheduleBuild2(0)
+        def sfr1 = flow.scheduleBuild2(0, new Cause.UserIdCause())
         def fr1 = sfr1.waitForStart()
 
-        def sfr2 = flow.scheduleBuild2(0)
+        def sfr2 = flow.scheduleBuild2(0, new Cause.UserIdCause())
         def fr2 = sfr2.waitForStart()
 
-        def sfr3 = flow.scheduleBuild2(0)
+        def sfr3 = flow.scheduleBuild2(0, new Cause.UserIdCause())
         def fr3 = sfr3.waitForStart()
 
-        def sfr4 = flow.scheduleBuild2(0)
+        def sfr4 = flow.scheduleBuild2(0, new Cause.UserIdCause())
         def fr4 = sfr4.waitForStart()
 
         // we have a 5 second quiet period!
