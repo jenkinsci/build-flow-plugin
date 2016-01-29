@@ -29,9 +29,11 @@ import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.UNSTABLE
 import static hudson.model.Result.FAILURE
 import hudson.model.Job
+import org.junit.Test
 
 class RetryTest extends DSLTestCase {
 
+    @Test
     public void testNoRetry() {
         Job job1 = createJob("job1")
         def flow = run("""
@@ -43,6 +45,7 @@ class RetryTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    @Test
     public void testRetry() {
         def job1 = createFailJob("willFail")
         def flow = run("""
@@ -54,6 +57,7 @@ class RetryTest extends DSLTestCase {
         assert FAILURE == flow.result
     }
 
+    @Test
     public void testRetryThenSuccess() {
         testRetryThenSuccess("""
             retry(3) {
@@ -62,6 +66,7 @@ class RetryTest extends DSLTestCase {
         """)
     }
 
+    @Test
     public void testNoQuotesNotation() {
         testRetryThenSuccess("""
             retry 3, {
@@ -71,6 +76,7 @@ class RetryTest extends DSLTestCase {
     }
 
 /*
+    @Test
     public void testNTimesNotation() {
         testRetryThenSuccess("""
             3.times retry {
@@ -92,6 +98,7 @@ class RetryTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
     
+    @Test
     public void testRetryGuard() {
         def fail = createFailJob("willFail")
         def rescue = createJob("rescue")
@@ -111,6 +118,7 @@ class RetryTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
+    @Test
     public void testNoRetryUnstable() {
         Job job1 = createUnstableJob("job1")
         def flow = run("""

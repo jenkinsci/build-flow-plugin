@@ -29,7 +29,6 @@ import com.cloudbees.plugin.flow.UnstableBuilder
 import com.cloudbees.plugins.flow.FlowDSL
 import hudson.model.Result
 import org.jvnet.hudson.test.FailureBuilder
-import org.jvnet.hudson.test.HudsonTestCase
 import hudson.model.AbstractBuild
 import hudson.model.ParametersAction
 import com.cloudbees.plugins.flow.BuildFlow
@@ -50,13 +49,23 @@ import hudson.tasks.Builder
 import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
 import com.cloudbees.plugin.flow.BlockingBuilder
 import hudson.model.Job
+import org.junit.Assert
+import org.junit.Rule
+import org.junit.rules.TestName
+import org.jvnet.hudson.test.JenkinsRule
+
 
 import static hudson.model.Result.UNSTABLE
 
-abstract class DSLTestCase extends HudsonTestCase {
+abstract class DSLTestCase {
+    @Rule
+    public JenkinsRule jenkinsRule = new JenkinsRule()
+
+    @Rule
+    public TestName name = new TestName()
 
     def createJob = {String name ->
-        return createFreeStyleProject(name);
+        return jenkinsRule.createFreeStyleProject(name);
     }
 
      def createJobs = { names ->
@@ -86,32 +95,32 @@ abstract class DSLTestCase extends HudsonTestCase {
     }
 
     def run = { script ->
-        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
         return flow.scheduleBuild2(0).get()
     }
 
     def runWithWorkspace = { script ->
-        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
         flow.buildNeedsWorkspace = true
         return flow.scheduleBuild2(0).get()
     }
 
     def schedule = { script ->
-        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
         return flow.scheduleBuild2(0)
     }
 
     def runWithCause = { script, cause ->
-        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
         return flow.scheduleBuild2(0, cause).get()
     }
 
     def assertSuccess = { job ->
-        assertNotNull("job ${job.name} didn't run", job.builds.lastBuild)
+        Assert.assertNotNull("job ${job.name} didn't run", job.builds.lastBuild)
         assert SUCCESS == job.builds.lastBuild.result
         return job.builds.lastBuild
     }
@@ -122,7 +131,7 @@ abstract class DSLTestCase extends HudsonTestCase {
 
     def assertAllSuccess = { jobs ->
         jobs.each {
-            assertNotNull("job ${it.name} didn't run", it.builds.lastBuild)
+            Assert.assertNotNull("job ${it.name} didn't run", it.builds.lastBuild)
             assert SUCCESS == it.builds.lastBuild.result
         }
     }
@@ -160,7 +169,7 @@ abstract class DSLTestCase extends HudsonTestCase {
                     return
                 }
         }
-        assertTrue("build don't have expected parameter set " + name + "=" + value, found)
+        Assert.assertTrue("build don't have expected parameter set " + name + "=" + value, found)
     }
 
     void assertRan(Job job, int times, Result result) {

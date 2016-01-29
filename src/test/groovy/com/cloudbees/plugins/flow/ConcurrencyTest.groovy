@@ -29,6 +29,8 @@ import jenkins.model.Jenkins
 
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
+import org.junit.Test
+import static org.junit.Assert.assertTrue
 
 class ConcurrencyTest extends DSLTestCase {
 
@@ -36,6 +38,7 @@ class ConcurrencyTest extends DSLTestCase {
      * Test that triggering multiple builds of the same concurrent build is ok.
      * This relies on the default quiet period of 5 seconds.
      */
+    @Test
     public void testConcurrency() {
         Jenkins.instance.numExecutors = 8
         Jenkins.instance.reload()
@@ -47,9 +50,9 @@ class ConcurrencyTest extends DSLTestCase {
         def concjob1 = createBlockingJob("concjob1", f1)
         concjob1.concurrentBuild = true
         concjob1.properties.put(ParametersDefinitionProperty.DescriptorImpl,
-                new ParametersDefinitionProperty(new RunParameterDefinition("param1", getName(), "ignored", null)))
+                new ParametersDefinitionProperty(new RunParameterDefinition("param1", name.getMethodName(), "ignored", null)))
 
-        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.concurrentBuild = true;
         flow.dsl = """  build("concjob1", param1: build.number)  """
         flow.onCreatedFromScratch()

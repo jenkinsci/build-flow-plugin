@@ -28,13 +28,15 @@ import hudson.model.Cause
 
 import static hudson.model.Result.SUCCESS
 import hudson.model.Job
+import org.junit.Test
 
 class UpstreamTest extends DSLTestCase {
 
+    @Test
     public void testUpstream() {
 
         Job job1 = createJob("job1")
-        def root = createFreeStyleProject("root").createExecutable()
+        def root = jenkinsRule.createFreeStyleProject("root").createExecutable()
         def cause = new Cause.UpstreamCause(root)
         def run = runWithCause("""
             build("job1",

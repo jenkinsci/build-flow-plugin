@@ -30,9 +30,11 @@ import hudson.model.ParametersDefinitionProperty
 import hudson.model.StringParameterDefinition
 
 import static hudson.model.Result.*
+import org.junit.Test
 
 class IgnoreTest extends DSLTestCase {
 
+    @Test
     public void testIgnoreJobFailure() {
         Job willFail = createFailJob("willFail");
         Job wontRun= createJob("wontRun");
@@ -47,6 +49,7 @@ class IgnoreTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    @Test
     public void testIgnoreJobUnstable() {
         Job unstable = createUnstableJob("unstable");
         Job wontRun= createJob("wontRun");
@@ -61,6 +64,7 @@ class IgnoreTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    @Test
     public void testIgnoreJobUnstableButFailureFailure() {
         Job willFail = createFailJob("willFail");
         Job wontRun= createJob("wontRun");

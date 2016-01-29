@@ -30,9 +30,11 @@ import hudson.model.Job
 
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
+import org.junit.Test
 
 public class CombinationTest extends DSLTestCase {
 
+    @Test
     public void testRetryWithGuard() {
         Job job1 = createJob("job1")
         Job willFail = createFailJob("willFail")
@@ -50,6 +52,7 @@ public class CombinationTest extends DSLTestCase {
         assert FAILURE == flow.result
     }
 
+    @Test
     public void testGuardWithParallel() {
         def jobs = createJobs(["job1", "job2", "rescue"])
         Job willFail = createFailJob("willFail")
@@ -69,6 +72,7 @@ public class CombinationTest extends DSLTestCase {
         assert FAILURE == flow.result
     }
 
+    @Test
     public void testParallelSubFlows() {
         def jobs = createJobs(["job1", "job2", "job3"])
         Job willFail = createFailJob("willFail")

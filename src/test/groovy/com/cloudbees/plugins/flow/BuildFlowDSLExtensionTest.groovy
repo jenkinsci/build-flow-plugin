@@ -26,9 +26,11 @@ package com.cloudbees.plugins.flow
 
 import com.cloudbees.plugin.flow.TestDSLExtension
 import hudson.model.Result
+import org.junit.Test
 
 class BuildFlowDSLExtensionTest extends DSLTestCase {
 
+    @Test
     public void testUseExtension() {
         BuildFlowDSLExtension.all().add(new TestDSLExtension())
         def flow = run("""
