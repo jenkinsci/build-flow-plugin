@@ -85,18 +85,21 @@ abstract class DSLTestCase {
     def createUnstableJob = {String name ->
         def job = createJob(name)
         job.getBuildersList().add(new UnstableBuilder());
+        job.onCreatedFromScratch() // need this to updateTransientActions
         return job
     }
 
     def createBlockingJob = {String name, File file = BlockingBuilder.DEFAULT_FILE ->
         def job = createJob(name)
         job.getBuildersList().add(new BlockingBuilder(file));
+        job.onCreatedFromScratch() // need this to updateTransientActions
         return job
     }
 
     def run = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
+        flow.onCreatedFromScratch() // need this to updateTransientActions
         return flow.scheduleBuild2(0).get()
     }
 
@@ -104,18 +107,21 @@ abstract class DSLTestCase {
         BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
         flow.buildNeedsWorkspace = true
+        flow.onCreatedFromScratch() // need this to updateTransientActions
         return flow.scheduleBuild2(0).get()
     }
 
     def schedule = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
+        flow.onCreatedFromScratch() // need this to updateTransientActions
         return flow.scheduleBuild2(0)
     }
 
     def runWithCause = { script, cause ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
         flow.dsl = script
+        flow.onCreatedFromScratch() // need this to updateTransientActions
         return flow.scheduleBuild2(0, cause).get()
     }
 

@@ -214,6 +214,7 @@ class BuildTest extends DSLTestCase {
                     { println Thread.currentThread().name }
             );
         """
+        flow.onCreatedFromScratch() // need this to updateTransientActions
         def build = flow.scheduleBuild2(0).get()
 
         assert SUCCESS == build.result
