@@ -46,6 +46,10 @@
     </license>
   </licenses>
 
+  <properties>
+        <junit.version>4.12</junit.version>
+  </properties>
+
   <developers>
   </developers>
 
@@ -126,6 +130,13 @@
             <artifactId>buildgraph-view</artifactId>
             <version>1.0</version>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
         
         <dependency>
