@@ -99,7 +99,7 @@ You may also want to just ignore result of some job, that are optional for your 
         build( "send_twitter_notification" )
     }
 
-The flow will not take care of the triggered build status if it's better than the configured result. This allows you to ignore `UNSTABLE` < `FAILURE` < `ABORTED`
+The flow will not pay any attention to the triggered build status if it's better than the configured result. This allows you to ignore `UNSTABLE` < `FAILURE` < `ABORTED`
 
 ## Retry ##
 You can ask the flow to `retry` a job a few times until success. This is equivalent to the retry-failed-job plugin :
