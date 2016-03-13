@@ -166,6 +166,32 @@ and this can be combined with other orchestration keywords :
         }
     )
 
+### Dynamically generate parallel jobs
+
+You can also generate the jobs you want to execute in parallel:
+
+    listOfJobs = [ "job1", "job2", "job3" ]
+
+    parallel (
+        listOfJobs.collect { job ->
+            { -> build(job) }
+        }
+    )
+
+Or based on a parameter:
+
+    // Assuming your job has a build parameter called "workerParameters"
+    // Each parameter will be given to a new job
+    jobParameters = build.properties.buildVariables.workerParameters
+        .split(",")
+        .collect { param -> param.trim() }
+
+    parallel (
+        jobParameters.collect { param ->
+            { -> build("worker", buildParam:param) }
+        }
+    )
+
 Extension Point
 ===============
 
