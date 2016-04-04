@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ * Copyright (c) 2013-2016, CloudBees, Inc., Nicolas De Loof.
  *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -165,6 +165,11 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         }
     }
 
+    /**
+     * Used by the FlowDSL to ensure we keep track of launched sub-builds.
+     *
+     * @param newFutures new sub-task futures
+     */
     protected void addNewFutures( List<Future<FlowState>> newFutures ) {
         synchronized(futuresList) {
             if ( !isAborting ) {

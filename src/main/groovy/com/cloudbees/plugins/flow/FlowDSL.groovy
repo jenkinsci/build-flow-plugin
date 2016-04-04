@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ * Copyright (c) 2013-2016, CloudBees, Inc., Nicolas De Loof.
  *                          Cisco Systems, Inc., a California corporation
  *                          SAP SE
  *
@@ -485,7 +485,7 @@ public class FlowDelegate {
             pool.awaitTermination(1, TimeUnit.DAYS)
             current_state.lastCompleted =lastCompleted
         } finally {
-            pool.shutdown()
+            pool.shutdown() // make sure we shutdown the thread pool if we are bombing out
             tasks.each {task -> task.cancel(false)}
             flowRun.state = current_state
             --indent

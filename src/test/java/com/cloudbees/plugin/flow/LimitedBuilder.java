@@ -37,7 +37,11 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
+ * A Builder that will fail if more than the specified limit are being run concurrently.
+ * Otherwise it simply sleeps for 5 seconds and returns success.
  *
+ * This helps test parallel blocks which place a configured limit on the number of
+ * builds they launch in parallel.
  */
 public class LimitedBuilder extends Builder {
 
@@ -53,7 +57,7 @@ public class LimitedBuilder extends Builder {
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
-        System.out.println("Limited Builder in build " + build.getFullDisplayName() + "starting");
+        System.out.println("Limited Builder in build " + build.getFullDisplayName() + " starting");
         if ( !sem.tryAcquire() ) {
             build.setResult(FAILURE);
             System.out.println("Limited Builder in build " + build.getFullDisplayName() + " over permits limit!");
@@ -66,7 +70,9 @@ public class LimitedBuilder extends Builder {
         } catch (InterruptedException ex) {
             build.setResult(ABORTED);
         }
-        sem.release();
+        finally {
+            sem.release();
+        }
         System.out.println("Limited Builder in build " + build.getFullDisplayName() + " completing " + build.getResult());
         return true;
     }
