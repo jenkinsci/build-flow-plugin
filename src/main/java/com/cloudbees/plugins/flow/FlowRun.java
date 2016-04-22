@@ -173,8 +173,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             try {
                 setResult(SUCCESS);
                 if (dslFile != null) {
-                    listener.getLogger().printf("[build-flow] reading DSL from file '%s'\n", dslFile);
-                    String fileContent = getWorkspace().child(dslFile).readToString();
+                    final String expandedDslFile = getEnvironment(listener).expand(dslFile);
+                    listener.getLogger().printf("[build-flow] reading DSL from file '%s'\n", expandedDslFile);
+                    String fileContent = getWorkspace().child(expandedDslFile).readToString();
                     new FlowDSL().executeFlowScript(FlowRun.this, fileContent, listener);
                 } else {
                     new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
