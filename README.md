@@ -1,7 +1,5 @@
-Deprecated / Unmaintained
-=========================
-
-This plugin is looking for a new maintainer (in case you are satisfied with what it provides but need spot fixes).
+Deprecated
+==========
 
 You should consider the pipeline plugin as a replacement as it is actively maintained:
 * https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Plugin
