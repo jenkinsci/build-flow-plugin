@@ -27,9 +27,11 @@ package com.cloudbees.plugins.flow
 import static hudson.model.Result.SUCCESS
 import hudson.model.Result
 import static hudson.model.Result.FAILURE
+import org.junit.Test
 
 class ParallelTest extends DSLTestCase {
 
+    @Test
     public void testParallel() {
         def jobs = createJobs(["job1", "job2", "job3", "job4"])
         def flow = run("""
@@ -45,6 +47,7 @@ class ParallelTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
+    @Test
     public void testFailOnParallelFailed() {
         createJobs(["job1", "job2"])
         createFailJob("willFail")
@@ -63,6 +66,7 @@ class ParallelTest extends DSLTestCase {
     }
 
 
+    @Test
     public void testFailOnJobSequenceFailed() {
         def jobs = createJobs(["job1", "job2", "job3"])
         createFailJob("willFail")
@@ -86,6 +90,7 @@ class ParallelTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
+    @Test
     public void testGetParallelResults() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def job4 = createJob("job4")
@@ -107,6 +112,7 @@ class ParallelTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
+    @Test
     public void testParallelMap() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def job4 = createJob("job4")

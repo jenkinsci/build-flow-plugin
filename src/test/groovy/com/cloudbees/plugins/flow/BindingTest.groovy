@@ -31,11 +31,13 @@ import static hudson.model.Result.FAILURE
 import hudson.model.Job
 import jenkins.model.Jenkins
 import org.junit.Ignore
+import org.junit.Test
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import hudson.slaves.EnvironmentVariablesNodeProperty.Entry
 
 class BindingTest extends DSLTestCase {
 
+    @Test
     public void testBindings() {
         Job job1 = createJob("job1")
         def flow = run("""
@@ -47,9 +49,10 @@ class BindingTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    @Test
     public void testEnvBinding() {
-        jenkins.globalNodeProperties.add(new EnvironmentVariablesNodeProperty(new Entry("someGlobalProperty", "expectedGlobalPropertyValue")))
-        jenkins.nodeProperties.add(new EnvironmentVariablesNodeProperty(new Entry("someNodeProperty", "expectedNodePropertyValue")))
+        jenkinsRule.jenkins.globalNodeProperties.add(new EnvironmentVariablesNodeProperty(new Entry("someGlobalProperty", "expectedGlobalPropertyValue")))
+        jenkinsRule.jenkins.nodeProperties.add(new EnvironmentVariablesNodeProperty(new Entry("someNodeProperty", "expectedNodePropertyValue")))
 
         Job job1 = createJob("job1")
         def flow = run("""
@@ -62,6 +65,7 @@ class BindingTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
+    @Test
     public void testBuiltinImports() {
         def flow = run("""
             println "test="+SUCCESS.class.name;

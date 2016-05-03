@@ -29,6 +29,7 @@ import jenkins.model.Jenkins
 import hudson.model.Cause.UserIdCause;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
+import org.junit.Test
 
 /**
  * Tests that when a flow is aborted is it reported correctly.
@@ -40,12 +41,13 @@ class AbortTest extends DSLTestCase {
 	/**
 	 * Tests that when a Flow is aborted it correctly aborts jobs that it started.
 	 */
+	@Test
 	public void testThatAbortAbortsStartedJobs() {
-		File f1 = new File("target/${getName()}_job1.lock")
+		File f1 = new File("target/${name.getMethodName()}_job1.lock")
 		f1.createNewFile()
 
-		Job job1 = createBlockingJob("job1", f1)
-		Job job2 = createFreeStyleProject("job2")
+		def job1 = createBlockingJob("job1", f1)
+		def job2 = jenkinsRule.createFreeStyleProject("job2")
 
 		def future = schedule("""
 		                     build("job1")
@@ -66,8 +68,8 @@ class AbortTest extends DSLTestCase {
 		// wait for the flow to finish executing.
 		future.get();
 
-		assertBuildStatus(Result.ABORTED, flow)
-		assertBuildStatus(Result.ABORTED, job1.lastBuild)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, flow)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, job1.lastBuild)
 		assertDidNotRun(job2)
 	}
 
@@ -75,9 +77,10 @@ class AbortTest extends DSLTestCase {
 	 * Tests that when a Flow is aborted it correctly aborts jobs that it started
 	 * in a parallel block.
 	 */
+	@Test
 	public void testThatAbortAbortsStartedJobs_ParallelBlock() {
-		File f1 = new File("target/${getName()}_job1.lock")
-		File f2 = new File("target/${getName()}_job2.lock")
+		File f1 = new File("target/${name.getMethodName()}_job1.lock")
+		File f2 = new File("target/${name.getMethodName()}_job2.lock")
 		f1.createNewFile()
 		f2.createNewFile()
 
@@ -107,17 +110,18 @@ class AbortTest extends DSLTestCase {
 		// wait for the flow to finish executing.
 		future.get();
 
-		assertBuildStatus(Result.ABORTED, job1.lastBuild)
-		assertBuildStatus(Result.ABORTED, job2.lastBuild)
-		assertBuildStatus(Result.ABORTED, flow)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, job1.lastBuild)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, job2.lastBuild)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, flow)
 	}
 
 	/**
 	 * Ensures an ignored parallel block does not supress the aborted job status.
 	 */
+	@Test
 	public void testThatAbortAbortsStartedJobs_IgnoredParallel() {
-		File f1 = new File("target/${getName()}_job1.lock")
-		File f2 = new File("target/${getName()}_job2.lock")
+		File f1 = new File("target/${name.getMethodName()}_job1.lock")
+		File f2 = new File("target/${name.getMethodName()}_job2.lock")
 		f1.createNewFile()
 		f2.createNewFile()
 
@@ -149,21 +153,22 @@ class AbortTest extends DSLTestCase {
 		// wait for the flow to finish executing.
 		future.get();
 
-		assertBuildStatus(Result.ABORTED, job1.lastBuild)
-		assertBuildStatus(Result.ABORTED, job2.lastBuild)
-		assertBuildStatus(Result.ABORTED, flow)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, job1.lastBuild)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, job2.lastBuild)
+		jenkinsRule.assertBuildStatus(Result.ABORTED, flow)
 	}
 
 	/**
 	 * Tests that when a Flow is aborted it correctly aborts jobs that it queued.
 	 */
+	@Test
 	public void testThatAbortAbortsQueuedJobs() {
-		File f1 = new File("target/${getName()}_job1.lock")
+		File f1 = new File("target/${name.getMethodName()}_job1.lock")
 		f1.createNewFile()
 
 		Job job1 = createBlockingJob("job1", f1)
 
-		BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+		BuildFlow flow = new BuildFlow(Jenkins.instance, name.getMethodName())
 		flow.concurrentBuild = true;
 		flow.onCreatedFromScratch()
 		flow.dsl = """  build("job1", param1: build.number)  """
@@ -192,13 +197,13 @@ class AbortTest extends DSLTestCase {
 		flows[1].future.oneOffExecutor.interrupt(Result.ABORTED)
 		println("aborting request sent...")
 		// wait for the flow to finish executing.
-		assertBuildStatus(Result.ABORTED, flows[1].flow.get())
+		jenkinsRule.assertBuildStatus(Result.ABORTED, flows[1].flow.get())
 
 		// Release the blocked job
 		System.out.println("releasing jobs")
 		f1.delete()
 
-		waitUntilNoActivityUpTo(25000)
+		jenkinsRule.waitUntilNoActivityUpTo(25000)
 
 		assertRan(job1, 3, Result.SUCCESS)
 
@@ -209,7 +214,7 @@ class AbortTest extends DSLTestCase {
 		assertHasParameter(job1.builds[0], 'param1', '3')
 
 		// Assert that non aborted flows succeeded.
-		assertBuildStatusSuccess(flows[0].flow.get())
-		assertBuildStatusSuccess(flows[2].flow.get())
+		jenkinsRule.assertBuildStatusSuccess(flows[0].flow.get())
+		jenkinsRule.assertBuildStatusSuccess(flows[2].flow.get())
 	}
 }

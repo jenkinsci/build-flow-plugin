@@ -27,9 +27,11 @@ package com.cloudbees.plugins.flow
 import static hudson.model.Result.SUCCESS
 import hudson.model.Job
 import static hudson.model.Result.FAILURE
+import org.junit.Test
 
 class GuardTest extends DSLTestCase {
 
+    @Test
     public void testGuardPass() {
         def jobs = createJobs(["job1", "job2", "job3", "clean"])
         def ret = run("""
@@ -45,7 +47,8 @@ class GuardTest extends DSLTestCase {
         assert SUCCESS == ret.result
     }
 
-    /*public void testGuardWithFail() {
+    /*@Test
+    public void testGuardWithFail() {
         Job job1 = createJob("job1");
         def failure = createFailJob("fails")
         Job job3 = createJob("job3");
@@ -89,6 +92,7 @@ class GuardTest extends DSLTestCase {
         assert r
     """
 
+    @Test
     public void testGuardPassPar() {
         def jobs = createJobs(["job1", "job2", "job3", "clean"])
         def ret = run(successBuildPar)
@@ -121,7 +125,7 @@ class GuardTest extends DSLTestCase {
         }
         assert a == 1
     """
-
+    @Test
     public void testGuardPassParRetry() {
         def jobs = createJobs(["job1", "job2", "job3", "clean"])
         def ret = run(successBuildParRetry)
