@@ -75,4 +75,66 @@ class IgnoreTest extends DSLTestCase {
         assert FAILURE == flow.result
     }
 
+    public void testIgnoreJobFailureButRunUnstable() {
+        Job willUnstable = createUnstableJob("willUnstable")
+        Job willFail = createFailJob("willFail");
+        Job wontRun= createJob("wontRun");
+        def flow = runWithAbortWhenWorseThan("""
+            ignore(FAILURE) {
+                build("willUnstable")
+                build("willFail")
+                build("wontRun")
+            }
+        """, UNSTABLE)
+        assertRan(willUnstable)
+        assertFailure(willFail)
+        assertDidNotRun(wontRun)
+        assert SUCCESS == flow.result
+    }
+
+    public void testIgnoreJobFailureButRunFailure() {
+        Job willUnstable = createUnstableJob("willUnstable")
+        Job willFail = createFailJob("willFail");
+        Job willRun= createJob("willRun");
+        def flow = runWithAbortWhenWorseThan("""
+            ignore(FAILURE) {
+                build("willUnstable")
+                build("willFail")
+                build("willRun")
+            }
+        """, FAILURE)
+        assertRan(willUnstable)
+        assertFailure(willFail)
+        assertRan(willRun)
+        assert SUCCESS == flow.result
+    }
+
+    public void testIgnoreJobUnstableButRunUnstable() {
+        Job willUnstable = createUnstableJob("willUnstable")
+        Job willRun= createJob("willRun");
+        def flow = runWithAbortWhenWorseThan("""
+            ignore(UNSTABLE) {
+                build("willUnstable")
+                build("willRun")
+            }
+        """, UNSTABLE)
+        assertRan(willUnstable)
+        assertRan(willRun)
+        assert SUCCESS == flow.result
+    }
+
+    public void testIgnoreJobUnstableButRunFailure() {
+        Job willUnstable = createUnstableJob("willUnstable")
+        Job willRun= createJob("willRun");
+        def flow = runWithAbortWhenWorseThan("""
+            ignore(UNSTABLE) {
+                build("willUnstable")
+                build("willRun")
+            }
+        """, FAILURE)
+        assertRan(willUnstable)
+        assertRan(willRun)
+        assert SUCCESS == flow.result
+    }
+
 }

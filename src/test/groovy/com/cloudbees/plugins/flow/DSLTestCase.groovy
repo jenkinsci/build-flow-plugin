@@ -91,6 +91,14 @@ abstract class DSLTestCase extends HudsonTestCase {
         return flow.scheduleBuild2(0).get()
     }
 
+    def runWithAbortWhenWorseThan = { script, abortWhenWorseThan ->
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        flow.abortWhenWorseThan = abortWhenWorseThan.toString()
+        flow.useAbortWhenWorseThan = true
+        return flow.scheduleBuild2(0).get()
+    }
+
     def runWithWorkspace = { script ->
         BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
         flow.dsl = script
@@ -118,6 +126,10 @@ abstract class DSLTestCase extends HudsonTestCase {
 
     def assertDidNotRun = { job ->
         assert 0 == job.builds.size()
+    }
+
+    def assertRan = { job ->
+        assert 0 < job.builds.size()
     }
 
     def assertAllSuccess = { jobs ->

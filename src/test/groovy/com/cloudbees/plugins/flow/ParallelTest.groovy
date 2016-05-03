@@ -27,6 +27,7 @@ package com.cloudbees.plugins.flow
 import static hudson.model.Result.SUCCESS
 import hudson.model.Result
 import static hudson.model.Result.FAILURE
+import static hudson.model.Result.UNSTABLE
 
 class ParallelTest extends DSLTestCase {
 
@@ -62,6 +63,56 @@ class ParallelTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
+    public void testUnstableOnParallelBeUnstableButRunTheFollowingJobsWhenAbortStatusSetToUnstable() {
+        createJobs(["job1", "job2"])
+        createUnstableJob("willBeUnstable")
+        def job4 = createJob("job4")
+        def flow = runWithAbortWhenWorseThan("""
+            parallel (
+                { build("job1") },
+                { build("job2") },
+                { build("willBeUnstable") }
+            )
+            build("job4")
+        """, UNSTABLE)
+        assertRan(job4)
+        assert UNSTABLE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testFailOnParallelFailedWhenAbortStatusSetToUnstable() {
+        createJobs(["job1", "job2"])
+        createFailJob("willFail")
+        def job4 = createJob("job4")
+        def flow = runWithAbortWhenWorseThan("""
+            parallel (
+                { build("job1") },
+                { build("job2") },
+                { build("willfail") }
+            )
+            build("job4")
+        """, UNSTABLE)
+        assertDidNotRun(job4)
+        assert FAILURE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testFailOnParallelFailedButRunTheFollowingJobsWhenAbortStatusSetToFailure() {
+        createJobs(["job1", "job2"])
+        createFailJob("willFail")
+        def job4 = createJob("job4")
+        def flow = runWithAbortWhenWorseThan("""
+            parallel (
+                { build("job1") },
+                { build("job2") },
+                { build("willfail") }
+            )
+            build("job4")
+        """, FAILURE)
+        assertRan(job4)
+        assert FAILURE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
 
     public void testFailOnJobSequenceFailed() {
         def jobs = createJobs(["job1", "job2", "job3"])

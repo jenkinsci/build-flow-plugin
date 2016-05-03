@@ -131,20 +131,146 @@ class BuildTest extends DSLTestCase {
         println flow.jobsGraph.edgeSet()
     }
 
-    public void testSequentialBuildsWithFailure() {
+    public void testSequentialBuildsExpectFailureWithDefaultSettings() {
         def jobs = createJobs(["job1", "job2", "job3"])
         def willFail = createFailJob("willFail")
-        def notRan = createJob("notRan")
+        def willNotRun = createJob("willNotRun")
         def flow = run("""
             build("job1")
             build("job2")
             build("job3")
             build("willFail")
-            build("notRan")
+            build("willNotRun")
         """)
         assertAllSuccess(jobs)
         assertFailure(willFail)
-        assertDidNotRun(notRan)
+        assertDidNotRun(willNotRun)
+        assert FAILURE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectUnstableWithDefaultSettings() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willBeUnstable = createUnstableJob("willBeUnstable")
+        def willNotRun = createJob("willNotRun")
+        def flow = run("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willBeUnstable")
+            build("willNotRun")
+        """)
+        assertAllSuccess(jobs)
+        assertUnstable(willBeUnstable)
+        assertDidNotRun(willNotRun)
+        assert UNSTABLE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectUnstableWithSuccessSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willBeUnstable = createUnstableJob("willBeUnstable")
+        def willNotRun = createJob("willNotRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willBeUnstable")
+            build("willNotRun")
+        """, SUCCESS)
+        assertAllSuccess(jobs)
+        assertUnstable(willBeUnstable)
+        assertDidNotRun(willNotRun)
+        assert UNSTABLE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectFailureWithSuccessSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willFail = createFailJob("willFail")
+        def willNotRun = createJob("willNotRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willFail")
+            build("willNotRun")
+        """, SUCCESS)
+        assertAllSuccess(jobs)
+        assertFailure(willFail)
+        assertDidNotRun(willNotRun)
+        assert FAILURE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectUnstableWithUnstableSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willBeUnstable = createUnstableJob("willBeUnstable")
+        def willRun = createJob("willRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willBeUnstable")
+            build("willRun")
+        """, UNSTABLE)
+        assertAllSuccess(jobs)
+        assertUnstable(willBeUnstable)
+        assertRan(willRun)
+        assert UNSTABLE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectFailureWithUnstableSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willFail = createFailJob("willFail")
+        def willNotRun = createJob("willNotRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willFail")
+            build("willNotRun")
+        """, UNSTABLE)
+        assertAllSuccess(jobs)
+        assertFailure(willFail)
+        assertDidNotRun(willNotRun)
+        assert FAILURE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectUnstableWithFailureSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willBeUnstable = createUnstableJob("willBeUnstable")
+        def willRun = createJob("willRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willBeUnstable")
+            build("willRun")
+        """, FAILURE)
+        assertAllSuccess(jobs)
+        assertUnstable(willBeUnstable)
+        assertRan(willRun)
+        assert UNSTABLE == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testSequentialBuildsExpectFailureWithFailureSet() {
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def willFail = createFailJob("willFail")
+        def willRun = createJob("willRun")
+        def flow = runWithAbortWhenWorseThan("""
+            build("job1")
+            build("job2")
+            build("job3")
+            build("willFail")
+            build("willRun")
+        """, FAILURE)
+        assertAllSuccess(jobs)
+        assertFailure(willFail)
+        assertRan(willRun)
         assert FAILURE == flow.result
         println flow.jobsGraph.edgeSet()
     }

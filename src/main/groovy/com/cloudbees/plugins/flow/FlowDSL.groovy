@@ -43,6 +43,7 @@ import java.util.logging.Logger
 
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
+import hudson.model.Result
 
 public class FlowDSL {
 
@@ -201,7 +202,8 @@ public class FlowDelegate {
      * Check flow status and stop if unexpected failure is detected
      */
     private void statusCheck() {
-        if (flowRun.state.result.isWorseThan(SUCCESS)) {
+        if (flowRun.state.result.isWorseThan(Result.fromString(flowRun.getAbortWhenWorseThan()))) {
+            println("Abort execution, because one of the last builds is worse than " + flowRun.getAbortWhenWorseThan())
             fail()
         }
     }
