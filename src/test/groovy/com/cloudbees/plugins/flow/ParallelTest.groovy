@@ -1,7 +1,8 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ * Copyright (c) 2013-2015, CloudBees, Inc., Nicolas De Loof.
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,25 @@ class ParallelTest extends DSLTestCase {
                 { build("job3") }
             )
             build("job4")
+        """)
+        assertAllSuccess(jobs)
+        assert SUCCESS == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testParallelLimitConcurrency() {
+        initLimitedJobKey(getName(), 1)
+        def jobs = [
+            createLimitedJob("job1", getName()),
+            createLimitedJob("job2", getName()),
+            createLimitedJob("job3", getName()),
+        ]
+        def flow = run("""
+            parallel( 1,
+                { build("job1") },
+                { build("job2") },
+                { build("job3") },
+            )
         """)
         assertAllSuccess(jobs)
         assert SUCCESS == flow.result
@@ -124,6 +144,25 @@ class ParallelTest extends DSLTestCase {
         assertSuccess(job4)
         assertHasParameter(job4, "r1", "SUCCESS")
         assertHasParameter(job4, "r2", "job2")
+        assert SUCCESS == flow.result
+        println flow.jobsGraph.edgeSet()
+    }
+
+    public void testParallelMapLimitConcurrency() {
+        initLimitedJobKey(getName(), 1)
+        def jobs = [
+            createLimitedJob("job1", getName()),
+            createLimitedJob("job2", getName()),
+            createLimitedJob("job3", getName()),
+        ]
+        def flow = run("""
+            join = parallel ( 1, [
+                first:  { build("job1") },
+                second: { build("job2") },
+                third:  { build("job3") }
+            ])
+        """)
+        assertAllSuccess(jobs)
         assert SUCCESS == flow.result
         println flow.jobsGraph.edgeSet()
     }

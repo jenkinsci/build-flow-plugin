@@ -1,8 +1,9 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
- *                     Cisco Systems, Inc., a California corporation
+ * Copyright (c) 2013-2016, CloudBees, Inc., Nicolas De Loof.
+ *                          Cisco Systems, Inc., a California corporation
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +42,7 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import java.util.concurrent.*
 import java.util.logging.Logger
 
+import static hudson.model.Result.ABORTED
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
 
@@ -102,6 +104,9 @@ public class FlowDSL {
     private void killRunningJobs(FlowRun flowRun, BuildListener listener) {
         flowRun.state.result = Executor.currentExecutor().abortResult();
         Executor.currentExecutor().recordCauseOfInterruption(flowRun, listener);
+
+        flowRun.isAborting = true
+        flowRun.abortUnstartedFutures()
 
         def graph = flowRun.jobsGraph
         graph.vertexSet().each() { ji ->
@@ -395,13 +400,13 @@ public class FlowDelegate {
     }
 
     // allows syntax like : parallel(["Kohsuke","Nicolas"].collect { name -> return { build("job1", param1:name) } })
-    def List<FlowState> parallel(Collection<? extends Closure> closures) {
-        parallel(closures as Closure[])
+    def List<FlowState> parallel(int maxThreads = 0, Collection<? extends Closure> closures) {
+        parallel(maxThreads, closures as Closure[])
     }
 
     // allows collecting job status by name rather than by index
     // inspired by https://github.com/caolan/async#parallel
-    def Map<?, FlowState> parallel(Map<?, ? extends Closure> args) {
+    def Map<?, FlowState> parallel(int maxThreads = 0, Map<?, ? extends Closure> args) {
         def keys     = new ArrayList<?>()
         def closures = new ArrayList<? extends Closure>()
         args.entrySet().each { e ->
@@ -409,27 +414,31 @@ public class FlowDelegate {
           closures.add(e.value)
         }
         def results = new LinkedHashMap<?, FlowState>()
-        def flowStates = parallel(closures) // as List<FlowState>
+        def flowStates = parallel(maxThreads, closures) // as List<FlowState>
         flowStates.eachWithIndex { v, i -> results[keys[i]] = v }
         results
     }
 
-    def List<FlowState> parallel(Closure ... closures) {
+    def List<FlowState> parallel(int maxThreads = 0, Closure ... closures) {
         statusCheck()
         // TODO use NamingThreadFactory since Jenkins 1.541
-        ExecutorService pool = Executors.newCachedThreadPool(new ThreadFactory() {
+        ThreadFactory tf = new ThreadFactory() {
             public Thread newThread(Runnable r) {
                 def thread = Executors.defaultThreadFactory().newThread(r);
                 thread.name = "BuildFlow parallel statement thread for " + flowRun.parent.fullName;
                 return thread;
             }
-        });
+        }
+        ExecutorService pool = (maxThreads <= 0) ?
+                Executors.newCachedThreadPool(tf) : Executors.newFixedThreadPool(maxThreads, tf)
         Set<Run> upstream = flowRun.state.lastCompleted
         Set<Run> lastCompleted = Collections.synchronizedSet(new HashSet<Run>())
         def results = new CopyOnWriteArrayList<FlowState>()
         def tasks = new ArrayList<Future<FlowState>>()
 
-        println("parallel {")
+        def startMsg = "parallel"
+        if ( maxThreads > 0 ) startMsg += "( "+maxThreads+" )"
+        println(startMsg + " {")
         ++indent
 
         def current_state = flowRun.state
@@ -450,6 +459,9 @@ public class FlowDelegate {
 
                 tasks.add(pool.submit(track_closure as Callable))
             }
+            // add the full list of futures to a build wide list
+            // to account for possible nested parallel blocks
+            flowRun.addNewFutures(tasks)
 
             tasks.each {task ->
                 try {
@@ -457,12 +469,15 @@ public class FlowDelegate {
                     Result result = final_state.result
                     results.add(final_state)
                     current_state.result = current_state.result.combine(result)
-                } catch(ExecutionException e)
-                {
+                }
+                catch(ExecutionException e) {
                     // TODO perhaps rethrow?
                     current_state.result = FAILURE
                     listener.error("Failed to run DSL Script")
                     e.printStackTrace(listener.getLogger())
+                }
+                catch(CancellationException e) {
+                    current_state.result = ABORTED
                 }
             }
 
@@ -470,6 +485,8 @@ public class FlowDelegate {
             pool.awaitTermination(1, TimeUnit.DAYS)
             current_state.lastCompleted =lastCompleted
         } finally {
+            pool.shutdown() // make sure we shutdown the thread pool if we are bombing out
+            tasks.each {task -> task.cancel(false)}
             flowRun.state = current_state
             --indent
             println("}")

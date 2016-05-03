@@ -1,7 +1,8 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2013, CloudBees, Inc., Nicolas De Loof.
+ * Copyright (c) 2013-2016, CloudBees, Inc., Nicolas De Loof.
+ *                          SAP SE
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,11 +36,14 @@ import hudson.model.Run;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -67,9 +71,14 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     private DirectedGraph<JobInvocation, JobEdge> jobsGraph;
 
+    // Note: synchronization necessary
+    private transient final List<Future<FlowState>> futuresList = new ArrayList<Future<FlowState>>();
+
     private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
     
     private transient AtomicInteger buildIndex = new AtomicInteger(1);
+
+    private transient volatile boolean isAborting = false;
 
     public FlowRun(BuildFlow job, File buildDir) throws IOException {
         super(job, buildDir);
@@ -153,6 +162,33 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             run(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
         } else {
             execute(new FlyweightTaskRunnerImpl(dsl));
+        }
+    }
+
+    /**
+     * Used by the FlowDSL to ensure we keep track of launched sub-builds.
+     *
+     * @param newFutures new sub-task futures
+     */
+    protected void addNewFutures( List<Future<FlowState>> newFutures ) {
+        synchronized(futuresList) {
+            if ( !isAborting ) {
+                futuresList.addAll(newFutures);
+            }
+            else {
+                for ( Future f : newFutures ) {
+                    f.cancel(false);
+                }
+            }
+        }
+    }
+
+    protected void abortUnstartedFutures() {
+        synchronized(futuresList) {
+            isAborting = true;
+            for ( Future f : futuresList ) {
+                f.cancel(false);
+            }
         }
     }
 
