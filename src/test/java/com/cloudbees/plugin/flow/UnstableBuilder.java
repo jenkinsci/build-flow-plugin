@@ -38,7 +38,7 @@ import static hudson.model.Result.SUCCESS;
 import static hudson.model.Result.UNSTABLE;
 
 /**
- * @author: <a hef="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 public class UnstableBuilder extends Builder {
 

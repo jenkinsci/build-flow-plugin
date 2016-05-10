@@ -41,7 +41,7 @@ import static hudson.model.Result.SUCCESS;
 /**
  * A Builder that will block until a file exists.
  *
- * @author: James Nord
+ * @author James Nord
  */
 public class BlockingBuilder extends Builder {
 

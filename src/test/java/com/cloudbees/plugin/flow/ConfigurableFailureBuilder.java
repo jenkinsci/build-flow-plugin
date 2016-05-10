@@ -38,7 +38,7 @@ import static hudson.model.Result.FAILURE;
 import static hudson.model.Result.SUCCESS;
 
 /**
- * @author: <a hef="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
 public class ConfigurableFailureBuilder extends Builder {
 
