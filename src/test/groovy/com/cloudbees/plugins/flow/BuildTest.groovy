@@ -26,7 +26,7 @@
 package com.cloudbees.plugins.flow
 
 import hudson.model.Result
-import org.jvnet.hudson.test.Bug
+import org.jvnet.hudson.test.Issue
 
 import static hudson.model.Result.SUCCESS
 import static hudson.model.Result.FAILURE
@@ -195,7 +195,7 @@ class BuildTest extends DSLTestCase {
         assert SUCCESS == flow.result
     }
 
-    @Bug(17199)
+    @Issue("JENKINS-17199")
     @Test
     public void testImportStatement() {
         def flow = run("""
