@@ -38,7 +38,7 @@ import java.util.TreeMap;
 public class TestDSLExtension extends BuildFlowDSLExtension {
     @Override
     public Object createExtension(String extensionName, FlowDelegate dsl) {
-        Map m = new TreeMap();
+        Map<String, Object> m = new TreeMap<String, Object>();
         m.put("dsl",dsl);
         m.put("name",extensionName);
         return m;

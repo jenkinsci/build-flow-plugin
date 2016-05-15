@@ -134,7 +134,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     }
 
     public void doGetDot(StaplerRequest req, StaplerResponse rsp) throws IOException {
-        new DOTExporter().export(rsp.getWriter(), jobsGraph);
+        new DOTExporter<JobInvocation, JobEdge>().export(rsp.getWriter(), jobsGraph);
     }
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
