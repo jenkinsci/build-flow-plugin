@@ -37,6 +37,7 @@ import hudson.util.AlternativeUiTextProvider;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
+import jenkins.triggers.SCMTriggerItem;
 
 import java.io.IOException;
 import java.util.List;
@@ -59,7 +60,7 @@ import groovy.lang.GroovyShell;
  *
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
-public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask, SCMedItem {
+public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelItem, FlyweightTask, SCMTriggerItem {
 
     private final FlowIcon icon = new FlowIcon();
 

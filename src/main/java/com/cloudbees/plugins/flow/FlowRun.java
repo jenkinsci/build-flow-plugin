@@ -150,13 +150,13 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     @Override
     public void run() {
         if (buildNeedsWorkspace) {
-            run(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
+            execute(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
         } else {
             execute(new FlyweightTaskRunnerImpl(dsl));
         }
     }
 
-    protected class BuildWithWorkspaceRunnerImpl extends AbstractRunner {
+    protected class BuildWithWorkspaceRunnerImpl extends BuildExecution {
 
         private final String dsl;
         private final String dslFile;
