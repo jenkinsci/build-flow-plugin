@@ -31,13 +31,17 @@
   </p:config-trigger>
 
   <f:section title="Flow">
-    <f:optionalBlock field="buildNeedsWorkspace" title="${%Flow run needs a workspace}"
-                     checked="${instance.buildNeedsWorkspace}">
-      <f:entry field="dslFile" title="${%Read DSL from file}">
-        <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
-        <f:textbox readonly="${h.hasPermission(it,permission) ? null : 'readonly'}"/>
-      </f:entry>
-    </f:optionalBlock>
+    <f:block>
+      <table width="100%">
+        <f:optionalBlock field="buildNeedsWorkspace" title="${%Flow run needs a workspace}"
+                         checked="${instance.buildNeedsWorkspace}">
+          <f:entry field="dslFile" title="${%Read DSL from file}">
+            <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
+            <f:textbox readonly="${h.hasPermission(it,permission) ? null : 'readonly'}"/>
+          </f:entry>
+        </f:optionalBlock>
+      </table>
+    </f:block>
     <f:entry field="dsl" title="${%Define build flow using flow DSL}">
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
       <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}" checkMethod="POST" />
