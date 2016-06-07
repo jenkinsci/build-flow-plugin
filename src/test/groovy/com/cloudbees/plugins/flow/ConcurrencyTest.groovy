@@ -44,8 +44,9 @@ class ConcurrencyTest extends DSLTestCase {
         Jenkins.instance.numExecutors = 8
         Jenkins.instance.reload()
 
-        File f1 = new File("target/concjob1.block")
+        File f1 = new File("target", "concjob1.block")
         // this will prevent job1 from running.
+        f1.mkdirs();
         f1.createNewFile();
 
         def concjob1 = createBlockingJob("concjob1", f1)

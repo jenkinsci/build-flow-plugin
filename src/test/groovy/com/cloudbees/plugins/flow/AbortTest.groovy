@@ -43,7 +43,8 @@ class AbortTest extends DSLTestCase {
 	 */
 	@Test
 	public void testThatAbortAbortsStartedJobs() {
-		File f1 = new File("target/${name.getMethodName()}_job1.lock")
+		File f1 = new File("target", "${name.getMethodName()}_job1.lock")
+		f1.mkdirs()
 		f1.createNewFile()
 
 		def job1 = createBlockingJob("job1", f1)
@@ -79,9 +80,11 @@ class AbortTest extends DSLTestCase {
 	 */
 	@Test
 	public void testThatAbortAbortsStartedJobs_ParallelBlock() {
-		File f1 = new File("target/${name.getMethodName()}_job1.lock")
-		File f2 = new File("target/${name.getMethodName()}_job2.lock")
+		File f1 = new File("target", "${name.getMethodName()}_job1.lock")
+		File f2 = new File("target", "${name.getMethodName()}_job2.lock")
+		f1.mkdirs()
 		f1.createNewFile()
+		f2.mkdirs()
 		f2.createNewFile()
 
 		Job job1 = createBlockingJob("job1", f1)
@@ -120,9 +123,11 @@ class AbortTest extends DSLTestCase {
 	 */
 	@Test
 	public void testThatAbortAbortsStartedJobs_IgnoredParallel() {
-		File f1 = new File("target/${name.getMethodName()}_job1.lock")
-		File f2 = new File("target/${name.getMethodName()}_job2.lock")
+		File f1 = new File("target", "${name.getMethodName()}_job1.lock")
+		File f2 = new File("target", "${name.getMethodName()}_job2.lock")
+		f1.mkdirs()
 		f1.createNewFile()
+		f2.mkdirs()
 		f2.createNewFile()
 
 		Job job1 = createBlockingJob("job1", f1)
@@ -163,7 +168,7 @@ class AbortTest extends DSLTestCase {
 	 */
 	@Test
 	public void testThatAbortAbortsQueuedJobs() {
-		File f1 = new File("target/${name.getMethodName()}_job1.lock")
+		File f1 = new File("target", "${name.getMethodName()}_job1.lock")
 		f1.createNewFile()
 
 		Job job1 = createBlockingJob("job1", f1)
