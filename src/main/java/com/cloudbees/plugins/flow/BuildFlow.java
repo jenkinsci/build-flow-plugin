@@ -66,7 +66,7 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
 
     private String dsl;
     private String dslFile;
-
+    private String classpath;
     private boolean buildNeedsWorkspace;
 
 
@@ -80,6 +80,14 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
 
     public void setDsl(String dsl) {
         this.dsl = dsl;
+    }
+
+    public String getClasspath() {
+        return classpath;
+    }
+
+    public void setClasspath(String classpath) {
+        this.classpath = classpath;
     }
 
     public boolean getBuildNeedsWorkspace() {
@@ -105,6 +113,7 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
         this.buildNeedsWorkspace = json.containsKey("buildNeedsWorkspace");
         if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
             this.dsl = json.getString("dsl");
+            this.classpath = json.getString("classpath");
             if (this.buildNeedsWorkspace) {
                 JSONObject o = json.getJSONObject("buildNeedsWorkspace");
                 this.dslFile = Util.fixEmptyAndTrim(o.getString("dslFile"));

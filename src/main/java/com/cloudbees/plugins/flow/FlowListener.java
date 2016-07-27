@@ -41,8 +41,7 @@ public class FlowListener extends RunListener<Run<?, ?>> {
         List<Cause> causes = startedBuild.getCauses();
         for (Cause cause : causes) {
             if (cause instanceof FlowCause) {
-                ((FlowCause) cause).getAssociatedJob().buildStarted(
-                        startedBuild);
+                ((FlowCause) cause).getAssociatedJob().buildStarted(startedBuild);
             }
         }
     }
