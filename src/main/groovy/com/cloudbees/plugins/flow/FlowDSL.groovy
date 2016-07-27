@@ -33,6 +33,8 @@ import hudson.slaves.EnvironmentVariablesNodeProperty
 import hudson.slaves.NodeProperty
 import hudson.util.spring.ClosureScript
 import jenkins.model.Jenkins
+
+import org.acegisecurity.context.SecurityContextHolder
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
