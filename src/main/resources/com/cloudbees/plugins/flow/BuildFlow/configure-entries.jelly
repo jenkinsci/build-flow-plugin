@@ -46,6 +46,11 @@
       <j:getStatic var="permission" className="hudson.model.Hudson" field="RUN_SCRIPTS"/>
       <f:textarea class="fixed-width" readonly="${h.hasPermission(it,permission) ? null : 'readonly'}" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}" checkMethod="POST" />
     </f:entry>
+        <f:advanced>
+            <f:entry title="${%Classpath}"  field="classpath">
+                <f:expandableTextbox/>
+            </f:entry>
+        </f:advanced>
   </f:section>
 
   <p:config-publishers2 />

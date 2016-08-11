@@ -60,6 +60,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     
     private String dsl;
     private String dslFile;
+    private String classpath;
 
     private boolean buildNeedsWorkspace;
 
@@ -90,6 +91,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         }
         this.dsl = job.getDsl();
         this.dslFile = job.getDslFile();
+        this.classpath = job.getClasspath();
         this.buildNeedsWorkspace = job.getBuildNeedsWorkspace();
         startJob.buildStarted(this);
         jobsGraph.addVertex(startJob);
@@ -150,9 +152,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     @Override
     public void run() {
         if (buildNeedsWorkspace) {
-            execute(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
+            execute(new BuildWithWorkspaceRunnerImpl(dsl, dslFile, classpath));
         } else {
-            execute(new FlyweightTaskRunnerImpl(dsl));
+            execute(new FlyweightTaskRunnerImpl(dsl,classpath));
         }
     }
 
@@ -160,10 +162,12 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
         private final String dsl;
         private final String dslFile;
+        private final String classpath;
 
-        public BuildWithWorkspaceRunnerImpl(String dsl, String dslFile) {
+        public BuildWithWorkspaceRunnerImpl(String dsl, String dslFile, String classpath) {
             this.dsl = dsl;
             this.dslFile = dslFile;
+            this.classpath = classpath;
         }
 
         protected Result doRun(BuildListener listener) throws Exception {
@@ -175,9 +179,9 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
                 if (dslFile != null) {
                     listener.getLogger().printf("[build-flow] reading DSL from file '%s'\n", dslFile);
                     String fileContent = getWorkspace().child(dslFile).readToString();
-                    new FlowDSL().executeFlowScript(FlowRun.this, fileContent, listener);
+                    new FlowDSL().executeFlowScript(FlowRun.this, fileContent, classpath,  listener);
                 } else {
-                    new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+                    new FlowDSL().executeFlowScript(FlowRun.this, dsl, classpath, listener);
                 }
             } finally {
                 boolean failed=false;
@@ -208,15 +212,17 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
     protected class FlyweightTaskRunnerImpl extends RunExecution {
 
         private final String dsl;
+        private final String classpath;
 
-        public FlyweightTaskRunnerImpl(String dsl) {
+        public FlyweightTaskRunnerImpl(String dsl, String classpath) {
             this.dsl = dsl;
+            this.classpath = classpath;
         }
 
         @Override
         public Result run(BuildListener listener) throws Exception, RunnerAbortedException {
             setResult(SUCCESS);
-            new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+            new FlowDSL().executeFlowScript(FlowRun.this, dsl, classpath, listener);
             return getState().getResult();
         }
 

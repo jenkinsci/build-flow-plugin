@@ -46,7 +46,7 @@ import static hudson.model.Result.SUCCESS
 
 public class FlowDSL {
 
-    def void executeFlowScript(FlowRun flowRun, String dsl, BuildListener listener) {
+    def void executeFlowScript(FlowRun flowRun, String dsl, String classpath, BuildListener listener) {
         // Retrieve the upstream build if the flow was triggered by another job
         Run upstream = null;
         flowRun.causes.each{ cause -> 
@@ -77,7 +77,20 @@ public class FlowDSL {
         ic.addStaticStars(Result.class.name)
         cc.addCompilationCustomizers(ic)
 
-        ClosureScript dslScript = (ClosureScript)new GroovyShell(Jenkins.instance.pluginManager.uberClassLoader,new Binding(),cc).parse(dsl)
+        def classpathList = []
+
+        if (classpath?.trim()){
+            classpath.eachLine {
+                def pathURL = pathToURL(it)
+                if (pathURL != null){
+                    classpathList.add(pathURL)
+                }
+            }
+        }
+
+        def uberLoader = Jenkins.instance.pluginManager.uberClassLoader
+        def extendedLoader = new URLClassLoader(classpathList as URL[], uberLoader);
+        ClosureScript dslScript = (ClosureScript)new GroovyShell(extendedLoader,new Binding(),cc).parse(dsl)
         dslScript.setDelegate(flow);
 
         try {
@@ -96,6 +109,18 @@ public class FlowDSL {
             listener.error("Failed to run DSL Script")
             e.printStackTrace(listener.getLogger())
             throw e;
+        }
+    }
+
+    def pathToURL(path){
+        try {
+            return new URL(path);
+        } catch (MalformedURLException x) {
+            try{
+                return new File(path).toURI().toURL();
+            }catch (MalformedURLException x1){
+                return null
+            }
         }
     }
 
