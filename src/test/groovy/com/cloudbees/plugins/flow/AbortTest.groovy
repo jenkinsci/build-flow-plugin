@@ -149,6 +149,7 @@ class AbortTest extends DSLTestCase {
 		while (!job1.building) {
 			Thread.sleep(10L)
 		}
+		// wait for job2 to start maybe
 		println("job has started")
 
 		// abort the flow
